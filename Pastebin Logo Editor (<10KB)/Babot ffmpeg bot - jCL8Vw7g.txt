@@ -1,0 +1,57 @@
+{if:{arg:0}|=|ffmpeg_any|then:{set:s|{unix}}
+{sh:
+load {media}
+mkdir ./displacemaps
+curl -s "https://files.catbox.moe/egdjih.mov" -o "./displacemaps/tvsimulator.mov"
+for i in `seq -180 1 180`; do
+    magick hald:4 -modulate 100,100,%[fx:$i/1.8+100] hslhue_$i.ppm
+  done
+sr=$(ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of default=nokey=1:noprint_wrappers=1 $FILE_1)
+fr=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of default=nokey=1:noprint_wrappers=1 $FILE_1)
+d=$(ffprobe -i $FILE_1 -show_entries format=duration -v quiet -of csv="p=0")
+w=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 $FILE_1)
+h=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of default=nw=1:nk=1 $FILE_1)
+fc=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 $FILE_1)
+ffmpeg -loglevel error -i $FILE_1 {args} ./output/$(basename $FILE_1) |& tee -a}
+{js:let unix = {unix}
+let start = discord.variables.s
+let diff = (unix-start)/1000
+console.log(`-# Took ${diff.toFixed(3)} seconds.`)}}
+{if:{arg:0}|=|process_video|then:
+{set:string|{substring:{args}|{indexof:{arg:2}|{args}}}}
+{set:vidlen|{sh:
+load {iv}
+ffprobe -i $FILE_1 -show_entries format=duration -v quiet -of csv="p=0"
+}}
+{set:time|{if:{arg:1}|=|vidlen|then:{get:vidlen}|else:{arg:1}}}
+
+{set:code|
+load {iv}
+
+ffmpeg -i $FILE_1 {get:string} -t {get:time} 1.ts
+{replace:string|{get:string}|{replace:arg|{get:time}|{js:for (let i = 0; i < {arg:0}-1; i++) {
+console.log(`ffmpeg -i "${i+1}.ts" string -t arg ${i+2}.ts`)
+}}}}
+{set:#|0}
+ffmpeg -i "concat:{foreach:{math:{arg:0}-1}|{set:#|{math:{get:#}+1}}{get:#}.ts\u007c}{arg:0}.ts" ./output/ihtx_custom.mp4}
+Here's your process video
+{sh:{js:console.log(`{get:code}`)}}
+}}
+{if:{arg:0}|=|sox_edit|then:{sh:load {av}
+ffmpeg -i $FILE_1 wav.wav
+sox wav.wav ./output/sox.wav {args}}
+{iscript:load {av} m
+load FILE_1 a
+audioputreplace m a true true
+render m default sox}}
+{if:{arg:0}|=|autotune_video|then:{sh:load {av:0}
+load {if:{arg:0}|=|yt|then:{search.yt:{args:1}}|else:{if:{arg:0}|=|youtube|then:{search.yt:{args:1}}|else:{arg:0}}}
+load https://github.com/GanerCodes/AutotuneBot/raw/refs/heads/main/autotune.exe
+
+vidlen=$(ffprobe -i $FILE_1 -show_entries format=duration -v quiet -of csv="p=0")
+ffmpeg -i $FILE_1 -ac 1 -ar 48000 mod.wav
+ffmpeg -stream_loop -1 -i $FILE_2 -ac 1 -ar 48000 -t $vidlen carrier.wav
+wine cmd &>/dev/null && wine ./input/autotune.exe -q -b 75 mod.wav carrier.wav audio.wav
+ffmpeg -i $FILE_1 -i audio.wav -map 0:v -map 1:a -shortest ./output/$(basename autotuned.${FILE_1##*.})}}
+{if:{arg:0}|=|destroy|then:{eval:{text:https://pastebin.com/raw/Y3YELaV9}}}
+{if:{arg:0}|=|gag_stock|then:Info fruits and vegetables 🍇🍈🍉🍊🍋🍌🍍🥭🍎🍏🍐🍑🍒🍓🫐🥝🍅🫒🥥🍋‍🟩🥑🍆🥔🥕🌽🌶🫑🥒🥬🥦🧄🧅}

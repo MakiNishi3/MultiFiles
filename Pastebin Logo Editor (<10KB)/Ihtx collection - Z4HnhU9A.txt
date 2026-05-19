@@ -1,0 +1,97 @@
+{if:{arg:0}|=|ihtxcf|then:{set:string|{substring:{args}|{indexof:{arg:2}|{args}}}}
+{set:vidlen|{sh:
+load {iv}
+ffprobe -i $FILE_1 -show_entries format=duration -v quiet -of csv="p=0"
+}}
+{set:time|{if:{arg:1}|=|vidlen|then:{get:vidlen}|else:{arg:1}}}
+
+{set:code|
+load {iv}
+
+ffmpeg -i $FILE_1 {get:string} -t {get:time} 1.ts
+{replace:string|{get:string}|{replace:arg|{get:time}|{js:for (let i = 0; i < {arg:0}-1; i++) {
+console.log(`ffmpeg -i "${i+1}.ts" string -t arg ${i+2}.ts`)
+}}}}
+{set:#|0}
+ffmpeg -i "concat:{foreach:{math:{arg:0}-1}|{set:#|{math:{get:#}+1}}{get:#}.ts\u007c}{arg:0}.ts" ./output/ihtx_custom.mp4}
+⚠️ Warning: Make sure you use `.t sync` afterwards to make sure the video is synced to the audio
+{sh:{js:console.log(`{get:code}`)}}
+}
+}
+{if:{arg:0}|=|icfp|then:{set:s|{unix}}
+{set:string|{substring:{args}|{indexof:{arg:4}|{args}}}}
+
+{set:code|
+load {iv}
+load https://cdn.discordapp.com/attachments/1124758334805909509/1381053326644482099/resized.mp4?ex=68631ea3&is=6861cd23&hm=ecb1b0ffacc4d52faea41649358b9e96b72149e515adfadac3055925e33a3f52&
+
+vidlen=$(ffprobe -i $FILE_1 -show_entries format=duration -v quiet -of csv="p=0")
+dur=$(awk -v vidlen="$vidlen" 'BEGIN\u007b printf "%.8f", {arg:1}\u007d')
+
+mkdir ./displacemaps
+curl -s "https://leopard.hosting.pecon.us/dl/nukho/Project_Name_4.mov" -o "./displacemaps/tvsimulator.mov"
+ffmpeg -i $FILE_2 -vf scale=8:8,setsar=1:1,"geq=r=128:g=128:b=128",fps=1 -pix_fmt yuv420p -an a.mp4
+
+ffmpeg -f lavfi -i "nullsrc=s=8x8,geq=r=128:g=128:b=128" b.png
+for i in $(seq -180 1 180); do
+    magick hald:4 -modulate 100,100,%[fx:$i/1.8+100] hslhue_$i.ppm
+  done
+ffmpeg -hide_banner -y -stream_loop 1 -i $FILE_1 -c:v h264 -c:a flac -preset ultrafast -crf 23 -t $dur -movflags +faststart 0.mp4
+
+extension={if:{arg:3}|=|default|then:$(basename $\u007bFILE_1##*.\u007d)|else:'{arg:3}'}
+sr=$(ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of default=nokey=1:noprint_wrappers=1 0.mp4)
+fr=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of default=nokey=1:noprint_wrappers=1 0.mp4)
+d=$(ffprobe -i 0.mp4 -show_entries format=duration -v quiet -of csv="p=0")
+w=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 0.mp4)
+h=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of default=nw=1:nk=1 0.mp4)
+fc=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 0.mp4)
+
+{if:{arg:2}|=|true|then:ffmpeg -hide_banner -y -i "0.mp4" {get:string} -movflags +faststart 1.ts
+for((i=0;i<{arg:0};i++)); do
+   ffmpeg -hide_banner -y -i "$((i+1)).ts" {get:string} $((i+2)).ts -movflags +faststart
+done|else:ffmpeg -hide_banner -y -stream_loop 1 -i "0.mp4" {get:string} -t $dur -movflags +faststart 1.ts
+for((i=0;i<{arg:0};i++)); do
+   ffmpeg -hide_banner -y -stream_loop 1 -i "$((i+1)).ts" {get:string} -t $dur $((i+2)).ts -movflags +faststart
+done}
+for((i=1;i<={arg:0};i++)); do
+   echo "file '$i.ts'"
+done >> concat.txt
+ffmpeg -hide_banner -f concat -safe 0 -i "concat.txt" {if:{arg:3}|=|mkv|then:-b:a 320K -q:a 3|else:{if:{arg:3}|=|mxf|then:-c:v mpeg2video -qscale 1 -qmin 1 -c:a pcm_s16le -ar 48000|else:{if:{arg:3}|=|mov|then:-q:a 3|else:{if:{arg:3}|=|mp4|then:-c:a flac -b:a 1K}}}} -pix_fmt yuv420p -movflags +faststart ./output/ihtx_custom.$extension
+rm -f *.ts concat.txt}
+
+⚠️ Warning: Make sure you use `.t sync+` afterwards to make sure the video is synced to the audio
+{sh:{js:console.log(`{get:code}`)}}
+{js:let unix = {unix}
+let start = discord.variables.s
+let diff = (unix-start)/1000
+console.log(JSON.stringify({"embeds":[{"color":0x646464,"title":`Exec time:`,"description":`${diff.toFixed(3)} seconds`,"type":"rich"}]}))}}}
+{if:{arg:0}|=|icfpp|then:{set:string|{substring:{args}|{indexof:{arg:3}|{args}}}}
+{set:vidlen|{sh:
+load {iv}
+ffprobe -i $FILE_1 -show_entries format=duration -v quiet -of csv="p=0"
+}}
+{set:time|{if:{arg:1}|=|vidlen|then:{get:vidlen}|else:{arg:1}}}
+
+{set:code|
+load {media}
+ffmpeg -i $FILE_1 -t {get:time} 0.ts
+
+sr=$(ffprobe -v error -select_streams a:0 -show_entries stream=sample_rate -of default=nokey=1:noprint_wrappers=1 0.ts)
+fr=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of default=nokey=1:noprint_wrappers=1 0.ts)
+d=$(ffprobe -i 0.ts -show_entries format=duration -v quiet -of csv="p=0")
+w=$(ffprobe -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 0.ts)
+h=$(ffprobe -v error -select_streams v:0 -show_entries stream=height -of default=nw=1:nk=1 0.ts)
+fc=$(ffprobe -v error -select_streams v:0 -show_entries stream=nb_frames -of default=nokey=1:noprint_wrappers=1 0.ts)
+a="awk '{printf $d/2}'"
+halfd=$(eval $a)
+
+ffmpeg -i "0.ts" {get:string} -t {get:time} 1.ts
+{replace:string|{get:string}|{replace:arg|{get:time}|{js:for (let i = 0; i < {arg:0}-1; i++) {
+console.log(`ffmpeg -i "${i+1}.ts" string -t arg ${i+2}.ts`)
+}}}}
+{set:#|0}
+ffmpeg -i "concat:{foreach:{math:{arg:0}-1}|{set:#|{math:{get:#}+1}}{get:#}.ts\u007c}{arg:0}.ts" ./output/ihtx_{arg:0}_{arg:1}.{arg:2}}
+# THIS IS IN BETA
+{code:.t {tagname} <powers> <export length> <file type> <code...>}
+⚠️ Warning: Make sure you use `.t sync+ alt` afterwards to make sure the video is synced to the audio
+{sh:{js:console.log(`{get:code}`)}}}

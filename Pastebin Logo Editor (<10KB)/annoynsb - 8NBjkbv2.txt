@@ -1,0 +1,27 @@
+{if:{arg:0}|=||then:My prefix is **annoy_nsb_** | See annoy_nsb_help for more commands}
+{if:{arg:0}|=|help|then:Commands
+- nicktroll
+- dmtroll
+- emojispam
+- uwuify
+- fnaf
+- copypasta
+- ban
+- kick
+- trololo
+- lololo
+- baarej
+- silence
+Use /dmtroll to more commands}
+{if:{arg:0}|=|nicktroll|then:Nickname was changed for {user} by **{nick:{args}}** for 3 minutes}
+{if:{arg:0}|=|dmtroll|then:DM gets trolled from **{user}}**
+{if:{arg:0}|=|emojispam|then:{choose:attempting to spam emojis....|done, loser}}
+{if:{arg:0}|=|uwuify|then:{upper:{arg:1} {lower:{arg:2}}
+{if:{arg:0}|=|fnaf|then:Gets FNAF for you}
+{if:{arg:0}|=|copypasta|then::x: There was an error with the copypasta API. Try again later.}
+{if:{arg:0}|=|ban|then:User banned {userid}}
+{if:{arg:0}|=|kick|then:User kicked {user}}
+{if:{arg:0}|=|trololo|then:Trololo}
+{if:{arg:0}|=|lololo|then::x:ERR_CODE04}
+{if:{arg:0}|=|baarej|then:baarej diff deleted, Exit code : 0}
+{if:{arg:0}|=|silence|then:____}

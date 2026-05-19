@@ -1,0 +1,99 @@
+import subprocess
+import os
+
+INPUT_FILE = "input.mp4"   # your video file
+OUTPUT_DIR = "outputs/"    # output folder
+
+# Ensure output folder exists
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def run_ffmpeg(filter_str, output_file):
+    """Run FFmpeg with a filter"""
+    cmd = [
+        "ffmpeg", "-y", "-i", INPUT_FILE,
+        "-vf", filter_str,
+        output_file
+    ]
+    subprocess.run(cmd)
+
+# AuroraFX 50 visual effects
+aurora_fx = {
+    # 1–10: Color & Tone
+    "!grayscale": "hue=s=0",
+    "!sepia": "colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131",
+    "!negate": "negate",
+    "!invert": "lutrgb=r=negval:g=negval:b=negval",
+    "!hue90": "hue=h=90",
+    "!hue180": "hue=h=180",
+    "!hue270": "hue=h=270",
+    "!saturation_up": "hue=s=2",
+    "!brightness_up": "eq=brightness=0.3",
+    "!contrast_up": "eq=contrast=1.5",
+
+    # 11–20: Gamma / Contrast / Filters
+    "!gamma_up": "eq=gamma=2.0",
+    "!gamma_down": "eq=gamma=0.5",
+    "!vintage": "curves=vintage",
+    "!posterize": "frei0r=posterize",
+    "!solarize": "frei0r=solarize",
+    "!threshold": "frei0r=threshold0r",
+    "!technicolor": "frei0r=colortap",
+    "!xray": "lutrgb=r=negval:g=val:b=negval",
+    "!glow": "gblur=sigma=10",
+    "!sharpen": "unsharp",
+
+    # 21–30: Blur & Edge
+    "!blur": "boxblur=5",
+    "!gaussian_blur": "gblur=sigma=5",
+    "!motion_blur": "minterpolate=fps=120",
+    "!edge": "edgedetect=low=0.1:high=0.4",
+    "!emboss": "convolution='0 -1 0 -1 4 -1 0 -1 0'",
+    "!sketch": "frei0r=sketch",
+    "!cartoon": "frei0r=cartoon",
+    "!oilpaint": "frei0r=oilpainting",
+    "!watercolor": "frei0r=water",
+    "!kaleidoscope": "frei0r=kaleidoscope",
+
+    # 31–40: Geometric transforms
+    "!mirror": "hflip",
+    "!vflip": "vflip",
+    "!rotate45": "rotate=PI/4",
+    "!rotate90": "transpose=1",
+    "!rotate180": "transpose=2,transpose=2",
+    "!rotate270": "transpose=2,transpose=1",
+    "!zoom2x": "scale=2*iw:2*ih",
+    "!shrink_half": "scale=iw/2:ih/2",
+    "!flipflop": "transpose=2,transpose=2,hflip,vflip",
+    "!transpose": "transpose=1",
+
+    # 41–50: Fun / Distortion
+    "!swirl": "swirl=0.02",
+    "!wave": "wave=2:2",
+    "!ripple": "frei0r=ripple",
+    "!lenscorrection": "lenscorrection=k1=-0.3:k2=-0.3",
+    "!defish": "defish=r=0.3",
+    "!sphere": "frei0r=spherize",
+    "!tile": "tile=2x2",
+    "!pixelate": "scale=iw/20:ih/20,scale=iw*20:ih*20",
+    "!stretch": "scale=iw*1.5:ih",
+    "!invert_hue": "hue=h=-180"
+}
+
+def apply_effect(command):
+    """Apply an AuroraFX effect by command (!effect_name)"""
+    if command in aurora_fx:
+        effect = aurora_fx[command]
+        output_file = f"{OUTPUT_DIR}output_{command[1:]}.mp4"
+        print(f"Applying AuroraFX effect: {command} → {output_file}")
+        run_ffmpeg(effect, output_file)
+    else:
+        print("Unknown effect. Available:", ", ".join(aurora_fx.keys()))
+
+# Example usage
+if __name__ == "__main__":
+    # Try applying a few effects
+    apply_effect("!grayscale")
+    apply_effect("!sepia")
+    apply_effect("!mirror")
+    apply_effect("!cartoon")
+    apply_effect("!swirl")

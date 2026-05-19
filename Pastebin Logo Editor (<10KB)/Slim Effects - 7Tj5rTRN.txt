@@ -1,0 +1,97 @@
+-# Note: SlimFX is in BETA!{choose:A|are you purple|bazianga|BasicallyBazinga Doin|Cabra|Cagando|Dee|Eaaaaaaaaaaa|Find then lokk|G|Hasdos|I Hate The X OpenVideoBot and VideoEditBot|Hey look! It's Soy Pedro|No|Joziel Dinosaur|Kappa|LimbO PC|MA|Noooo|Oh,ih|p|q|We are not the same person|If error|yees|Here's your processing video|salagata}
+{if:{arg:0}|=||then:SLIM EFFECTS
+Does a effects to add an effects|else:
+{iscript:
+load {iv} 0
+{if:{arg:0}|=|normal|then:volume 0}
+{if:{arg:0}|=|g major 4|then:huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|confusion|then:contrast 0 -1}
+{if:{arg:0}|=|devils blast|then:hueshiftrgb 0 -255 255 0
+rotate 0 90
+waves 0 10 100
+rotate 0 -90}
+{if:{arg:0}|=|g major|then:invert 0}
+{if:{arg:0}|=|crying|then:invert 0
+hueshifthsv 0 210
+wave 0 10 100}
+{if:{arg:0}|=|dma|then:rain 0
+invert 0}
+{if:{arg:0}|=|g major 2|then:invertrgba 0 1 1 0}
+{if:{arg:0}|=|invert color|then:hueshifthsv 0 180}
+{if:{arg:0}|=|rgb to bgr|then:swaprgba 0 bgr}
+{if:{arg:0}|=|g major 74|then:contrast 0 -1
+explode 0}
+{if:{arg:0}|=|g major 91|then:hueshifthsv 0 180
+swaprgba 0 bgr
+haah 0
+rotate 0 0.18}
+{if:{arg:0}|=|91-dxi|then:hueshifthsv 0 57 100
+invert 0
+shake 0 0 10 true}
+{if:{arg:0}|=|tbs|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|sob|then:huecurvergba 0 all 0 0.5 1 0.5 1 0}
+{if:{arg:0}|=|sox|then:huecurvergba 0 all 0 0.6 0.3 0.7 1}
+{if:{arg:0}|=|sagamim major 4|then:hueshifthsv 0 46 42}
+{if:{arg:0}|=|salagata major 97|then:blurple 0}
+{if:{arg:0}|=|p major 53|then:gold 0}
+{if:{arg:0}|=|jerni|then:huecurvergba 0 all 0.5 0}
+{if:{arg:0}|=|oara|then:huecurvergba 0 all 0 1 0.7 1}
+{if:{arg:0}|=|pe|then:huecurvergba 0 all 0 0.7 1}
+{if:{arg:0}|=|ace|then:huecurvergba 0 all 0.8 0}
+{if:{arg:0}|=|cablevision|then:huecurvergba 0 all 1 0}
+{if:{arg:0}|=|ahiwi|then:huecurvergba 0 all 0 0.7 0}
+{if:{arg:0}|=|error|then:huecurvergba 0 all 1 0.3 0.7}
+{if:{arg:0}|=|gold major|then:gold 0
+haah 0
+woow 0
+reverse 0}
+{if:{arg:0}|=|91-txi|then:hueshifthsv 0 57 100
+shake 0 10 0 true
+invert 0}
+{if:{arg:0}|=|gg|then:huecurvergba 0 all 0.7 1 0.3 0}
+{if:{arg:0}|=|g oajor|then:invert 0}
+{if:{arg:0}|=|g major o1|then:invert 0}
+{if:{arg:0}|=|my g major 977|then:hueshifthsv 0 5}
+{if:{arg:0}|=|nor|then:huecurvergba 0 all 0 0.5 0}
+{if:{arg:0}|=|ihi|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|amki|then:huecurvergba 0 all 0 0.9}
+render 0 default slimfx}
+}
+{if:{arg:0}|=|list|then:**LIST OF EFFECTS**
+- normal
+- g major 4
+- confusion
+- devils blast
+- g major
+- crying
+- custom
+- dma
+- g major 2
+- invert color
+- rgb to bgr
+- g major 74
+- g major 91
+- 91-dxi
+- tbs
+- sob
+- sox
+- sagamim major 4
+- salagata major 97
+- p major 53
+- jerni
+- oara
+- pe
+- ace
+- cablevision
+- ahiwi
+- error
+- gold major
+- 91-txi
+- gg
+- g oajor
+- g major o1
+- my g major 977
+- nor
+- ihi
+- amki
+- and so on....}}

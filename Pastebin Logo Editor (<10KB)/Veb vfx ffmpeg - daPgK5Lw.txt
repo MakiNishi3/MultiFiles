@@ -1,0 +1,18 @@
+{if:{arg:0}|=|help|then:Help Server! Contact us, Support discord server https://discord.gg/eB7DTVW4}|else:{sh:
+load {iv}
+ffmpeg -loglevel fatal -i $FILE_1
+{if:{arg:0}|=|rotate|then:-vf rotate={arg:1}}
+{if:{arg:0}|=|speed|then:-vf "setpts=-{arg:1}*PTS" -af atempo={arg:2} -map 0:v}
+{if:{arg:0}|=|vmirror|then:-vf "crop=iw:ih/2:0:ih/2,split[bottom][tmp];[tmp]vflip[bottom];[top][bottom]vstack"}
+{if:{arg:0}|=|hmirror|then:-vf "crop=iw/2:ih:0:0,split[left][tmp];[tmp]hflip[right];[left][right]hstack"}
+{if:{arg:0}|=|shake|then:-vf frei0r=gateweave:'0\u007c{arg:1}\u007c{arg:2}'}
+{if:{arg:0}|=|fisheye|then:-vf v360=input=e:output=ball,scale=640:360,setsar=1:1}
+{if:{arg:0}|=|hue|then:-vf hue={arg:1}
+{if:{arg:0}|=|acid|then:-vf hue=s={args}
+{if:{arg:0}|=|wava|then:-vf format=yuv444p,scale=iw:ih,"geq='p{if:{arg:3}|=|true|then:
+(X-((sin((T*5*{arg:0})+(Y/H)*(PI*{arg:1})))*(-15*{arg:2}))\,Y)
+|else:
+(X\,Y-((sin((T*5*{arg:0})+(X/W)*(PI*{arg:1})))*(-15*{arg:2})))
+}'",scale=iw:ih,format=yuv420p}
+./output/veb.mp4}
+}

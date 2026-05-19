@@ -1,0 +1,422 @@
+-# NoteO8: BAP89VIDEOREVIVED is under~~wear~~ construction due to amtvevideo latest version
+{choose::BeeboWhar:|Bad Apple|We are not the same person|:sob: sorry|SoX|{mention} I swear|are you purple|Prior|Mario party jamboree|Sprunki gyatt|Hey look! It's YGL2K14|end}
+{iscript:
+load {media} 0
+{if:{arg:0}|=|normal|then:volume 0}
+{if:{arg:0}|=|91-dxi|then:hueshifthsv 0 57 100
+invert 0
+shake 0 0 10 true}
+{if:{arg:0}|=|g major|then:invert 0}
+{if:{arg:0}|=|g major 0|then:hueshifthsv 0 180
+huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|g major 1|then:invert 0
+hueshifthsv 0 180}
+{if:{arg:0}|=|g major 2|then:invertrgba 0 1 1 0}
+{if:{arg:0}|=|g major 3|then:hueshiftrgb 0 -255 -255 0
+rotate 0 90
+waves 0 10 100
+rotate 0 -90}
+{if:{arg:0}|=|g major 4|then:huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|g major 5|then:invert 0
+huecurvergba 0 red 0 1}
+{if:{arg:0}|=|g major 6|then:deepfry 0}
+{if:{arg:0}|=|g major 7|then:invert 0}
+{if:{arg:0}|=|g major 8|then:invert 0
+hueshifthsv 0 180
+deepfry 0}
+{if:{arg:0}|=|g major 10|then:haah 0
+contrast 0 -1
+swaprgba 0 bgr}
+{if:{arg:0}|=|g major 16|then:flop 0
+invert 0
+hueshifthsv 0 180
+hueshifthsv 0 30}
+{if:{arg:0}|=|g major 17|then:hueshifthsv 0 120
+haah 0
+explode 0}
+{if:{arg:0}|=|g major 18|then:hueshifthsv 0 0 100}
+{if:{arg:0}|=|g major 19|then:haah 0
+hueshifthsv 0 180
+swaprgba 0 bgr}
+{if:{arg:0}|=|g major 50|then:contrast 0 -1
+swaprgba 0 bgr}
+{if:{arg:0}|=|g major 91|then:swaprgba 0 bgr
+hueshifthsv 0 180
+haah 0
+rotate 0 0.18}
+{if:{arg:0}|=|custom|then:{eval:{args}}}
+{if:{arg:0}|=|haha major|then:slide 0}
+{if:{arg:0}|=|g minor 91|then:swaprgba 0 bgr
+haah 0
+rotate 0 359.18}
+{if:{arg:0}|=|hsv|then:hueshifthsv 0 {args}}
+{if:{arg:0}|=|lost effect|then:hueshifthsv 0 180}
+{if:{arg:0}|=|does respond|then:hueshifthsv 0 300
+swirl 0 90}
+{if:{arg:0}|=|does not respond|then:hueshifthsv 0 50
+swirl 0 -90}
+{if:{arg:0}|=|g major 74|then:contrast 0 -1}
+{if:{arg:0}|=|g major 591|then:invert 0
+hueshifthsv 0 300
+swaprgba 0 bgr
+swirl 0 -90}
+{if:{arg:0}|=|a major 23|then:grayscale 0
+huecurvergba 0 blue 1 0 0}
+{if:{arg:0}|=|i major 76|then:grayscale 0
+huecurvergba 0 red 1 0.5 1
+huecurvergba 0 green 1 0.5 1}
+{if:{arg:0}|=|b major 9|then:grayscale 0
+huecurvergba 0 green 1 0.2 0.4 0}
+{if:{arg:0}|=|:x: major|then:haah 0
+swirl 0 2
+invert 0}
+{if:{arg:0}|=|:x:-dxi|then:haah 0
+swirl 0 2
+invert 0
+hueshifthsv 0 180 100
+shake 0 0 10 true}
+{if:{arg:0}|=|dxi|then:invert 0
+hueshifthsv 0 15 100
+shake 0 0 10 true
+swirl 0 3}
+{if:{arg:0}|=|reversed|then:reverse 0}
+{if:{arg:0}|=|gold major|then:haah 0
+woow 0
+gold 0
+reverse 0}
+{if:{arg:0}|=|sob g major|then:huecurvergba 0 all 0.2 0.4}
+{if:{arg:0}|=|:x: rejected|then:invert 0}
+{if:{arg:0}|=|confusion|then:contrast 0 -1
+haah 0}
+{if:{arg:0}|=|bgr tv|then:slide 0 1 up
+swaprgba 0 bgr}
+{if:{arg:0}|=|sob x|then:huecurvergba 0 all 1 0.5 1
+wave 0 10 100}
+{if:{arg:0}|=|edgedetect|then:edgedetect 0}
+{if:{arg:0}|=|sensist|then:invert 0
+huecurvergba 0 all 1 1 1 0.4}
+{if:{arg:0}|=|rnd|then:huecurvergba 0 all 1 0.6 1}
+{if:{arg:0}|=|nor|then:swirl 0 90}
+{if:{arg:0}|=|appeal|then:huecurvergba 0 0.5 0.2}
+{if:{arg:0}|=|training|then:invert 0}
+{if:{arg:0}|=|:x: appeal is rejected|then:haah 0}
+{if:{arg:0}|=|x has continued|then:swirl 0 2
+haah 0
+hueshifthsv 0 3}
+{if:{arg:0}|=|stopping|then:hueshifthsv 0 4}
+{if:{arg:0}|=|fhat|then:invert 0
+swirl 0 3}
+{if:{arg:0}|=|belinea major|then:invert 0}
+render 0 default abtotvideo
+}
+{choose:gyatt|{mention} I swear|R|CHICKEN JOCKEY|GET OUT!|OH NO AKAMAMAKKA IM DRYING|I'VE PLAYED THIS GAMES BEFORE|.| |NO|no!|NO!|bry|GET OUT!|Sprunki|DANDYS WORLD|vee|shelly|roblox|are you purple|tooking}
+-# Command Execution Took {range:0|30} seconds.
+
+{if:{arg:0}|=||then:.t {tagname} see list.:else {iscript:
+load {iv} 0
+{if:{arg:0}|=|normal|then:volume 0 0}
+{if:{arg:0}|=|g major|then:invert 0}
+{if:{arg:0}|=|g major 1|then:invert 0
+hueshifthsv 0 180}
+{if:{arg:0}|=|91-dxi|then:invert 0
+hueshifthsv 0 57 100
+shake 0 0 10 true}
+{if:{arg:0}|=|g major 2|then:invertrgba 0 1 1 0}
+{if:{arg:0}|=|g major 4|then:huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|g major 74|then:explode 0
+contrast 0 -1}
+{if:{arg:0}|=|g major 305|then:hueshifthsv 0 -120}
+{if:{arg:0}|=|haha major|then:slide 0}
+{if:{arg:0}|=|custom|then:{eval:{args}}}
+{if:{arg:0}|=|g major 91|then:skew 0 2
+haah 0
+swaprgba 0 bgr
+hueshifthsv 0 180}
+{if:{arg:0}|=|split2pitch|then:copy 0 0a
+audiopitch 0 2**({args}/12)
+audiopitch 0a 2**({args}/12)
+audioputmix 0 0a
+volume 0 2}
+{if:{arg:0}|=|ovbpitch|then:audiopitch 0 2**({args}/12)}
+{if:{arg:0}|=|chorded|then:raingold 0
+invert 0}
+{if:{arg:0}|=|clearer|then:rain 0
+invert 0}
+{if:{arg:0}|=|group|then:gold 0
+invert 0}
+{if:{arg:0}|=|helium|then:edgedetect 0
+cartoon 0 10
+deepfry 0
+hueshifthsv 0 12 100
+invert 0}
+{if:{arg:0}|=|list|then:{eval:{text:https://pastebin.com/raw/vS5fQnnW}}}
+{if:{arg:0}|=|g major 7|then:invert 0}
+{if:{arg:0}|=|g major 16|then:invert 0
+flop 0
+hueshifthsv 0 30
+hueshifthsv 0 180}
+{if:{arg:0}|=|g major 6466|then:grayscale 0}
+{if:{arg:0}|=|tacoma major|then:contrast 0 -1
+swaprgba 0 bgr}
+{if:{arg:0}|=|hsv|then:hueshifthsv 0 {args}}
+{if:{arg:0}|=|z major 97|then:haah 0}
+render 0 default iscript
+}}
+Note: SagamimVideo is under~~wear~~ construction
+> No phase yet.
+> Alpha is usually profit with â
+{if:{arg:0}|=||then:.tag {tagname} add an effect to contact us|else:
+{iscript:
+load {media} 0
+{if:{arg:0}|=|normal|then:volume 0 0}
+{if:{arg:0}|=|g major|then:invert 0}
+{if:{arg:0}|=|g major 1|then:invert 0
+hueshifthsv 0 180}
+{if:{arg:0}|=|g major 2|then:invertrgba 0 1 1 0}
+{if:{arg:0}|=|g major 0|then:hueshifthsv 0 180
+huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|reversed|then:reverse 0}
+{if:{arg:0}|=|gold major|then:reverse 0
+gold 0
+haah 0
+woow 0}
+{if:{arg:0}|=|custom|then:{eval:{args}}}
+{if:{arg:0}|=|dxi|then:invert 0
+hueshifthsv 0 53 100
+shake 0 0 10 true
+swirl 0 -1}
+{if:{arg:0}|=|91-dxi|then:invert 0
+hueshifthsv 0 53 100
+shake 0 0 10 true}
+{if:{arg:0}|=|sagamim major|then:hueshifthsv 0 3 3
+blurple 0
+hueshifthsv 0 4 5 -90}
+{if:{arg:0}|=|whar|then:spin 0 yes no yes
+slide 0}
+{if:{arg:0}|=|g major 4|then:huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|blurple major|then:volume 0 0}
+{if:{arg:0}|=|g major 16|then:blurple 0}
+{if:{arg:0}|=|tacoma major|then:contrast 0 -1
+swaprgba 0 bgr}
+{if:{arg:0}|=|hflip|then:flop}
+{if:{arg:0}|=|vflip|then:flip}
+{if:{arg:0}|=|g major 16|then:flop 0
+hueshifthsv 0 30
+hueshifthsv 0 180
+invert 0}
+{if:{arg:0}|=|g major 19|then:haah 0
+contrast 0 -1
+invert 0
+swaprgba 0 bgr}
+{if:{arg:0}|=|g major 91|then:hueshifthsv 0 180
+swaprgba 0 bgr
+haah 0
+rotate 0 0.18}
+{if:{arg:0}|=|custom major 333|then:invert 0
+rotate 0 0.18}
+{if:{arg:0}|=|g major 74|then:contrast 0 -1
+explode 0}
+{if:{arg:0}|=|g major aroace|then:swirl 0 2}
+{if:{arg:0}|=|edgedetect|then:edgedetect 0}
+{if:{arg:0}|=|weird code|then:haah 0
+swirl 0 57
+hueshifthsv 0 180}
+{if:{arg:0}|=|979-dxi|then:shake 0 0 10 true}
+{if:{arg:0}|=|confusion|then:haah 0
+contrast 0 -1}
+{if:{arg:0}|=|3-dxi|then:shake 0 0 10 true
+hueshifthsv 0 4 40}
+{if:{arg:0}|=|txi|then:invert 0
+shake 0 10 0 true
+hueshifthsv 0 65}
+render 0 default sagamimvideo
+}}{iscript:
+load {media} 0
+{if:{arg:0}|=|normal|then:volume 0}
+{if:{arg:0}|=|reversed|then:reverse 0}
+{if:{arg:0}|=|confusion|then:haah 0
+explode 0}
+{if:{arg:0}|=|g major 4|then:huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|g major 7|then:invert 0}
+{if:{arg:0}|=|g major 16|then:invert 0
+flop 0
+hueshifthsv 0 180
+hueshifthsv 0 30}
+{if:{arg:0}|=|g major 18|then:hueshifthsv 0 0 100}
+{if:{arg:0}|=|g major 19|then:haah 0
+hueshifthsv 0 180
+swaprgba 0 bgr}
+{if:{arg:0}|=|g major 21|then:hueshifthsv 0 1 100
+invert 0}
+{if:{arg:0}|=|g major 23|then:hueshifthsv 0 210
+flop 0}
+{if:{arg:0}|=|g major 50|then:contrast 0 -1
+swaprgba 0 bgr}
+{if:{arg:0}|=|g major 53|then:swirl 0 -54
+hueshifthsv 0 86}
+{if:{arg:0}|=|g major 74|then:explode 0
+contrast 0 -1}
+{if:{arg:0}|=|g major 91|then:swaprgba 0 bgr
+haah 0
+hueshifthsv 0 180
+rotate 0 0.18 none true}
+{if:{arg:0}|=|91-dxi|then:invert 0
+hueshifthsv 0 57 100
+shake 0 0 10 true}
+{if:{arg:0}|=|g major 100|then:hueshifthsv 0 85 100
+haah 0
+swaprgba 0 bgr
+rotate 0 90
+wave 0 15 160
+rotate 0 -90
+wave 0 15 150
+flop 0
+wave 0 15 150}
+{if:{arg:0}|=|crying x|then:wave 0 19 190
+invert 0
+hueshifthsv 0 180
+hueshifthsv 0 30}
+{if:{arg:0}|=|i killed x|then:explode 0
+hueshifthsv 0 200}
+{if:{arg:0}|=|dxi|then:invert 0
+hueshifthsv 0 14 100
+shake 0 0 10 true}
+{if:{arg:0}|=|custom|then:{args}}
+{if:{arg:0}|=|opposite g major 4|then:huecurvergba 0 all 0 1 0
+invert 0}
+{if:{arg:0}|=|l major 43|then:grayscale 0
+huecurvergba 0 red 0 1 0}
+{if:{arg:0}|=|baarens g major 1|then:haah 0
+hueshifthsv 0 180
+swirl 0 1
+invert 0}
+{if:{arg:0}|=|gold major|then:haah 0
+woow 0
+gold 0
+reverse 0}
+{if:{arg:0}|=|g major 1|then:invert 0
+hueshifthsv 0 180}
+{if:{arg:0}|=|g major 2|then:invertrgba 0 1 1 0}
+{if:{arg:0}|=|g major 0|then:huecurvergba 0 all 0 1 0
+hueshifthsv 0 180}
+{if:{arg:0}|=|v major 64|then:grayscale 0
+huecurvergba 0 green 1 0 0.5 1}
+{if:{arg:0}|=|w major 159|then:raingold 0
+invert 0}
+{if:{arg:0}|=|x major 159|then:gold 0
+invert 0
+hueshifthsv 0 50}
+{if:{arg:0}|=|lebs g major 84|then:hueshifthsv 0 0 100
+swaprgba 0 bgr}
+{if:{arg:0}|=|c major 18|then:grayscale 0
+huecurvergba 0 blue 1 0.5 1}
+{if:{arg:0}|=|f major 48|then:grayscale 0
+huecurvergba 0 all 0 0.7 1}
+{if:{arg:0}|=|sagamim major 2|then:hueshifthsv 0 107 100}
+{if:{arg:0}|=|hoaisonvo major|then:swirl 0 80}
+{if:{arg:0}|=|z major 667|then:haah 0}
+{if:{arg:0}|=|g major 15|then:wave 0 10 100}
+{if:{arg:0}|=|aroace major|then:hueshifthsv 0 86 778}
+{if:{arg:0}|=|rnd|then:huecurvergba 0 all 0 0.6 1 1 1 0 0 0 1 0.3 0}
+{if:{arg:0}|=|sox|then:hueshiftrgb 0 255 255 255}
+{if:{arg:0}|=|sob|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|vegas pros g|then:invert 0}
+render 0 default easyaeffects
+}{choose:A|are you purple|bazianga|BasicallyBazinga Doin|Cabra|Cagando|Dee|Eaaaaaaaaaaa|Find then lokk|G|Hasdos|I Hate The X OpenVideoBot and VideoEditBot|Hey look! It's Soy Pedro|No|Joziel Dinosaur|Kappa|LimbO PC|MA|Noooo|Oh,ih|p|q|We are not the same person|If error|yees|Here's your processing video|salagata}
+{if:{arg:0}|=||then:SLIM EFFECTS
+Does a effects to add an effects|else:
+{iscript:
+load {iv} 0
+{if:{arg:0}|=|normal|then:volume 0}
+{if:{arg:0}|=|g major 4|then:huecurvergba 0 all 0 1 0}
+{if:{arg:0}|=|confusion|then:contrast 0 -1}
+{if:{arg:0}|=|devils blast|then:hueshiftrgb 0 -255 255 0
+rotate 0 90
+waves 0 10 100
+rotate 0 -90}
+{if:{arg:0}|=|g major|then:invert 0}
+{if:{arg:0}|=|crying|then:invert 0
+hueshifthsv 0 210
+wave 0 10 100}
+{if:{arg:0}|=|dma|then:rain 0
+invert 0}
+{if:{arg:0}|=|g major 2|then:invertrgba 0 1 1 0}
+{if:{arg:0}|=|invert color|then:hueshifthsv 0 180}
+{if:{arg:0}|=|rgb to bgr|then:swaprgba 0 bgr}
+{if:{arg:0}|=|g major 74|then:contrast 0 -1
+explode 0}
+{if:{arg:0}|=|g major 91|then:hueshifthsv 0 180
+swaprgba 0 bgr
+haah 0
+rotate 0 0.18
+{if:{arg:0}|=|91-dxi|then:hueshifthsv 0 57 100
+invert 0
+shake 0 0 10 true}
+{if:{arg:0}|=|tbs|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|sob|then:huecurvergba 0 all 0 0.5 1 0.5 1 0}
+{if:{arg:0}|=|sox|then:huecurvergba 0 all 0 0.6 0.3 0.7 1}
+{if:{arg:0}|=|sagamim major 4|then:hueshifthsv 0 46 42}
+{if:{arg:0}|=|salagata major 97|then:blurple 0}
+{if:{arg:0}|=|p major 53|then:gold 0}
+{if:{arg:0}|=|jerni|then:huecurvergba 0 all 0.5 0}
+{if:{arg:0}|=|oara|then:huecurvergba 0 all 0 1 0.7 1}
+{if:{arg:0}|=|pe|then:huecurvergba 0 all 0 0.7 1}
+{if:{arg:0}|=|ace|then:huecurvergba 0 all 0.8 0}
+{if:{arg:0}|=|cablevision|then:huecurvergba 0 all 1 0}
+{if:{arg:0}|=|ahiwi|then:huecurvergba 0 all 0 0.7 0}
+{if:{arg:0}|=|error|then:huecurvergba 0 all 1 0.3 0.7}
+{if:{arg:0}|=|gold major|then:gold 0
+haah 0
+woow 0
+reverse 0}
+{if:{arg:0}|=|91-txi|then:hueshifthsv 0 57 100
+shake 0 10 0 true
+invert 0}
+{if:{arg:0}|=|gg|then:huecurvergba 0 all 0.7 1 0.3 0}
+{if:{arg:0}|=|g oajor|then:invert 0}
+{if:{arg:0}|=|g major o1|then:invert 0}
+{if:{arg:0}|=|my g major 977|then:hueshifthsv 0 5}
+{if:{arg:0}|=|nor|then:huecurvergba 0 all 0 0.5 0}
+{if:{arg:0}|=|ihi|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|amki|then:huecurvergba 0 all 0 0.9}
+render 0 default slimfx}
+}
+{if:{arg:0}|=|list|then:**LIST OF EFFECTS**
+- normal
+- g major 4
+- confusion
+- devils blast
+- g major
+- crying
+- custom
+- dma
+- g major 2
+- invert color
+- rgb to bgr
+- g major 74
+- g major 91
+- 91-dxi
+- tbs
+- sob
+- sox
+- sagamim major 4
+- salagata major 97
+- p major 53
+- jerni
+- oara
+- pe
+- ace
+- cablevision
+- ahiwi
+- error
+- gold major
+- 91-txi
+- gg
+- g oajor
+- g major o1
+- my g major 977
+- nor
+- ihi
+- amki
+- and so on....}}
+

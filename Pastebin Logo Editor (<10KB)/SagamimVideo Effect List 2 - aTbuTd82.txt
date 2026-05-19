@@ -1,0 +1,65 @@
+{if:{arg:0}|=||then:.tag {tagname} add an effect to contact us|else:
+{iscript:
+load {iv} 0
+{if:{arg:0}|=|g major 305|then:hueshifthsv 0 -120}
+{if:{arg:0}|=|haha major|then:slide 0}
+{if:{arg:0}|=|chorded|then:raingold 0
+invert 0}
+{if:{arg:0}|=|clearer|then:rain 0
+invert 0}
+{if:{arg:0}|=|group|then:gold 0
+invert 0}
+{if:{arg:0}|=|helium|then:edgedetect 0
+cartoon 0 10
+deepfry 0
+hueshifthsv 0 12 100
+invert 0}
+{if:{arg:0}|=|z major 97|then:haah 0}
+{if:{arg:0}|=|l major 43|then:grayscale 0
+huecurvergba 0 red 0 1 0}
+{if:{arg:0}|=|baarens g major 1|then:haah 0
+hueshifthsv 0 180
+swirl 0 1
+invert 0}
+{if:{arg:0}|=|v major 64|then:grayscale 0
+huecurvergba 0 green 1 0 0.5 1}
+{if:{arg:0}|=|w major 159|then:raingold 0
+invert 0}
+{if:{arg:0}|=|x major 159|then:gold 0
+invert 0
+hueshifthsv 0 50}
+{if:{arg:0}|=|lebs g major 84|then:hueshifthsv 0 0 100
+swaprgba 0 bgr}
+{if:{arg:0}|=|c major 18|then:grayscale 0
+huecurvergba 0 blue 1 0.5 1}
+{if:{arg:0}|=|f major 48|then:grayscale 0
+huecurvergba 0 all 0 0.7 1}
+{if:{arg:0}|=|sagamim major 2|then:hueshifthsv 0 107 100}
+{if:{arg:0}|=|hoaisonvo major|then:swirl 0 80}
+{if:{arg:0}|=|z major 667|then:haah 0}
+{if:{arg:0}|=|g major 15|then:wave 0 10 100}
+{if:{arg:0}|=|aroace major|then:hueshifthsv 0 86 778}
+{if:{arg:0}|=|rnd|then:huecurvergba 0 all 0 0.6 1 1 1 0 0 0 1 0.3 0}
+{if:{arg:0}|=|sox|then:hueshiftrgb 0 255 255 255}
+{if:{arg:0}|=|sob|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|vegas pros g|then:invert 0}
+{if:{arg:0}|=|salagata major 97|then:blurple 0}
+{if:{arg:0}|=|p major 53|then:gold 0}
+{if:{arg:0}|=|jerni|then:huecurvergba 0 all 0.5 0}
+{if:{arg:0}|=|oara|then:huecurvergba 0 all 0 1 0.7 1}
+{if:{arg:0}|=|pe|then:huecurvergba 0 all 0 0.7 1}
+{if:{arg:0}|=|ace|then:huecurvergba 0 all 0.8 0}
+{if:{arg:0}|=|cablevision|then:huecurvergba 0 all 1 0}
+{if:{arg:0}|=|ahiwi|then:huecurvergba 0 all 0 0.7 0}
+{if:{arg:0}|=|error|then:huecurvergba 0 all 1 0.3 0.7}
+{if:{arg:0}|=|91-txi|then:hueshifthsv 0 57 100
+shake 0 10 0 true
+invert 0}
+{if:{arg:0}|=|gg|then:huecurvergba 0 all 0.7 1 0.3 0}
+{if:{arg:0}|=|g oajor|then:invert 0}
+{if:{arg:0}|=|g major o1|then:invert 0}
+{if:{arg:0}|=|my g major 977|then:hueshifthsv 0 5}
+{if:{arg:0}|=|nor|then:huecurvergba 0 all 0 0.5 0}
+{if:{arg:0}|=|ihi|then:huecurvergba 0 all 0 0.5 1}
+{if:{arg:0}|=|amki|then:huecurvergba 0 all 0 0.9}
+render 0}

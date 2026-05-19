@@ -1,0 +1,42 @@
+{choose:Halo! Im latino-american bot|Here|ya no cagando|Please seb eat on your files! Be careful|meme games|AH|disappear <>><|no removed content|Tag returned no content|HOST BY|HELP ME SEB|#STOPNSBJOBTOOKLONGERTHAN30SECONDS|isFromChildParsing}
+{if:{arg:0}|=|help|then:Help Server! Contact us, Support discord server https://discord.gg/eB7DTVW4}|else:
+{iscript:
+load {media} 0
+{if:{arg:0}|=|crush|then:audiotremolo 0 {arg:1}}
+{if:{arg:0}|=|pitch|then:audiopitch 0 {arg:1}}
+{if:{arg:0}|=|wobble|then:audiovibrato 0 {arg:1}}
+{if:{arg:0}|=|sfx|then:repeat 0 {arg:1}}
+{if:{arg:0}|=|autotune|then:audioputreplace 0 {arg:1}}
+{if:{arg:0}|=|speed|then:speed 0 {arg:1}}
+{if:{arg:0}|=|shake|then:shake 0 {arg:1} true}
+{if:{arg:0}|=|rlag|then:hueshifthsv 0 1000}
+{if:{arg:0}|=|hue|then:hueshifthsv 0 {arg:1} {arg:2}}
+{if:{arg:0}|=|acid|then:hueshifthsv 0 180 {arg:1}}
+{if:{arg:0}|=|wave|then:wave 0 {arg:1}}
+{if:{arg:0}|=|waveamount|then:wave 0 {arg:1}}
+{if:{arg:0}|=|wavestrength|then:waves 0 {arg:1}}
+{if:{arg:0}|=|rotate|then:rotate 0 {arg:1}}
+{if:{arg:0}|=|fisheye|then:fish 0}
+{if:{arg:0}|=|hflip|then:flop}
+{if:{arg:0}|=|vflip|then:flip}
+{if:{arg:0}|=|stutter|then:shuffle 0}
+{if:{arg:0}|=|ytp|then:speed 0 0.7}
+{if:{arg:0}|=|ricecake|then:speed 0 0.5}
+{if:{arg:0}|=|datamosh|then:speed 0 0.4}
+{if:{arg:0}|=|lag|then:repeat 0 {arg:1}}
+{if:{arg:0}|=|start|then:snip 0 0 {arg:1}}
+{if:{arg:0}|=|end|then:snip 0 {arg:1} {arg:2}}
+{if:{arg:0}|=|hmirror|then:haah 0}
+{if:{arg:0}|=|vmirror|then:woow 0}
+{if:{arg:0}|=|repeatuntil|then:repeat 0 {arg:1}}
+{if:{arg:0}|=|caption|then:caption 0 {arg:1}}
+{if:{arg:0}|=|spin|then:spin 0 {arg:1}}
+{if:{arg:0}|=|distort|then:swirl 0 {arg:1}}
+{if:{arg:0}|=|blur|then:blur 0 {arg:1}}
+{if:{arg:0}|=|curves|then:huecurvergba 0 {arg:1} {arg:2} {arg:3}}
+{if:{arg:0}|=|invert|then:invert 0}
+{if:{arg:0}|=|bgr|then:swaprgba 0 bgra}
+{if:{arg:0}|=|gold|then:gold 0}
+{if:{arg:0}|=|raingold|then:raingold 0}
+render 0 default videoeditbot
+}

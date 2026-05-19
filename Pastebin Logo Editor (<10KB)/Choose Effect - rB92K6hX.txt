@@ -1,0 +1,3 @@
+Took {range:0|30} seconds.
+{eval:{text:https://pastebin.com/raw/vrvyYbYS}}
+{eval:{text:https://pastebin.com/raw/WjcMTyAY}}

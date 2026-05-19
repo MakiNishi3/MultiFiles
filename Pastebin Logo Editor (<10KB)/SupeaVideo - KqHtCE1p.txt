@@ -1,0 +1,214 @@
+{set:offset|1}
+{choose:gyatt|{mention} I swear|R|CHICKEN JOCKEY|GET OUT!|OH NO AKAMAMAKKA IM DRYING|I'VE PLAYED THIS GAMES BEFORE|.| |NO|no!|NO!|bry|GET OUT!|Sprunki|DANDYS WORLD|vee|shelly|roblox|are you purple|tooking}
+-# Command Execution Took {range:0|30} seconds.
+
+{if:{arg:0}|=||then:.t {tagname} see list.:else {iscript:
+load {iv} 0
+{if:{arg:0}|=|normal|then:{set:code|volume 0 0}}
+{if:{arg:0}|=|g major|then:{set:code|invert 0}}
+{if:{arg:0}|=|g major 1|then:{set:code|invert 0
+hueshifthsv 0 180}}
+{if:{arg:0}|=|91-dxi|then:{set:code|invert 0
+hueshifthsv 0 57 100
+shake 0 0 10 true}}
+{if:{arg:0}|=|g major 2|then:{set:code|invertrgba 0 1 1 0}}
+{if:{arg:0}|=|g major 4|then:{set:code|huecurvergba 0 all 0 1 0}}
+{if:{arg:0}|=|g major 74|then:{set:code|explode 0
+contrast 0 -1}}
+{if:{arg:0}|=|g major 305|then:{set:code|hueshifthsv 0 -120}}
+{if:{arg:0}|=|haha major|then:{set:code|slide 0}}
+{if:{arg:0}|=|g major 91|then:{set:code|skew 0 2
+haah 0
+swaprgba 0 bgr
+hueshifthsv 0 180}}
+{if:{arg:0}|=|chorded|then:{set:code|raingold 0
+invert 0}}
+{if:{arg:0}|=|clearer|then:{set:code|rain 0
+invert 0}}
+{if:{arg:0}|=|group|then:{set:code|gold 0
+invert 0}}
+{if:{arg:0}|=|helium|then:{set:code|edgedetect 0
+cartoon 0 10
+deepfry 0
+hueshifthsv 0 12 100
+invert 0}}
+{if:{arg:0}|=|list|then:{set:code|{eval:{text:https://pastebin.com/raw/vS5fQnnW}}}
+{if:{arg:0}|=|g major 7|then:{set:code|invert 0}}
+{if:{arg:0}|=|g major 16|then:{set:code|invert 0
+flop 0
+hueshifthsv 0 30
+hueshifthsv 0 180}}
+{if:{arg:0}|=|g major 6466|then:{set:code|grayscale 0}
+{if:{arg:0}|=|tacoma major|then:{set:code|contrast 0 -1
+swaprgba 0 bgr}}
+{if:{arg:0}|=|z major 97|then:{set:code|haah 0}}
+render 0 default iscript
+}}|else:{set:powers|{or:{arg:{math:{get:offset}+1}}|10}} {set:time|{or:{arg:{math:{get:offset}+2}}|0.5}} {if:{arg:{get:offset}}|=|raw|then:{py:import json
+icon = '{avatar}'
+icon2 = 'https://cdn.discordapp.com/attachments/1124758334805909509/1417893993462890557/tools.overlay.png?ex=68cc242f&is=68cad2af&hm=ec222a7bc58837726df433b4949b8b39a2871227975f9bbd8506531971c2e965&,'
+authname = '{usertag}'
+content = {jsonify:{code:{replace:#|{or:{arg:{math:{get:offset}+1}}|#}|{if:{arg:{math:{get:offset}+2}}|=|true|then:{get:old}|else:{get:code}}}}}
+ 
+embeds = []
+embeds.append({
+'color': 0x609cff, 
+'title': "**Code**", 
+'description': content,
+'author': {'name': authname,'icon_url': icon},
+'footer': {'text': "KTOTvideo",'icon_url': icon2},
+})
+result = {'embeds': embeds}
+print(json.dumps(result))
+}{attachtext:{replace:#|{or:{arg:{math:{get:offset}+1}}|#}|{if:{arg:{math:{get:offset}+2}}|=|true|then:{get:old}|else:{get:code}}}}|else:{if:{arg:{get:offset}}|=|ihtxscfr|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`+`\nif 0 == 0 "copy # #$\\nswaprgba #$ rrb\\nhueshifthsv #$ -28.5 50\\noverlay # #$ 0 0 none 0.01 0 true 25\\nhueshifthsv # 0 15"`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = 1; i <= powers; i++){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+render 1 default ktotvideo}|else:{if:{arg:{get:offset}}|=|ihtxpgrender|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`+`\nif 0 == 0 "copy # #$\\ncopy #$ #$$\\nswaprgba #$$ bgr\\noverlay #$ #$$ 0 0 none 0.01 0 true 25\\nhueshifthsvffmpeg #$ 120 1.5\\nhueshifthsv #$ -120 25\\noverlay # #$ 0 0 none 0.01 0 true 25"`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = 1; i <= powers; i++){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+render 1 default ktotvideo}|else:{if:{arg:{get:offset}}|=|ihtxrandom|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = 1; i <= powers; i++){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+shuffle 1 {get:time}
+render 1 default ktotvideo}|else:{if:{arg:{get:offset}}|=|ihtxkine|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`+`\ncopy # #$\nfadein #$ 0.16\nfadeout #$ 0.16\naudioputreplace # #$`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = 1; i <= powers; i++){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+render 1 default ktotvideo}|else:{if:{arg:{get:offset}}|=|ihtxbuggy|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`+`\nshuffle # 0.16`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = 1; i <= powers; i++){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+render 1 default ktotvideo}|else:{if:{arg:{get:offset}}|=|ihtxreverse|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = powers; i >= 1; i--){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+render {get:powers} default ktotvideo}|else:{if:{arg:{get:offset}}|=|multiplier|then:{iscript:load {media} 0
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}`)
+}}
+render {get:powers} default ktotvideo}|else:{if:{arg:{get:offset}}|=|ihtx|then:{iscript:load {media} 0
+get 0 duration true
+snip 0 0 {get:time}
+{js:let action = `{arg:{math:{get:offset}+4}}` == `true` ? `{get:old}` : `{get:code}`;
+let arg = `{arg:{math:{get:offset}+3}}`;
+let powers = discord.variables.powers;
+for(let i = 0; i < powers; i++){
+ console.log(`copy ${i} ${i+1}
+${action.replaceAll(`#`,i+1)}
+${arg != `true` ? `repeatduration ${i+1} 0d` : ``}`)
+}}
+concatmultiple {js:const temp = [];
+let powers = discord.variables.powers;
+function* gen(powers) {
+   for(let i = 1; i <= powers; i++){
+      yield i
+    }
+}
+temp.push(...Array.from(gen(powers)))
+console.log(temp.join(` `))}
+render 1 default ktotvideo}|else:{iscript:load {if:{arg:0}|=|add source|then:{media:0}|else:{media}} 0
+copy 0 1
+{js:let action = `{arg:{get:offset}}` == `oldpitch` ? `{get:old}` : `{get:code}`;
+console.log(action.replaceAll(`#`,1))}
+render 1 default ktotvideo}}}}}}}}}}}}}}}}

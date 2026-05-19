@@ -1,0 +1,36 @@
+{choose:the real g major 4 {iscript:
+load {iv} 0
+huecurvergba 0 all 0 1 0
+render 0}|pika major {iscript:
+load {iv} 0
+hueshifthsv 0 12 100
+render 0}|g major 7 {iscript:
+load {iv} 0
+invert 0
+render 0}|g major 74 {iscript:
+load {iv} 0
+contrast 0 -1
+explode 0
+render 0}|haha major {iscript:
+load {iv} 0
+slide 0
+render 0}|g major 305 {iscript:
+load {iv} 0
+hueshifthsv 0 -120
+render 0}|lebs g major 84 {iscript:
+load {iv} 0
+swaprgba 0 bgr
+hueshifthsv 0 0 60
+render 0}|veb huecycle {sh:
+load {iv}
+ffmpeg -i $FILE_1 -vf hue=360*t ./output/name.mp4}|whar {sh: load {iv}
+ffmpeg -i $FILE_1 -vf rotate=360*t,scroll=0.017 ./output/name.mp4}|custom major 333 {sh: load {iv}
+ffmpeg -i $FILE_1 -vf rotate=0.18,negate ./output/whar.mp4}|x is wind of x {iscript:
+load {iv} 0
+explode 0
+contrast 0 -1
+render 0}|91-dxi {iscript:
+load {iv} 0
+hueshifthsv 0 57 100
+shake 0 0 10 true
+render 0}}

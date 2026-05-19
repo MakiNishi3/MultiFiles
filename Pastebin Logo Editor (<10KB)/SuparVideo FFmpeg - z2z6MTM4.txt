@@ -1,0 +1,10 @@
+{if:{arg:0}|=|list|then:**FFMPEG EFFECTS LIST**
+- hue cycle
+- g major 74
+- g major}|else:
+{sh:
+load {iv}
+ffmpeg -i $FILE_1 -vf
+{if:{arg:0}|=|hue cycle|then:hue=h=360*t}
+{if:{arg:0}|=|g major 74|then:eq=contrast=-1,lenscorrection=0.5:0.5:0.5}
+{if:{arg:0}|=|g major|then:negate} ./output/ffmpeg.mp4}

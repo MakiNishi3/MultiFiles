@@ -1,0 +1,6 @@
+{if:{arg:0}|=|buy|then:Malformed Input:
+{math:10^{range:0|10000}}}
+{if:{arg:0}|=|buy2|then:Click to buy:
+{range:0|100000000000000000000}}
+{if:{arg:0}|=|commands|then:- buy
+- buy2}

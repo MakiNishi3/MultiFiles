@@ -1,0 +1,21 @@
+**ISCRIPT EFFECTS LIST**
+- normal
+- g major
+- g major 1
+- 91-dxi
+- g major 2
+- g major 4
+- g major 74
+- g major 305
+- haha major
+- custom
+- g major 91
+- split2pitch
+- ovbpitch
+- chorded
+- clearer
+- group
+- helium
+- coming soon
+- idk
+- anyways
