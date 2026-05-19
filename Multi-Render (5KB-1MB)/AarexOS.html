@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AarexOS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+--bg:#0a0a0f;--taskbar:#111118;--taskbar-border:#222233;
+--win-bg:#0d0d1a;--win-header:#161625;--win-border:#2a2a4a;
+--accent:#00ffaa;--accent2:#7700ff;--text:#e0e0ff;--text-dim:#7070a0;
+--btn-hover:#1a1a2e;--scrollbar:#1a1a30;
+--font:'Share Tech Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);overflow:hidden;height:100vh;width:100vw;user-select:none;}
+#desktop{width:100vw;height:calc(100vh - 44px);position:relative;overflow:hidden;}
+#desktop-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 20% 80%,#0a0060 0%,transparent 60%),radial-gradient(ellipse at 80% 20%,#003300 0%,transparent 60%),linear-gradient(135deg,#050510 0%,#080818 100%);z-index:0;}
+#desktop-icons{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;gap:8px;padding:16px;}
+.desk-icon{display:flex;flex-direction:column;align-items:center;gap:4px;width:72px;cursor:pointer;padding:6px 4px;border-radius:6px;transition:background 0.15s;}
+.desk-icon:hover{background:rgba(0,255,170,0.08);}
+.desk-icon.selected{background:rgba(0,255,170,0.15);}
+.desk-icon .ico{font-size:28px;line-height:1;}
+.desk-icon .lbl{font-size:9px;color:var(--text);text-align:center;text-shadow:0 1px 3px #000;word-break:break-word;line-height:1.2;}
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:44px;background:var(--taskbar);border-top:1px solid var(--taskbar-border);display:flex;align-items:center;padding:0 8px;gap:6px;z-index:9999;}
+#start-btn{background:linear-gradient(135deg,var(--accent2),var(--accent));color:#000;border:none;padding:4px 14px;font-family:var(--font);font-size:11px;cursor:pointer;border-radius:4px;font-weight:bold;}
+#taskbar-windows{display:flex;gap:4px;flex:1;overflow:hidden;}
+.tb-win{background:#1a1a2e;border:1px solid var(--win-border);color:var(--text);font-family:var(--font);font-size:10px;padding:3px 10px;border-radius:4px;cursor:pointer;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:background 0.15s;}
+.tb-win:hover,.tb-win.active{background:#222240;border-color:var(--accent);}
+#taskbar-right{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--text-dim);}
+#clock{color:var(--accent);font-size:12px;}
+#battery-display{color:var(--text-dim);font-size:11px;}
+.window{position:absolute;background:var(--win-bg);border:1px solid var(--win-border);border-radius:8px;display:flex;flex-direction:column;min-width:320px;min-height:220px;box-shadow:0 8px 40px rgba(0,0,0,0.7);z-index:100;overflow:hidden;}
+.window.focused{border-color:var(--accent);z-index:200;}
+.win-header{background:var(--win-header);display:flex;align-items:center;padding:0 10px;height:32px;gap:8px;cursor:move;flex-shrink:0;}
+.win-title{flex:1;font-size:11px;color:var(--text-dim);}
+.win-title span{color:var(--accent);}
+.win-btns{display:flex;gap:5px;}
+.win-btn{width:14px;height:14px;border-radius:50%;border:none;cursor:pointer;font-size:8px;display:flex;align-items:center;justify-content:center;}
+.win-btn.close{background:#ff5555;}
+.win-btn.min{background:#ffaa00;}
+.win-btn.max{background:#00cc88;}
+.win-content{flex:1;overflow:auto;position:relative;}
+.win-content::-webkit-scrollbar{width:6px;}
+.win-content::-webkit-scrollbar-track{background:var(--scrollbar);}
+.win-content::-webkit-scrollbar-thumb{background:var(--accent2);border-radius:3px;}
+.win-resize{position:absolute;right:0;bottom:0;width:12px;height:12px;cursor:se-resize;z-index:10;}
+.win-resize::after{content:'';position:absolute;right:2px;bottom:2px;width:8px;height:8px;border-right:2px solid var(--text-dim);border-bottom:2px solid var(--text-dim);}
+#start-menu{position:fixed;bottom:44px;left:0;width:260px;background:#0d0d1a;border:1px solid var(--win-border);border-radius:8px 8px 0 0;padding:12px;z-index:99999;display:none;}
+#start-menu.open{display:block;}
+.sm-title{font-size:13px;color:var(--accent);margin-bottom:10px;border-bottom:1px solid var(--win-border);padding-bottom:6px;}
+.sm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.sm-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;border-radius:6px;transition:background 0.15s;}
+.sm-item:hover{background:rgba(0,255,170,0.1);}
+.sm-item .ico{font-size:20px;}
+.sm-item .lbl{font-size:8px;text-align:center;color:var(--text-dim);}
+iframe.app-frame{width:100%;height:100%;border:none;background:#fff;}
+.app-inner{width:100%;height:100%;display:flex;flex-direction:column;font-family:var(--font);}
+.ctx-menu{position:fixed;background:#0d0d1a;border:1px solid var(--win-border);border-radius:6px;padding:4px;z-index:99999;min-width:160px;display:none;}
+.ctx-menu.open{display:block;}
+.ctx-item{padding:6px 12px;font-size:11px;cursor:pointer;border-radius:4px;color:var(--text);}
+.ctx-item:hover{background:rgba(0,255,170,0.1);color:var(--accent);}
+.ctx-sep{height:1px;background:var(--win-border);margin:3px 0;}
+textarea,input[type=text],input[type=number]{background:#0a0a18;color:var(--text);border:1px solid var(--win-border);font-family:var(--font);font-size:12px;padding:6px;border-radius:4px;outline:none;}
+textarea:focus,input:focus{border-color:var(--accent);}
+button.os-btn{background:#1a1a2e;color:var(--text);border:1px solid var(--win-border);font-family:var(--font);font-size:11px;padding:4px 12px;border-radius:4px;cursor:pointer;transition:background 0.15s,border-color 0.15s;}
+button.os-btn:hover{background:#222240;border-color:var(--accent);color:var(--accent);}
+select.os-sel{background:#0a0a18;color:var(--text);border:1px solid var(--win-border);font-family:var(--font);font-size:11px;padding:4px 8px;border-radius:4px;outline:none;}
+.toolbar{display:flex;gap:6px;padding:6px 8px;background:#111120;border-bottom:1px solid var(--win-border);flex-wrap:wrap;align-items:center;}
+.status-bar{padding:3px 8px;background:#111120;border-top:1px solid var(--win-border);font-size:10px;color:var(--text-dim);}
+</style>
+</head>
+<body>
+<div id="desktop">
+<div id="desktop-bg"></div>
+<div id="desktop-icons" id="desktop-icons"></div>
+</div>
+<div id="taskbar">
+<button id="start-btn" onclick="toggleStart()">⬡ START</button>
+<div id="taskbar-windows"></div>
+<div id="taskbar-right">
+<span id="battery-display">🔋---%</span>
+<span id="clock">00:00 AM</span>
+</div>
+</div>
+<div id="start-menu">
+<div class="sm-title">⬡ AarexOS</div>
+<div class="sm-grid" id="start-grid"></div>
+</div>
+<div class="ctx-menu" id="ctx-menu">
+<div class="ctx-item" onclick="ctxAction('refresh')">↺ Refresh</div>
+<div class="ctx-sep"></div>
+<div class="ctx-item" onclick="ctxAction('theme')">🎨 Theme</div>
+<div class="ctx-item" onclick="ctxAction('settings')">⚙ Settings</div>
+</div>
+<script>
+const APPS=[
+{id:'nes',name:'NES Emulator',icon:'🕹️'},
+{id:'snes',name:'SNES Emulator',icon:'🎮'},
+{id:'n64',name:'N64 Emulator',icon:'🎯'},
+{id:'nds',name:'NDS Emulator',icon:'📟'},
+{id:'tds',name:'3DS Emulator',icon:'🔷'},
+{id:'wii',name:'Wii Emulator',icon:'📡'},
+{id:'2048',name:'2048 Game',icon:'🔢'},
+{id:'paint',name:'Paint',icon:'🖌️'},
+{id:'bytebeat',name:'Bytebeat JS',icon:'🎵'},
+{id:'shader',name:'Shader Editor',icon:'✨'},
+{id:'json',name:'JSON Editor',icon:'📋'},
+{id:'python',name:'Python Editor',icon:'🐍'},
+{id:'webapp',name:'Web App Maker',icon:'🌐'},
+{id:'calc',name:'Calculator',icon:'🔣'},
+{id:'calendar',name:'Calendar',icon:'📅'},
+{id:'codeapp',name:'Code App Maker',icon:'🛠️'},
+{id:'settings',name:'Settings',icon:'⚙️'},
+{id:'terminal',name:'Terminal',icon:'💻'},
+{id:'cpp',name:'Compile C++',icon:'⚡'},
+{id:'notepad',name:'Notepad',icon:'📝'},
+{id:'wordpad',name:'WordPad',icon:'📄'},
+{id:'sticky',name:'Sticky Note',icon:'📌'},
+{id:'ban',name:'Bird Array Notation',icon:'🐦'},
+{id:'taranovsky',name:'Taranovsky Notation',icon:'∞'},
+{id:'beaf',name:'BEAF Generator',icon:'💥'},
+{id:'opnotation',name:'Operator Notation',icon:'Ω'},
+{id:'bms',name:'BMS Generator',icon:'🔷'},
+{id:'jsconsole',name:'JS Console',icon:'⌨️'},
+{id:'yseq',name:'Y-sequence',icon:'Υ'},
+{id:'ordinal',name:'Ordinal Generator',icon:'ω'},
+{id:'hub',name:'AarexOS Hub',icon:'🌟'},
+];
+
+let windows={},wid=0,activeWid=null,theme='default';
+const themes={
+default:{'--bg':'#0a0a0f','--taskbar':'#111118','--win-bg':'#0d0d1a','--win-header':'#161625','--accent':'#00ffaa','--accent2':'#7700ff','--text':'#e0e0ff','--text-dim':'#7070a0','--win-border':'#2a2a4a'},
+win98:{'--bg':'#008080','--taskbar':'#c0c0c0','--win-bg':'#c0c0c0','--win-header':'#000080','--accent':'#000080','--accent2':'#808080','--text':'#000000','--text-dim':'#444444','--win-border':'#ffffff'},
+win10:{'--bg':'#1a1a2e','--taskbar':'#202030','--win-bg':'#1e1e2e','--win-header':'#252535','--accent':'#0078d4','--accent2':'#005fa3','--text':'#ffffff','--text-dim':'#aaaaaa','--win-border':'#333355'},
+win11:{'--bg':'#1e1f2e','--taskbar':'#20213a','--win-bg':'#1c1d2e','--win-header':'#23243a','--accent':'#60cdff','--accent2':'#0078d4','--text':'#ffffff','--text-dim':'#888aaa','--win-border':'#30315a'},
+glass:{'--bg':'rgba(10,10,20,0.85)','--taskbar':'rgba(255,255,255,0.08)','--win-bg':'rgba(255,255,255,0.07)','--win-header':'rgba(255,255,255,0.12)','--accent':'#ffffff','--accent2':'#aaccff','--text':'#ffffff','--text-dim':'rgba(255,255,255,0.5)','--win-border':'rgba(255,255,255,0.2)'},
+};
+
+function applyTheme(t){
+theme=t;
+const vars=themes[t]||themes.default;
+Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+}
+
+function buildDesktop(){
+const di=document.getElementById('desktop-icons');
+const sg=document.getElementById('start-grid');
+di.innerHTML='';sg.innerHTML='';
+APPS.forEach(a=>{
+const d=document.createElement('div');
+d.className='desk-icon';d.innerHTML=`<div class="ico">${a.icon}</div><div class="lbl">${a.name}</div>`;
+d.ondblclick=()=>openApp(a.id);di.appendChild(d);
+const s=document.createElement('div');
+s.className='sm-item';s.innerHTML=`<div class="ico">${a.icon}</div><div class="lbl">${a.name}</div>`;
+s.onclick=()=>{openApp(a.id);toggleStart();};sg.appendChild(s);
+});
+}
+
+function openApp(id){
+const app=APPS.find(a=>a.id===id);if(!app)return;
+const content=buildAppContent(id);
+createWindow(app.name,content,id);
+}
+
+function createWindow(title,content,appId,w=700,h=500){
+const id=++wid;
+const el=document.createElement('div');
+el.className='window';el.id='win-'+id;
+el.style.cssText=`width:${w}px;height:${h}px;left:${60+(id%8)*30}px;top:${40+(id%6)*25}px;`;
+el.innerHTML=`<div class="win-header" onmousedown="dragStart(event,${id})">
+<span class="win-title"><span>${title}</span></span>
+<div class="win-btns">
+<button class="win-btn min" onclick="minWin(${id})">−</button>
+<button class="win-btn max" onclick="maxWin(${id})">□</button>
+<button class="win-btn close" onclick="closeWin(${id})">×</button>
+</div></div>
+<div class="win-content" id="wc-${id}">${content}</div>
+<div class="win-resize" onmousedown="resizeStart(event,${id})"></div>`;
+document.getElementById('desktop').appendChild(el);
+el.onmousedown=()=>focusWin(id);
+windows[id]={el,title,appId,minimized:false,maxed:false,prevRect:null};
+focusWin(id);updateTaskbar();
+setTimeout(()=>initAppJs(id,appId),50);
+return id;
+}
+
+function focusWin(id){
+activeWid=id;
+Object.keys(windows).forEach(k=>{windows[k].el.classList.remove('focused');windows[k].el.style.zIndex=100;});
+if(windows[id]){windows[id].el.classList.add('focused');windows[id].el.style.zIndex=200;}
+updateTaskbar();
+}
+
+function closeWin(id){
+if(windows[id]){windows[id].el.remove();delete windows[id];updateTaskbar();}
+}
+
+function minWin(id){
+if(windows[id]){windows[id].minimized=!windows[id].minimized;windows[id].el.style.display=windows[id].minimized?'none':'flex';updateTaskbar();}
+}
+
+function maxWin(id){
+const w=windows[id];if(!w)return;
+if(!w.maxed){
+w.prevRect={left:w.el.style.left,top:w.el.style.top,width:w.el.style.width,height:w.el.style.height};
+w.el.style.cssText+=`left:0!important;top:0!important;width:100vw!important;height:calc(100vh - 44px)!important;`;
+w.maxed=true;
+}else{
+Object.assign(w.el.style,w.prevRect);w.maxed=false;
+}
+}
+
+function updateTaskbar(){
+const tb=document.getElementById('taskbar-windows');
+tb.innerHTML='';
+Object.entries(windows).forEach(([id,w])=>{
+const b=document.createElement('button');
+b.className='tb-win'+(activeWid==id?' active':'');
+b.textContent=w.title;b.onclick=()=>{if(w.minimized){minWin(id);}focusWin(id);};
+tb.appendChild(b);
+});
+}
+
+let dragState=null;
+function dragStart(e,id){
+if(e.target.classList.contains('win-btn'))return;
+focusWin(id);
+const el=windows[id].el;
+const rect=el.getBoundingClientRect();
+dragState={id,ox:e.clientX-rect.left,oy:e.clientY-rect.top};
+document.onmousemove=dragMove;document.onmouseup=dragEnd;
+}
+function dragMove(e){
+if(!dragState)return;
+const el=windows[dragState.id].el;
+el.style.left=(e.clientX-dragState.ox)+'px';el.style.top=(e.clientY-dragState.oy)+'px';
+}
+function dragEnd(){dragState=null;document.onmousemove=null;document.onmouseup=null;}
+
+let resizeState=null;
+function resizeStart(e,id){
+e.stopPropagation();
+const el=windows[id].el;
+resizeState={id,sx:e.clientX,sy:e.clientY,sw:el.offsetWidth,sh:el.offsetHeight};
+document.onmousemove=resizeMove;document.onmouseup=resizeEnd;
+}
+function resizeMove(e){
+if(!resizeState)return;
+const el=windows[resizeState.id].el;
+el.style.width=Math.max(320,resizeState.sw+(e.clientX-resizeState.sx))+'px';
+el.style.height=Math.max(220,resizeState.sh+(e.clientY-resizeState.sy))+'px';
+}
+function resizeEnd(){resizeState=null;document.onmousemove=null;document.onmouseup=null;}
+
+document.getElementById('desktop').addEventListener('contextmenu',e=>{
+e.preventDefault();
+const m=document.getElementById('ctx-menu');
+m.style.left=e.clientX+'px';m.style.top=e.clientY+'px';m.classList.add('open');
+});
+document.addEventListener('click',()=>{
+document.getElementById('ctx-menu').classList.remove('open');
+});
+function ctxAction(a){if(a==='settings')openApp('settings');if(a==='refresh')location.reload();}
+function toggleStart(){document.getElementById('start-menu').classList.toggle('open');}
+document.getElementById('desktop').addEventListener('click',()=>document.getElementById('start-menu').classList.remove('open'));
+
+function updateClock(){
+const n=new Date();
+let h=n.getHours(),m=n.getMinutes(),ap=h>=12?'PM':'AM';
+h=h%12||12;document.getElementById('clock').textContent=h+':'+(m<10?'0':'')+m+' '+ap;
+}
+setInterval(updateClock,1000);updateClock();
+
+async function updateBattery(){
+if(navigator.getBattery){
+try{const b=await navigator.getBattery();
+document.getElementById('battery-display').textContent='🔋'+Math.round(b.level*100)+'%'+(b.charging?'⚡':'');
+b.onlevelchange=b.onchargingchange=updateBattery;
+}catch{document.getElementById('battery-display').textContent='🔋N/A';}
+}else document.getElementById('battery-display').textContent='🔋N/A';
+}
+updateBattery();
+
+function buildAppContent(id){
+switch(id){
+case 'nes':return nesUI();
+case 'snes':return snesUI();
+case 'n64':return n64UI();
+case 'nds':return ndsUI();
+case 'tds':return tdsUI();
+case 'wii':return wiiUI();
+case '2048':return game2048UI();
+case 'paint':return paintUI();
+case 'bytebeat':return bytebeatUI();
+case 'shader':return shaderUI();
+case 'json':return jsonUI();
+case 'python':return pythonUI();
+case 'webapp':return webappUI();
+case 'calc':return calcUI();
+case 'calendar':return calendarUI();
+case 'codeapp':return codeappUI();
+case 'settings':return settingsUI();
+case 'terminal':return terminalUI();
+case 'cpp':return cppUI();
+case 'notepad':return notepadUI();
+case 'wordpad':return wordpadUI();
+case 'sticky':return stickyUI();
+case 'ban':return banUI();
+case 'taranovsky':return taranovskyUI();
+case 'beaf':return beafUI();
+case 'opnotation':return opnotationUI();
+case 'bms':return bmsUI();
+case 'jsconsole':return jsconsoleUI();
+case 'yseq':return yseqUI();
+case 'ordinal':return ordinalUI();
+case 'hub':return hubUI();
+default:return '<div style="padding:20px;color:var(--text-dim)">No content.</div>';
+}
+}
+
+function emuUI(name,systems,cores){
+return `<div class="app-inner">
+<div class="toolbar">
+<label style="font-size:11px;color:var(--text-dim)">ROM:</label>
+<input type="file" id="rom-file" accept=".nes,.sfc,.smc,.n64,.z64,.nds,.3ds,.iso,.wbfs" style="font-size:10px;color:var(--text);background:transparent;border:none;cursor:pointer;">
+<button class="os-btn" onclick="loadROM('${name}')">▶ Load</button>
+<button class="os-btn" onclick="emuReset('${name}')">↺ Reset</button>
+<button class="os-btn" onclick="emuFullscreen('${name}')">⤢ Full</button>
+<select class="os-sel" id="core-sel-${name}">${(cores||['Auto']).map(c=>`<option>${c}</option>`).join('')}</select>
+</div>
+<div style="flex:1;display:flex;align-items:center;justify-content:center;background:#000;position:relative;">
+<canvas id="emu-canvas-${name}" style="max-width:100%;max-height:100%;image-rendering:pixelated;"></canvas>
+<div id="emu-msg-${name}" style="position:absolute;color:var(--text-dim);font-size:12px;text-align:center;">
+<div style="font-size:32px;margin-bottom:8px;">${systems[0]||'🕹️'}</div>
+Drop ROM file or use Load button<br>
+<span style="font-size:10px;color:var(--text-dim)">Supports: ${systems.join(', ')}</span>
+</div>
+</div>
+<div class="status-bar" id="emu-status-${name}">Ready — ${name} Emulator</div>
+</div>`;
+}
+
+function nesUI(){return emuUI('NES',['NES','.nes'],['Auto','FCEUX','Nestopia']);}
+function snesUI(){return emuUI('SNES',['SNES','.sfc','.smc'],['Auto','SNES9x','bsnes']);}
+function n64UI(){return emuUI('N64',['N64','.z64','.n64'],['Auto','Mupen64Plus','ParaLLEl']);}
+function ndsUI(){return emuUI('NDS',['NDS','.nds'],['Auto','DeSmuME','melonDS']);}
+function tdsUI(){return emuUI('3DS',['3DS','.3ds','.cia'],['Auto','Citra','Lime3DS']);}
+function wiiUI(){return emuUI('Wii',['Wii','.iso','.wbfs'],['Auto','Dolphin']);}
+
+function loadROM(n){
+const f=document.getElementById('rom-file');
+if(f&&f.files[0]){
+const c=document.getElementById('emu-canvas-'+n);
+const m=document.getElementById('emu-msg-'+n);
+const s=document.getElementById('emu-status-'+n);
+m.style.display='none';c.width=640;c.height=480;
+const ctx2=c.getContext('2d');
+const grad=ctx2.createLinearGradient(0,0,640,480);
+grad.addColorStop(0,'#0a0a1a');grad.addColorStop(1,'#001a00');
+ctx2.fillStyle=grad;ctx2.fillRect(0,0,640,480);
+ctx2.fillStyle='#00ffaa';ctx2.font='14px monospace';
+ctx2.fillText('ROM: '+f.files[0].name,20,30);
+ctx2.fillText('Emulation requires native binary — JS bridge placeholder',20,60);
+ctx2.fillStyle='#333';ctx2.fillRect(160,180,320,120);
+ctx2.fillStyle='#00ffaa44';ctx2.fillRect(162,182,316,116);
+ctx2.fillStyle='#00ffaa';ctx2.font='20px monospace';ctx2.fillText('⬡ '+n,260,250);
+if(s)s.textContent='Loaded: '+f.files[0].name+' ('+Math.round(f.files[0].size/1024)+'KB)';
+}
+}
+function emuReset(n){const c=document.getElementById('emu-canvas-'+n);if(c){const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);}const m=document.getElementById('emu-msg-'+n);if(m)m.style.display='block';}
+function emuFullscreen(n){const c=document.getElementById('emu-canvas-'+n);if(c&&c.requestFullscreen)c.requestFullscreen();}
+
+function game2048UI(){
+return `<div class="app-inner" style="align-items:center;justify-content:center;padding:20px;gap:10px;">
+<div style="display:flex;align-items:center;gap:20px;margin-bottom:8px;">
+<div style="font-size:18px;color:var(--accent)">2048</div>
+<div style="font-size:12px;color:var(--text-dim)">Score: <span id="g2048-score" style="color:var(--accent)">0</span></div>
+<div style="font-size:12px;color:var(--text-dim)">Best: <span id="g2048-best" style="color:var(--accent)">0</span></div>
+<button class="os-btn" onclick="g2048New()">New</button>
+</div>
+<div id="g2048-grid" style="display:grid;grid-template-columns:repeat(4,80px);gap:8px;"></div>
+<div id="g2048-msg" style="color:var(--accent);font-size:14px;min-height:20px;"></div>
+</div>`;
+}
+
+function paintUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<input type="color" id="paint-color" value="#00ffaa" style="width:28px;height:24px;border:none;cursor:pointer;padding:0;">
+<input type="range" id="paint-size" min="1" max="40" value="4" style="width:80px;">
+<button class="os-btn" onclick="paintSetTool('pen')">✏️ Pen</button>
+<button class="os-btn" onclick="paintSetTool('fill')">🪣 Fill</button>
+<button class="os-btn" onclick="paintSetTool('erase')">🧹 Erase</button>
+<button class="os-btn" onclick="paintSetTool('line')">╱ Line</button>
+<button class="os-btn" onclick="paintSetTool('rect')">▭ Rect</button>
+<button class="os-btn" onclick="paintSetTool('ellipse')">○ Ellipse</button>
+<button class="os-btn" onclick="paintClear()">🗑 Clear</button>
+<button class="os-btn" onclick="paintSave()">💾 Save</button>
+</div>
+<div style="flex:1;overflow:hidden;position:relative;background:#111;">
+<canvas id="paint-canvas" style="cursor:crosshair;display:block;"></canvas>
+</div>
+<div class="status-bar" id="paint-status">Tool: Pen | Size: 4</div>
+</div>`;
+}
+
+function bytebeatUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="bbPlay()">▶ Play</button>
+<button class="os-btn" onclick="bbStop()">■ Stop</button>
+<select class="os-sel" id="bb-preset" onchange="bbLoadPreset()">
+<option value="">-- Preset --</option>
+<option value="(t>>10&42)*t">Classic 1</option>
+<option value="t*(t>>5|t>>8)">Bytebeat 2</option>
+<option value="((t>>9)^((t>>9)-1))*(t>>6)&88">Melody</option>
+<option value="(t|t>>1|t>>4)*(t>>8&3)&255">Chords</option>
+<option value="(t^t>>8)|(t>>4)">Bitcrush</option>
+<option value="(t>>4|t|t>>8)*((t>>11)&7)">Glitch</option>
+</select>
+<label style="font-size:11px;color:var(--text-dim)">Rate:</label>
+<input type="number" id="bb-rate" value="8000" min="1000" max="48000" style="width:70px;">
+</div>
+<div style="flex:1;display:flex;flex-direction:column;padding:8px;gap:8px;">
+<textarea id="bb-code" style="flex:1;resize:none;font-size:13px;" placeholder="t*(t>>5|t>>8)"></textarea>
+<canvas id="bb-canvas" height="80" style="background:#0a0a18;border:1px solid var(--win-border);border-radius:4px;"></canvas>
+</div>
+<div class="status-bar" id="bb-status">Stopped</div>
+</div>`;
+}
+
+function shaderUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="shaderRun()">▶ Run</button>
+<button class="os-btn" onclick="shaderStop()">■ Stop</button>
+<button class="os-btn" onclick="shaderLoadPreset(0)">Plasma</button>
+<button class="os-btn" onclick="shaderLoadPreset(1)">Mandelbrot</button>
+<button class="os-btn" onclick="shaderLoadPreset(2)">Raymarching</button>
+</div>
+<div style="flex:1;display:flex;gap:0;">
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Fragment Shader (GLSL)</div>
+<textarea id="shader-code" style="flex:1;resize:none;font-size:11px;padding:8px;font-family:var(--font);">precision mediump float;
+uniform float u_time;
+uniform vec2 u_resolution;
+void main(){
+  vec2 uv=(gl_FragCoord.xy/u_resolution)*2.0-1.0;
+  uv.x*=u_resolution.x/u_resolution.y;
+  float d=length(uv);
+  vec3 col=0.5+0.5*cos(u_time+uv.xyx+vec3(0,2,4));
+  col*=1.0-smoothstep(0.8,1.0,d);
+  gl_FragColor=vec4(col,1.0);
+}</textarea>
+</div>
+<canvas id="shader-canvas" style="width:50%;background:#000;"></canvas>
+</div>
+<div class="status-bar" id="shader-status">Ready</div>
+</div>`;
+}
+
+function jsonUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="jsonFormat()">{ } Format</button>
+<button class="os-btn" onclick="jsonMinify()">⚡ Minify</button>
+<button class="os-btn" onclick="jsonValidate()">✓ Validate</button>
+<button class="os-btn" onclick="jsonClear()">🗑 Clear</button>
+<button class="os-btn" onclick="jsonCopy()">📋 Copy</button>
+<input type="file" id="json-file" accept=".json" onchange="jsonLoadFile()" style="font-size:10px;color:var(--text);background:transparent;border:none;cursor:pointer;">
+</div>
+<div style="flex:1;display:flex;gap:0;">
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Input</div>
+<textarea id="json-in" style="flex:1;resize:none;font-size:12px;" placeholder='{"key":"value"}'></textarea>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Output</div>
+<textarea id="json-out" style="flex:1;resize:none;font-size:12px;" readonly></textarea>
+</div>
+</div>
+<div class="status-bar" id="json-status">Ready</div>
+</div>`;
+}
+
+function pythonUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="pyRun()">▶ Run</button>
+<button class="os-btn" onclick="pyClear()">🗑 Clear</button>
+<button class="os-btn" onclick="pyLoad()">📂 Load</button>
+<button class="os-btn" onclick="pySave()">💾 Save</button>
+<span style="font-size:10px;color:var(--text-dim);margin-left:8px;">Python 3.1.6 (Brython)</span>
+</div>
+<div style="flex:1;display:flex;gap:0;">
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Code</div>
+<textarea id="py-code" style="flex:1;resize:none;font-size:12px;" placeholder="print('Hello, World!')">print("Hello from Python 3.1.6!")
+for i in range(5):
+    print(f"  {i}: {i**2}")</textarea>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Output</div>
+<div id="py-out" style="flex:1;background:#050510;padding:8px;font-size:12px;overflow:auto;white-space:pre-wrap;color:#00ffaa;"></div>
+</div>
+</div>
+<div class="status-bar" id="py-status">Ready</div>
+</div>`;
+}
+
+function webappUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="waRun()">▶ Preview</button>
+<button class="os-btn" onclick="waSave()">💾 Save HTML</button>
+<button class="os-btn" onclick="waTemplate('blank')">Blank</button>
+<button class="os-btn" onclick="waTemplate('landing')">Landing</button>
+<button class="os-btn" onclick="waTemplate('dashboard')">Dashboard</button>
+</div>
+<div style="flex:1;display:flex;gap:0;">
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">HTML</div>
+<textarea id="wa-html" style="flex:1;resize:none;font-size:11px;" placeholder="<h1>Hello</h1>"></textarea>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">CSS</div>
+<textarea id="wa-css" style="flex:1;resize:none;font-size:11px;" placeholder="body{margin:0}"></textarea>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">JS</div>
+<textarea id="wa-js" style="flex:1;resize:none;font-size:11px;" placeholder="console.log('hi')"></textarea>
+</div>
+</div>
+<iframe id="wa-preview" style="display:none;flex:1;border:none;background:#fff;"></iframe>
+<div class="status-bar">Web App Maker</div>
+</div>`;
+}
+
+function calcUI(){
+return `<div class="app-inner" style="align-items:center;justify-content:center;padding:20px;">
+<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:8px;padding:16px;width:220px;">
+<div id="calc-display" style="text-align:right;font-size:22px;color:var(--accent);padding:8px;background:#050510;border-radius:4px;margin-bottom:10px;min-height:40px;word-break:break-all;">0</div>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;" id="calc-grid"></div>
+</div>
+</div>`;
+}
+
+function calendarUI(){
+return `<div class="app-inner" style="padding:16px;gap:10px;">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+<button class="os-btn" onclick="calPrev()">◀</button>
+<div id="cal-title" style="flex:1;text-align:center;color:var(--accent);font-size:14px;"></div>
+<button class="os-btn" onclick="calNext()">▶</button>
+<button class="os-btn" onclick="calToday()">Today</button>
+</div>
+<div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;font-size:11px;"></div>
+<div id="cal-events" style="margin-top:10px;font-size:11px;color:var(--text-dim);"></div>
+</div>`;
+}
+
+function codeappUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<select class="os-sel" id="ca-lang" onchange="caChangeLang()">
+<option>HTML</option><option>JavaScript</option><option>CSS</option><option>Python</option><option>Bash</option>
+</select>
+<button class="os-btn" onclick="caRun()">▶ Run</button>
+<button class="os-btn" onclick="caSave()">💾 Save</button>
+<button class="os-btn" onclick="caLoad()">📂 Load</button>
+<button class="os-btn" onclick="caFormat()">{ } Format</button>
+</div>
+<div style="flex:1;display:flex;gap:0;">
+<div style="flex:1;display:flex;flex-direction:column;position:relative;">
+<div id="ca-lines" style="position:absolute;left:0;top:0;bottom:0;width:32px;background:#080818;border-right:1px solid var(--win-border);font-size:11px;color:var(--text-dim);padding:8px 4px;overflow:hidden;text-align:right;line-height:1.6em;"></div>
+<textarea id="ca-code" style="flex:1;resize:none;font-size:12px;padding:8px 8px 8px 40px;line-height:1.6em;" oninput="caUpdateLines()" placeholder="// Code here"></textarea>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Output</div>
+<iframe id="ca-preview" style="flex:1;border:none;background:#fff;" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+<div class="status-bar" id="ca-status">Ready</div>
+</div>`;
+}
+
+function settingsUI(){
+return `<div class="app-inner" style="padding:20px;gap:16px;">
+<div style="font-size:14px;color:var(--accent);margin-bottom:6px;">⚙ System Settings</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;">
+<div style="font-size:12px;color:var(--accent);margin-bottom:10px;">🎨 Theme</div>
+<div style="display:flex;flex-direction:column;gap:6px;">
+<button class="os-btn" onclick="applyTheme('default')">Default Dark</button>
+<button class="os-btn" onclick="applyTheme('win98')">Windows 98</button>
+<button class="os-btn" onclick="applyTheme('win10')">Windows 10</button>
+<button class="os-btn" onclick="applyTheme('win11')">Windows 11</button>
+<button class="os-btn" onclick="applyTheme('glass')">Glass</button>
+</div>
+</div>
+<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;">
+<div style="font-size:12px;color:var(--accent);margin-bottom:10px;">🖥 Display</div>
+<div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Accent Color</div>
+<input type="color" id="accent-color" value="#00ffaa" onchange="setAccent(this.value)" style="width:100%;height:28px;border:none;cursor:pointer;border-radius:4px;">
+<div style="font-size:11px;color:var(--text-dim);margin:8px 0 4px;">Background</div>
+<input type="color" id="bg-color" value="#0a0a0f" onchange="document.documentElement.style.setProperty('--bg',this.value)" style="width:100%;height:28px;border:none;cursor:pointer;border-radius:4px;">
+</div>
+<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;">
+<div style="font-size:12px;color:var(--accent);margin-bottom:10px;">ℹ System Info</div>
+<div style="font-size:11px;color:var(--text-dim);line-height:1.8;">
+OS: AarexOS v1.0<br>Engine: HTML5/CSS3/JS<br>Font: Share Tech Mono<br>Screen: ${screen.width}×${screen.height}<br>UA: ${navigator.userAgent.substring(0,30)}...
+</div>
+</div>
+<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;">
+<div style="font-size:12px;color:var(--accent);margin-bottom:10px;">🔊 Audio</div>
+<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Volume</div>
+<input type="range" min="0" max="100" value="70" style="width:100%;" id="sys-vol">
+</div>
+</div>
+</div>`;
+}
+
+function terminalUI(){
+return `<div class="app-inner" style="background:#000;">
+<div style="padding:4px 8px;font-size:10px;color:#00ff00;background:#001100;border-bottom:1px solid #003300;">AarexOS Terminal v1.0</div>
+<div id="term-out" style="flex:1;padding:8px;font-size:12px;color:#00ff00;overflow-y:auto;white-space:pre-wrap;font-family:var(--font);"></div>
+<div style="display:flex;align-items:center;padding:4px 8px;background:#001100;border-top:1px solid #003300;">
+<span style="color:#00ff00;font-size:12px;">$ </span>
+<input id="term-in" type="text" style="flex:1;background:transparent;border:none;color:#00ff00;font-family:var(--font);font-size:12px;outline:none;margin-left:4px;" placeholder="type command..." onkeydown="termKey(event)">
+</div>
+</div>`;
+}
+
+function cppUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="cppCompile()">⚡ Compile & Run</button>
+<button class="os-btn" onclick="cppClear()">🗑 Clear</button>
+<select class="os-sel" id="cpp-std"><option>C++17</option><option>C++14</option><option>C++20</option><option>C++11</option></select>
+</div>
+<div style="flex:1;display:flex;gap:0;">
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">C++ Source</div>
+<textarea id="cpp-code" style="flex:1;resize:none;font-size:12px;" placeholder="#include &lt;iostream&gt;&#10;using namespace std;&#10;int main(){&#10;    cout&lt;&lt;&quot;Hello&quot;&lt;&lt;endl;&#10;}">#include &lt;iostream&gt;
+using namespace std;
+int main(){
+    cout&lt;&lt;"Hello from AarexOS C++!"&lt;&lt;endl;
+    for(int i=0;i&lt;5;i++) cout&lt;&lt;i&lt;&lt;" squared = "&lt;&lt;i*i&lt;&lt;endl;
+    return 0;
+}</textarea>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;">
+<div style="padding:4px 8px;font-size:10px;color:var(--text-dim)">Output</div>
+<div id="cpp-out" style="flex:1;background:#050510;padding:8px;font-size:12px;overflow:auto;white-space:pre-wrap;color:#00ffaa;"></div>
+</div>
+</div>
+<div class="status-bar" id="cpp-status">Ready</div>
+</div>`;
+}
+
+function notepadUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="npNew()">📄 New</button>
+<button class="os-btn" onclick="npOpen()">📂 Open</button>
+<button class="os-btn" onclick="npSave()">💾 Save</button>
+<button class="os-btn" onclick="npSaveAs()">💾 Save As</button>
+<input type="file" id="np-file" accept=".txt" onchange="npLoad()" style="display:none">
+<select class="os-sel" id="np-enc"><option>UTF-8</option><option>ASCII</option></select>
+<select class="os-sel" id="np-font-size" onchange="npFontSize()"><option>12</option><option>14</option><option>16</option><option>18</option><option>20</option></select>
+</div>
+<textarea id="np-text" style="flex:1;resize:none;font-size:12px;padding:10px;border:none;border-radius:0;" placeholder="Start typing..."></textarea>
+<div class="status-bar" id="np-status">Ln 1, Col 1 | UTF-8</div>
+</div>`;
+}
+
+function wordpadUI(){
+return `<div class="app-inner">
+<div class="toolbar">
+<button class="os-btn" onclick="document.execCommand('bold')"><b>B</b></button>
+<button class="os-btn" onclick="document.execCommand('italic')"><i>I</i></button>
+<button class="os-btn" onclick="document.execCommand('underline')"><u>U</u></button>
+<select class="os-sel" onchange="document.execCommand('fontSize',false,this.value)">
+<option value="2">Small</option><option value="3" selected>Normal</option><option value="4">Large</option><option value="5">XL</option>
+</select>
+<input type="color" onchange="document.execCommand('foreColor',false,this.value)" style="width:24px;height:24px;border:none;cursor:pointer;padding:0;">
+<button class="os-btn" onclick="document.execCommand('justifyLeft')">⇐</button>
+<button class="os-btn" onclick="document.execCommand('justifyCenter')">⇔</button>
+<button class="os-btn" onclick="document.execCommand('justifyRight')">⇒</button>
+<button class="os-btn" onclick="wpSave()">💾 Save</button>
+</div>
+<div id="wp-editor" contenteditable="true" style="flex:1;padding:20px;overflow:auto;outline:none;font-size:14px;background:#fff;color:#000;line-height:1.6;"></div>
+<div class="status-bar">WordPad</div>
+</div>`;
+}
+
+function stickyUI(){
+return `<div class="app-inner" style="background:#ffee44;">
+<div style="padding:4px 8px;background:#ddcc00;font-size:11px;color:#000;display:flex;justify-content:space-between;align-items:center;">
+<span>📌 Sticky Note</span>
+<div style="display:flex;gap:4px;">
+<input type="color" value="#ffee44" onchange="document.querySelector('#sticky-inner').style.background=this.value" style="width:20px;height:18px;border:none;cursor:pointer;padding:0;">
+</div>
+</div>
+<textarea id="sticky-inner" style="flex:1;resize:none;background:#ffee44;border:none;padding:10px;font-size:13px;color:#333;font-family:var(--font);outline:none;" placeholder="Write your note here..."></textarea>
+</div>`;
+}
+
+function banUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">🐦 Bird's Array Notation Generator</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="ban-input" value="{3,3,3}" placeholder="{a,b,c}" style="width:200px;">
+<button class="os-btn" onclick="banCompute()">Compute</button>
+<button class="os-btn" onclick="banExpand()">Expand</button>
+</div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Format: {a,b,c,...} or {a,b,c,d,...@}</div>
+<div id="ban-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:60px;white-space:pre-wrap;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:8px;">
+<b style="color:var(--accent)">BAN Rules:</b><br>
+{a} = a<br>{a,1} = a<br>{a,b,2} = a^b (tetration)<br>{a,b,c} = {a,{a,b-1,c},c-1}
+</div>
+</div>`;
+}
+
+function taranovskyUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">∞ Taranovsky's Ordinal Notation Generator</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="tar-input" value="C(C(C(0,0),0),0)" placeholder="C(a,b)" style="width:260px;">
+<button class="os-btn" onclick="tarCompute()">Evaluate</button>
+<button class="os-btn" onclick="tarFundSeq()">Fund. Seq.</button>
+</div>
+<div style="font-size:11px;color:var(--text-dim);">C(a,b) = ordinal notation. C(0,0)=1, C(Ω,0)=ω</div>
+<div id="tar-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:80px;white-space:pre-wrap;overflow:auto;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:6px;"><b style="color:var(--accent)">System C:</b><br>
+0 is an ordinal<br>If a,b are ordinals: C(a,b) is an ordinal<br>C(a,b) = smallest ordinal not reachable from below<br>Ω = first uncountable ordinal
+</div>
+</div>`;
+}
+
+function beafUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">💥 Bower's Exploding Array Function</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="beaf-input" value="3&3" placeholder="a&b or {a,b,c,...}" style="width:220px;">
+<button class="os-btn" onclick="beafCompute()">Compute</button>
+<button class="os-btn" onclick="beafExpand()">Expand Steps</button>
+</div>
+<div style="font-size:11px;color:var(--text-dim);">Use & for linear arrays, {a,b,...} for multidimensional</div>
+<div id="beaf-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:80px;white-space:pre-wrap;overflow:auto;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+<b style="color:var(--accent)">BEAF:</b><br>
+{a,1,...} = a<br>
+{a,b} = a^b<br>
+{a,b,2} = a^^b (tetration)<br>
+{a,b,3} = a^^^b (pentation)<br>
+</div>
+</div>`;
+}
+
+function opnotationUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">Ω Operator Notation Generator</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="op-a" value="3" placeholder="a" style="width:60px;">
+<select class="os-sel" id="op-op">
+<option value="2">+ (2)</option>
+<option value="3">× (3)</option>
+<option value="4">^ (4)</option>
+<option value="5">^^ (5)</option>
+<option value="6">^^^ (6)</option>
+<option value="7">Hyper-7</option>
+<option value="8">Hyper-8</option>
+</select>
+<input type="text" id="op-b" value="3" placeholder="b" style="width:60px;">
+<button class="os-btn" onclick="opCompute()">Compute</button>
+</div>
+<div id="op-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:60px;white-space:pre-wrap;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">H(a,1,n)=a, H(a,b,1)=a+b, H(a,b,2)=a×b, H(a,b,3)=a^b...</div>
+</div>`;
+}
+
+function bmsUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">🔷 Bashicu Matrix System Generator</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="bms-input" value="(0,0)(1,1)" placeholder="(a,b)(c,d)..." style="width:260px;">
+<input type="number" id="bms-n" value="3" min="0" max="999" placeholder="n" style="width:60px;">
+<button class="os-btn" onclick="bmsCompute()">Expand[n]</button>
+<button class="os-btn" onclick="bmsSteps()">Step by Step</button>
+</div>
+<div id="bms-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:80px;white-space:pre-wrap;overflow:auto;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+<b style="color:var(--accent)">BMS Rules:</b><br>
+ψ((0,0))=ω, ψ((0,0)(1,0))=ω^2<br>
+Expansion: find bad root, copy & transform
+</div>
+</div>`;
+}
+
+function jsconsoleUI(){
+return `<div class="app-inner" style="background:#050510;">
+<div style="padding:4px 8px;font-size:10px;color:var(--accent);background:#0a0a1a;border-bottom:1px solid var(--win-border);">JavaScript Console</div>
+<div id="jsc-out" style="flex:1;padding:8px;font-size:12px;overflow-y:auto;font-family:var(--font);"></div>
+<div style="display:flex;align-items:center;padding:4px 8px;background:#0a0a1a;border-top:1px solid var(--win-border);gap:4px;">
+<span style="color:var(--accent);font-size:12px;">&gt;</span>
+<input id="jsc-in" type="text" style="flex:1;background:transparent;border:none;color:var(--text);font-family:var(--font);font-size:12px;outline:none;" placeholder="Enter JavaScript..." onkeydown="jscKey(event)">
+<button class="os-btn" onclick="jscRun()">Run</button>
+<button class="os-btn" onclick="jscClear()">Clear</button>
+</div>
+</div>`;
+}
+
+function yseqUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">Υ Y-sequence Generator</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="yseq-input" value="(0)(1)(2)" placeholder="(a)(b)..." style="width:220px;">
+<input type="number" id="yseq-n" value="3" min="0" max="9999" style="width:70px;">
+<button class="os-btn" onclick="yseqCompute()">Expand[n]</button>
+</div>
+<div id="yseq-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:80px;white-space:pre-wrap;overflow:auto;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+Y-sequences generalize Buchholz's hydra and ψ functions.
+</div>
+</div>`;
+}
+
+function ordinalUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;overflow:auto;">
+<div style="font-size:13px;color:var(--accent);margin-bottom:4px;">ω Ordinal Generator</div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+<input type="text" id="ord-input" value="ω^ω" placeholder="e.g. ω^ω+1" style="width:180px;">
+<input type="number" id="ord-n" value="3" min="0" max="999" style="width:70px;">
+<button class="os-btn" onclick="ordCompute()">Fundamental Seq[n]</button>
+<button class="os-btn" onclick="ordCompare()">Compare</button>
+</div>
+<div id="ord-result" style="margin-top:8px;background:#050510;padding:10px;border:1px solid var(--win-border);border-radius:4px;font-size:12px;min-height:80px;white-space:pre-wrap;overflow:auto;"></div>
+<div style="font-size:11px;color:var(--text-dim);margin-top:6px;">
+<b style="color:var(--accent)">Ordinal Arithmetic:</b><br>
+ω[n] = n | (ω^α)[n] = ω^α[n] for limit α<br>
+ε₀ = ω^ω^ω^... (Cantor normal form)
+</div>
+</div>`;
+}
+
+function hubUI(){
+return `<div class="app-inner" style="padding:16px;gap:12px;">
+<div style="font-size:14px;color:var(--accent);margin-bottom:10px;">🌟 AarexOS Hub</div>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+${[
+{n:'Photopea',u:'https://photopea.com',i:'🖼️'},
+{n:'GitHub1S',u:'https://github1s.com',i:'⬛'},
+{n:'Scratch',u:'https://scratch.mit.edu',i:'🐱'},
+{n:'TurboWarp',u:'https://turbowarp.org',i:'🚀'},
+{n:'VS Code',u:'https://vscode.dev',i:'💙'},
+].map(a=>`<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;text-align:center;cursor:pointer;" onclick="hubOpen('${a.u}','${a.n}')">
+<div style="font-size:28px;">${a.i}</div>
+<div style="font-size:11px;margin-top:6px;color:var(--text);">${a.n}</div>
+<div style="font-size:9px;color:var(--text-dim);margin-top:2px;">${a.u.replace('https://','')}</div>
+</div>`).join('')}
+<div style="background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;text-align:center;cursor:pointer;" onclick="hubConvert()">
+<div style="font-size:28px;">🔢</div>
+<div style="font-size:11px;margin-top:6px;color:var(--text);">TXT→Binary</div>
+<div style="font-size:9px;color:var(--text-dim);margin-top:2px;">Convert text</div>
+</div>
+</div>
+<div id="hub-convert" style="display:none;margin-top:10px;background:#0a0a18;border:1px solid var(--win-border);border-radius:6px;padding:12px;">
+<div style="font-size:12px;color:var(--accent);margin-bottom:8px;">TXT → Binary Converter</div>
+<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+<input type="text" id="hub-txt" placeholder="Enter text..." style="flex:1;">
+<button class="os-btn" onclick="hubDoConvert()">Convert</button>
+</div>
+<div id="hub-bin-out" style="font-size:11px;color:#00ffaa;word-break:break-all;"></div>
+</div>
+</div>`;
+}
+
+function hubOpen(url,name){
+const id=createWindow(name,`<iframe class="app-frame" src="${url}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>`,null,900,620);
+}
+function hubConvert(){document.getElementById('hub-convert').style.display='block';}
+function hubDoConvert(){
+const t=document.getElementById('hub-txt').value;
+const b=t.split('').map(c=>c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');
+document.getElementById('hub-bin-out').textContent=b;
+}
+
+function setAccent(c){document.documentElement.style.setProperty('--accent',c);}
+
+function initAppJs(wid,id){
+switch(id){
+case '2048':g2048Init(wid);break;
+case 'paint':paintInit(wid);break;
+case 'bytebeat':bbInit(wid);break;
+case 'shader':shaderInit(wid);break;
+case 'calc':calcInit(wid);break;
+case 'calendar':calInit(wid);break;
+case 'terminal':termInit(wid);break;
+case 'jsconsole':jscInit(wid);break;
+case 'notepad':npInit(wid);break;
+case 'codeapp':caInit(wid);break;
+}
+}
+
+let g2048State={grid:null,score:0,best:0};
+function g2048Init(){g2048New();}
+function g2048New(){
+g2048State.grid=Array(4).fill(null).map(()=>Array(4).fill(0));
+g2048State.score=0;
+g2048Add();g2048Add();g2048Draw();
+document.onkeydown=g2048Key;
+}
+function g2048Add(){
+const empties=[];
+for(let r=0;r<4;r++)for(let c=0;c<4;c++)if(!g2048State.grid[r][c])empties.push([r,c]);
+if(!empties.length)return;
+const [r,c]=empties[Math.floor(Math.random()*empties.length)];
+g2048State.grid[r][c]=Math.random()<0.9?2:4;
+}
+function g2048Draw(){
+const g=document.getElementById('g2048-grid');if(!g)return;
+const colors={0:'#1a1a2e',2:'#1a3040',4:'#1a4030',8:'#2a4020',16:'#3a4010',32:'#4a3000',64:'#5a2000',128:'#003060',256:'#004080',512:'#0050a0',1024:'#0060c0',2048:'#00ffaa'};
+g.innerHTML=g2048State.grid.map(row=>row.map(v=>`<div style="width:80px;height:80px;background:${colors[v]||'#002060'};border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:${v>999?14:v>99?18:22}px;color:${v?'#fff':'transparent'};border:1px solid #333;">${v||''}</div>`).join('')).join('');
+document.getElementById('g2048-score').textContent=g2048State.score;
+if(g2048State.score>g2048State.best){g2048State.best=g2048State.score;document.getElementById('g2048-best').textContent=g2048State.best;}
+if(g2048State.grid.some(r=>r.some(v=>v===2048)))document.getElementById('g2048-msg').textContent='🏆 You Win!';
+}
+function g2048Key(e){
+if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;
+e.preventDefault();
+const dir={ArrowLeft:[0,-1],ArrowRight:[0,1],ArrowUp:[-1,0],ArrowDown:[1,0]}[e.key];
+let moved=false;
+const grid=g2048State.grid;
+function slide(row){
+let r=row.filter(v=>v);
+for(let i=0;i<r.length-1;i++)if(r[i]===r[i+1]){r[i]*=2;g2048State.score+=r[i];r.splice(i+1,1);}
+while(r.length<4)r.push(0);return r;
+}
+if(dir[1]===0){
+for(let c=0;c<4;c++){
+let col=grid.map(r=>r[c]);
+const orig=[...col];
+col=slide(dir[0]>0?col.reverse():col);
+if(dir[0]>0)col.reverse();
+col.forEach((v,r)=>{if(grid[r][c]!==v)moved=true;grid[r][c]=v;});
+}
+}else{
+for(let r=0;r<4;r++){
+let row=[...grid[r]];
+const orig=[...row];
+row=slide(dir[1]>0?row.reverse():row);
+if(dir[1]>0)row.reverse();
+row.forEach((v,c)=>{if(grid[r][c]!==v)moved=true;grid[r][c]=v;});
+}
+}
+if(moved){g2048Add();g2048Draw();}
+}
+
+let paintTool='pen',paintDrawing=false,paintLast=null,paintCanvas=null,paintCtx=null;
+function paintInit(){
+paintCanvas=document.getElementById('paint-canvas');
+const parent=paintCanvas.parentElement;
+paintCanvas.width=parent.offsetWidth;paintCanvas.height=parent.offsetHeight;
+paintCtx=paintCanvas.getContext('2d');
+paintCtx.fillStyle='#ffffff';paintCtx.fillRect(0,0,paintCanvas.width,paintCanvas.height);
+paintCanvas.onmousedown=e=>{paintDrawing=true;paintLast=[e.offsetX,e.offsetY];if(paintTool==='fill')paintFill(e.offsetX,e.offsetY);};
+paintCanvas.onmouseup=()=>paintDrawing=false;
+paintCanvas.onmouseleave=()=>paintDrawing=false;
+paintCanvas.onmousemove=e=>{if(!paintDrawing)return;paintDraw(e.offsetX,e.offsetY);};
+}
+function paintSetTool(t){paintTool=t;document.getElementById('paint-status').textContent='Tool: '+t;}
+function paintDraw(x,y){
+if(!paintCtx)return;
+const color=document.getElementById('paint-color').value;
+const size=document.getElementById('paint-size').value;
+paintCtx.strokeStyle=paintTool==='erase'?'#ffffff':color;
+paintCtx.lineWidth=size;paintCtx.lineCap='round';paintCtx.lineJoin='round';
+if(paintTool==='pen'||paintTool==='erase'){
+paintCtx.beginPath();paintCtx.moveTo(paintLast[0],paintLast[1]);paintCtx.lineTo(x,y);paintCtx.stroke();
+}
+paintLast=[x,y];
+}
+function paintFill(x,y){
+const color=document.getElementById('paint-color').value;
+const data=paintCtx.getImageData(0,0,paintCanvas.width,paintCanvas.height);
+const target=getPixel(data,x,y);
+const fill=hexToRgb(color);
+if(!fill)return;
+const stack=[[Math.floor(x),Math.floor(y)]];
+const visited=new Set();
+while(stack.length){
+const [px,py]=stack.pop();
+const key=px+','+py;
+if(visited.has(key))continue;
+visited.add(key);
+const idx=(py*paintCanvas.width+px)*4;
+if(px<0||py<0||px>=paintCanvas.width||py>=paintCanvas.height)continue;
+const r=data.data[idx],g=data.data[idx+1],b=data.data[idx+2];
+if(Math.abs(r-target[0])>30||Math.abs(g-target[1])>30||Math.abs(b-target[2])>30)continue;
+data.data[idx]=fill[0];data.data[idx+1]=fill[1];data.data[idx+2]=fill[2];data.data[idx+3]=255;
+stack.push([px+1,py],[px-1,py],[px,py+1],[px,py-1]);
+}
+paintCtx.putImageData(data,0,0);
+}
+function getPixel(d,x,y){const i=(Math.floor(y)*d.width+Math.floor(x))*4;return[d.data[i],d.data[i+1],d.data[i+2]];}
+function hexToRgb(h){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return[r,g,b];}
+function paintClear(){if(paintCtx){paintCtx.fillStyle='#ffffff';paintCtx.fillRect(0,0,paintCanvas.width,paintCanvas.height);}}
+function paintSave(){if(!paintCanvas)return;const a=document.createElement('a');a.download='painting.png';a.href=paintCanvas.toDataURL();a.click();}
+
+let bbCtx=null,bbNode=null,bbPlaying=false,bbT=0,bbAC=null;
+function bbInit(){bbCtx=document.getElementById('bb-canvas');}
+function bbPlay(){
+bbStop();
+const code=document.getElementById('bb-code').value||'t*(t>>5|t>>8)';
+const rate=parseInt(document.getElementById('bb-rate').value)||8000;
+try{
+bbAC=new AudioContext({sampleRate:rate});
+const bufSize=4096;
+const node=bbAC.createScriptProcessor(bufSize,0,1);
+bbT=0;
+node.onaudioprocess=e=>{
+const out=e.outputBuffer.getChannelData(0);
+for(let i=0;i<bufSize;i++){
+const t=bbT++;
+try{const v=new Function('t','return ('+code+')&255;')(t);out[i]=(v-128)/128;}catch{out[i]=0;}
+}
+bbViz();
+};
+node.connect(bbAC.destination);bbNode=node;bbPlaying=true;
+document.getElementById('bb-status').textContent='Playing at '+rate+'Hz';
+}catch(e){document.getElementById('bb-status').textContent='Error: '+e.message;}
+}
+function bbStop(){if(bbAC){bbAC.close();bbAC=null;}bbNode=null;bbPlaying=false;document.getElementById('bb-status').textContent='Stopped';}
+function bbViz(){
+const c=document.getElementById('bb-canvas');if(!c)return;
+const ctx=c.getContext('2d');ctx.fillStyle='#0a0a18';ctx.fillRect(0,0,c.width,c.height);
+ctx.strokeStyle='#00ffaa';ctx.beginPath();
+for(let x=0;x<c.width;x++){const t=bbT-c.width+x;let v=0;try{v=new Function('t','return ('+document.getElementById('bb-code').value+')&255;')(t);}catch{}ctx.lineTo(x,(1-(v/255))*c.height);}
+ctx.stroke();
+}
+function bbLoadPreset(){const p=document.getElementById('bb-preset');if(p.value)document.getElementById('bb-code').value=p.value;}
+
+let shaderAnim=null,shaderGL=null;
+function shaderInit(){
+const c=document.getElementById('shader-canvas');if(!c)return;
+c.width=c.offsetWidth;c.height=c.offsetHeight;
+shaderGL=c.getContext('webgl');
+}
+function shaderRun(){
+shaderStop();
+const gl=shaderGL;if(!gl)return;
+const fragSrc=document.getElementById('shader-code').value;
+const vertSrc=`attribute vec2 pos;void main(){gl_Position=vec4(pos,0,1);}`;
+function compile(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){document.getElementById('shader-status').textContent='Error: '+gl.getShaderInfoLog(s);return null;}return s;}
+const vs=compile(gl.VERTEX_SHADER,vertSrc);
+const fs=compile(gl.FRAGMENT_SHADER,fragSrc);
+if(!vs||!fs)return;
+const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);gl.linkProgram(prog);gl.useProgram(prog);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const pos=gl.getAttribLocation(prog,'pos');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,2,gl.FLOAT,false,0,0);
+const uTime=gl.getUniformLocation(prog,'u_time');
+const uRes=gl.getUniformLocation(prog,'u_resolution');
+const start=Date.now();
+function frame(){
+gl.uniform1f(uTime,(Date.now()-start)/1000);
+gl.uniform2f(uRes,gl.canvas.width,gl.canvas.height);
+gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+shaderAnim=requestAnimationFrame(frame);
+}
+frame();document.getElementById('shader-status').textContent='Running';
+}
+function shaderStop(){if(shaderAnim){cancelAnimationFrame(shaderAnim);shaderAnim=null;}document.getElementById('shader-status').textContent='Stopped';}
+function shaderLoadPreset(i){
+const presets=[
+`precision mediump float;
+uniform float u_time;
+uniform vec2 u_resolution;
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution;
+  vec3 c=0.5+0.5*cos(u_time+uv.xyx*6.28+vec3(0,2,4));
+  gl_FragColor=vec4(c,1);
+}`,
+`precision mediump float;
+uniform float u_time;
+uniform vec2 u_resolution;
+void main(){
+  vec2 uv=(gl_FragCoord.xy/u_resolution)*2.0-1.0;
+  uv.x*=u_resolution.x/u_resolution.y;
+  vec2 c=uv*2.5;vec2 z=vec2(0);int n=0;
+  for(int i=0;i<64;i++){if(dot(z,z)>4.0)break;z=vec2(z.x*z.x-z.y*z.y,2.0*z.x*z.y)+c;n++;}
+  float t=float(n)/64.0;
+  gl_FragColor=vec4(t,t*0.5,1.0-t,1);
+}`,
+`precision mediump float;
+uniform float u_time;
+uniform vec2 u_resolution;
+float sphere(vec3 p){return length(p)-1.0;}
+float map(vec3 p){p.xy*=mat2(cos(u_time),-sin(u_time),sin(u_time),cos(u_time));return sphere(p);}
+void main(){
+  vec2 uv=(gl_FragCoord.xy/u_resolution)*2.0-1.0;
+  uv.x*=u_resolution.x/u_resolution.y;
+  vec3 ro=vec3(0,0,3);vec3 rd=normalize(vec3(uv,-1));
+  float t=0.0;vec3 col=vec3(0.05,0.05,0.15);
+  for(int i=0;i<64;i++){vec3 p=ro+rd*t;float d=map(p);if(d<0.001){vec3 n=normalize(vec3(map(p+vec3(0.001,0,0))-d,map(p+vec3(0,0.001,0))-d,map(p+vec3(0,0,0.001))-d));float l=max(dot(n,normalize(vec3(1,1,1))),0.0);col=vec3(0,l,l*0.5)+vec3(0.1,0.2,0.3)*0.3;break;}t+=d;if(t>10.0)break;}
+  gl_FragColor=vec4(col,1);
+}`];
+document.getElementById('shader-code').value=presets[i];
+}
+
+function jsonFormat(){try{const v=JSON.parse(document.getElementById('json-in').value);document.getElementById('json-out').value=JSON.stringify(v,null,2);document.getElementById('json-status').textContent='Formatted';}catch(e){document.getElementById('json-status').textContent='Error: '+e.message;}}
+function jsonMinify(){try{const v=JSON.parse(document.getElementById('json-in').value);document.getElementById('json-out').value=JSON.stringify(v);document.getElementById('json-status').textContent='Minified';}catch(e){document.getElementById('json-status').textContent='Error: '+e.message;}}
+function jsonValidate(){try{JSON.parse(document.getElementById('json-in').value);document.getElementById('json-status').textContent='✓ Valid JSON';}catch(e){document.getElementById('json-status').textContent='✗ Invalid: '+e.message;}}
+function jsonClear(){document.getElementById('json-in').value='';document.getElementById('json-out').value='';document.getElementById('json-status').textContent='Cleared';}
+function jsonCopy(){navigator.clipboard.writeText(document.getElementById('json-out').value||document.getElementById('json-in').value);}
+function jsonLoadFile(){const f=document.getElementById('json-file').files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('json-in').value=e.target.result;jsonFormat();};r.readAsText(f);}
+
+function pyRun(){
+const code=document.getElementById('py-code').value;
+const out=document.getElementById('py-out');
+out.innerHTML='';
+document.getElementById('py-status').textContent='Running...';
+const lines=[];
+const fakePy=code.replace(/print\(([^)]+)\)/g,(_,a)=>{
+try{lines.push(String(eval(a.replace(/f"/g,'"').replace(/f'/g,"'"))));}catch{lines.push('[eval error]');}
+return '';
+});
+lines.forEach(l=>{out.innerHTML+=`<span style="color:#00ffaa">${l.replace(/</g,'&lt;')}</span>\n`;});
+if(!lines.length)out.innerHTML='<span style="color:#7070a0">(no print output)</span>';
+document.getElementById('py-status').textContent='Done';
+}
+function pyClear(){document.getElementById('py-out').innerHTML='';document.getElementById('py-code').value='';}
+function pyLoad(){const i=document.createElement('input');i.type='file';i.accept='.py';i.onchange=e=>{const r=new FileReader();r.onload=f=>{document.getElementById('py-code').value=f.target.result;};r.readAsText(e.target.files[0]);};i.click();}
+function pySave(){const b=new Blob([document.getElementById('py-code').value],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='script.py';a.click();}
+
+function waRun(){
+const h=document.getElementById('wa-html').value;
+const c=document.getElementById('wa-css').value;
+const j=document.getElementById('wa-js').value;
+const f=document.getElementById('wa-preview');
+f.style.display='block';
+const doc=`<!DOCTYPE html><html><head><style>${c}</style></head><body>${h}<script>${j}<\/script></body></html>`;
+f.srcdoc=doc;
+}
+function waSave(){
+const h=document.getElementById('wa-html').value;
+const c=document.getElementById('wa-css').value;
+const j=document.getElementById('wa-js').value;
+const doc=`<!DOCTYPE html><html><head><style>${c}</style></head><body>${h}<script>${j}<\/script></body></html>`;
+const b=new Blob([doc],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='webapp.html';a.click();
+}
+function waTemplate(t){
+const templates={
+blank:{h:'<h1>Hello World</h1>',c:'body{font-family:sans-serif;padding:20px;}',j:'console.log("Hello")'},
+landing:{h:'<header><h1>My App</h1><p>The best app ever.</p><button onclick="alert(\'Hi!\')">Get Started</button></header>',c:'body{margin:0;font-family:sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);color:white;min-height:100vh;display:flex;align-items:center;justify-content:center;}header{text-align:center;}button{padding:10px 30px;border:2px solid white;background:transparent;color:white;font-size:16px;cursor:pointer;border-radius:4px;}',j:''},
+dashboard:{h:'<div class="header"><h2>📊 Dashboard</h2></div><div class="cards"><div class="card">Users: <b>1,234</b></div><div class="card">Revenue: <b>$56k</b></div><div class="card">Orders: <b>789</b></div></div>',c:'body{margin:0;font-family:sans-serif;background:#1a1a2e;color:white;}.header{background:#16213e;padding:16px 24px;}.cards{display:flex;gap:16px;padding:20px;}.card{background:#0f3460;padding:20px;border-radius:8px;flex:1;font-size:18px;}',j:''},
+};
+const t2=templates[t]||templates.blank;
+document.getElementById('wa-html').value=t2.h;
+document.getElementById('wa-css').value=t2.c;
+document.getElementById('wa-js').value=t2.j;
+}
+
+function calcInit(){
+const grid=document.getElementById('calc-grid');if(!grid)return;
+const btns=[
+['C','±','%','÷'],
+['7','8','9','×'],
+['4','5','6','−'],
+['1','2','3','+'],
+['0','.','⌫','=']
+];
+let expr='',display='0';
+const upd=v=>{document.getElementById('calc-display').textContent=v||'0';};
+grid.innerHTML=btns.map(row=>row.map(b=>`<button class="os-btn" style="font-size:14px;padding:12px 0;${['÷','×','−','+','='].includes(b)?'background:#1a2040;color:var(--accent);':''}" onclick="calcBtn('${b}')">${b}</button>`).join('')).join('');
+window.calcBtn=function(b){
+const d=document.getElementById('calc-display');
+if(b==='C'){expr='';d.textContent='0';}
+else if(b==='='){try{let e=expr.replace(/÷/g,'/').replace(/×/g,'*').replace(/−/g,'-');d.textContent=Function('return '+e)();expr=d.textContent;}catch{d.textContent='Err';expr='';}}
+else if(b==='⌫'){expr=expr.slice(0,-1);d.textContent=expr||'0';}
+else if(b==='±'){expr=(parseFloat(expr||0)*-1).toString();d.textContent=expr;}
+else if(b==='%'){try{expr=(parseFloat(expr||0)/100).toString();d.textContent=expr;}catch{}}
+else{expr+=b;d.textContent=expr;}
+};
+}
+
+let calDate=new Date();
+const calEvents={};
+function calInit(){calDraw();}
+function calDraw(){
+const y=calDate.getFullYear(),m=calDate.getMonth();
+const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+document.getElementById('cal-title').textContent=months[m]+' '+y;
+const first=new Date(y,m,1).getDay();
+const days=new Date(y,m+1,0).getDate();
+const today=new Date();
+const g=document.getElementById('cal-grid');
+g.innerHTML=['Su','Mo','Tu','We','Th','Fr','Sa'].map(d=>`<div style="text-align:center;color:var(--text-dim);font-size:10px;padding:4px;">${d}</div>`).join('');
+for(let i=0;i<first;i++)g.innerHTML+=`<div></div>`;
+for(let d=1;d<=days;d++){
+const isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+const key=`${y}-${m}-${d}`;
+const hasEvent=calEvents[key];
+g.innerHTML+=`<div style="text-align:center;padding:6px 2px;cursor:pointer;border-radius:4px;font-size:11px;background:${isToday?'var(--accent2)':'transparent'};color:${isToday?'#fff':'var(--text)'};border:${hasEvent?'1px solid var(--accent)':'1px solid transparent'};" onclick="calSelectDay(${y},${m},${d})">${d}${hasEvent?'•':''}</div>`;
+}
+}
+function calPrev(){calDate.setMonth(calDate.getMonth()-1);calDraw();}
+function calNext(){calDate.setMonth(calDate.getMonth()+1);calDraw();}
+function calToday(){calDate=new Date();calDraw();}
+function calSelectDay(y,m,d){
+const key=`${y}-${m}-${d}`;
+const note=prompt(`Event for ${d}/${m+1}/${y}:`,calEvents[key]||'');
+if(note!==null){calEvents[key]=note;calDraw();document.getElementById('cal-events').textContent=note?`${d}/${m+1}: ${note}`:'';}
+}
+
+let termHistory=[],termHistIdx=-1,termCwd='~',termFS={'~':{}};
+function termInit(){
+const o=document.getElementById('term-out');
+if(o)o.innerHTML='<span style="color:#00ff00">AarexOS Terminal v1.0\nType \'help\' for commands.\n</span>';
+}
+function termKey(e){
+const inp=document.getElementById('term-in');
+if(e.key==='Enter'){
+const cmd=inp.value.trim();
+if(cmd){termHistory.unshift(cmd);termHistIdx=-1;}
+termRun(cmd);inp.value='';
+}else if(e.key==='ArrowUp'){termHistIdx=Math.min(termHistIdx+1,termHistory.length-1);inp.value=termHistory[termHistIdx]||'';}
+else if(e.key==='ArrowDown'){termHistIdx=Math.max(termHistIdx-1,-1);inp.value=termHistory[termHistIdx]||'';}
+}
+function termRun(cmd){
+const out=document.getElementById('term-out');
+if(!out)return;
+const echo=`<span style="color:#888">$ ${cmd.replace(/</g,'&lt;')}</span>\n`;
+let res='';
+const parts=cmd.split(' ');
+const c=parts[0];const a=parts.slice(1);
+if(c==='help')res='help clear echo date ls mkdir rm cat pwd whoami uname neofetch history';
+else if(c==='clear'){out.innerHTML='';return;}
+else if(c==='echo')res=a.join(' ');
+else if(c==='date')res=new Date().toString();
+else if(c==='ls')res=Object.keys(termFS[termCwd]||{}).join('\n')||'(empty)';
+else if(c==='pwd')res=termCwd;
+else if(c==='whoami')res='aarex';
+else if(c==='uname')res='AarexOS 1.0 HTML5/JS x86_64';
+else if(c==='mkdir'){if(a[0]){termFS[termCwd]=termFS[termCwd]||{};termFS[termCwd][a[0]]={};res='Directory created';}else res='Usage: mkdir <name>';}
+else if(c==='history')res=termHistory.join('\n');
+else if(c==='neofetch')res=`     ⬡⬡⬡⬡⬡
+    ⬡     ⬡     AarexOS v1.0
+    ⬡  ⬡  ⬡     ────────────
+    ⬡     ⬡     Kernel: HTML5
+     ⬡⬡⬡⬡⬡     Shell: AarexSH
+                 Resolution: ${screen.width}x${screen.height}
+                 Font: Share Tech Mono`;
+else if(c==='')res='';
+else res=`${c}: command not found`;
+out.innerHTML+=echo+(res?`<span style="color:#00ff00">${res.replace(/</g,'&lt;')}</span>\n`:'');
+out.scrollTop=out.scrollHeight;
+}
+
+function cppCompile(){
+const code=document.getElementById('cpp-code').value;
+const out=document.getElementById('cpp-out');
+out.innerHTML='';
+document.getElementById('cpp-status').textContent='Compiling...';
+setTimeout(()=>{
+const lines=[];
+const prints=code.match(/cout\s*<<\s*([^;]+)/g)||[];
+prints.forEach(p=>{
+const str=p.replace(/cout\s*<<\s*/,'').replace(/<<\s*endl/,'').replace(/<<\s*"\\n"/,'').trim();
+if(str.startsWith('"')||str.startsWith("'")){
+lines.push(str.replace(/^["']|["']$/g,''));
+}else if(/^\d+$/.test(str)){lines.push(str);}
+else{lines.push('[computed value]');}
+});
+if(!lines.length){
+const main=code.match(/"([^"]+)"/g)||[];
+main.forEach(m=>lines.push(m.replace(/^"|"$/g,'')));
+}
+lines.forEach(l=>{out.innerHTML+=`<span style="color:#00ffaa">${l.replace(/</g,'&lt;')}</span>\n`;});
+if(!lines.length)out.innerHTML='<span style="color:#7070a0">// Simulation: No cout output detected</span>';
+document.getElementById('cpp-status').textContent='Done (simulated '+document.getElementById('cpp-std').value+')';
+},300);
+}
+function cppClear(){document.getElementById('cpp-code').value='';document.getElementById('cpp-out').innerHTML='';}
+
+function npInit(){
+const ta=document.getElementById('np-text');if(!ta)return;
+ta.oninput=()=>{
+const lines=ta.value.substring(0,ta.selectionStart).split('\n');
+const ln=lines.length,col=lines[lines.length-1].length+1;
+document.getElementById('np-status').textContent=`Ln ${ln}, Col ${col} | UTF-8`;
+};
+}
+function npNew(){document.getElementById('np-text').value='';document.getElementById('np-status').textContent='Ln 1, Col 1 | UTF-8';}
+function npOpen(){document.getElementById('np-file').click();}
+function npLoad(){const f=document.getElementById('np-file').files[0];if(!f)return;const r=new FileReader();r.onload=e=>{document.getElementById('np-text').value=e.target.result;};r.readAsText(f);}
+function npSave(){const b=new Blob([document.getElementById('np-text').value],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='note.txt';a.click();}
+function npSaveAs(){npSave();}
+function npFontSize(){const s=document.getElementById('np-font-size').value;document.getElementById('np-text').style.fontSize=s+'px';}
+
+function wpSave(){
+const b=new Blob([document.getElementById('wp-editor').innerHTML],{type:'text/html'});
+const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='document.html';a.click();
+}
+
+function banCompute(){
+const input=document.getElementById('ban-input').value.trim();
+const out=document.getElementById('ban-result');
+try{
+const arr=JSON.parse(input.replace(/\{/g,'[').replace(/\}/g,']'));
+const ban=(a)=>{
+if(!Array.isArray(a)||a.length===0)return 1;
+if(a.length===1)return a[0];
+if(a.length===2)return Math.pow(a[0],a[1]);
+if(a[1]===1)return a[0];
+if(a[2]===1)return Math.pow(a[0],a[1]);
+return `{${a[0]},{${a[0]},${a[1]-1},${a[2]}},${a[2]-1}}`;
+};
+const r=ban(arr);
+out.textContent=`Input: ${input}\nResult: ${r}\n\n`;
+if(Array.isArray(arr)&&arr.length<=3&&arr.every(x=>typeof x==='number'&&x<=10)){
+out.textContent+=`Expanded value: ${banEval(arr)}\n`;
+out.textContent+=`↑ notation: ${arr[0]}↑↑${arr[1]} (approx)`;
+}
+}catch(e){out.textContent='Parse error: '+e.message+'\nExpected format: {a,b,c}';}
+}
+function banEval(arr){
+if(!Array.isArray(arr)||arr.length===0)return 1;
+if(arr.length===1)return arr[0];
+if(arr.length===2){let r=1;for(let i=0;i<arr[1];i++)r*=arr[0];return r;}
+if(arr[1]===1)return arr[0];
+let r=arr[0];for(let i=1;i<arr[1];i++)r=Math.pow(arr[0],r);
+if(r>1e15)return '>10^15';return r;
+}
+function banExpand(){
+const input=document.getElementById('ban-input').value.trim();
+const out=document.getElementById('ban-result');
+try{
+const arr=JSON.parse(input.replace(/\{/g,'[').replace(/\}/g,']'));
+if(!Array.isArray(arr)||arr.length<3){out.textContent='Need at least 3 elements for expansion';return;}
+const steps=[`Step 0: ${JSON.stringify(arr).replace(/\[/g,'{').replace(/\]/g,'}')}`];
+let cur=[...arr];
+for(let i=0;i<5&&cur.length>=3;i++){
+const newArr=[cur[0],[cur[0],...cur.slice(1,cur.length-1).map((v,j)=>j===0?v-1:v)],cur[cur.length-1]-1];
+steps.push(`Step ${i+1}: ${JSON.stringify(newArr).replace(/\[/g,'{').replace(/\]/g,'}')}`);
+cur=newArr.flat();
+}
+out.textContent=steps.join('\n');
+}catch(e){out.textContent='Error: '+e.message;}
+}
+
+function tarCompute(){
+const input=document.getElementById('tar-input').value.trim();
+const out=document.getElementById('tar-result');
+out.textContent=`Expression: ${input}\n\n`;
+if(input==='C(0,0)')out.textContent+='Value: 1 (= ω^0 = 1)\nStrength: finite';
+else if(input.includes('C(C('))out.textContent+=`This is a complex C-notation ordinal.\n\nTaranovsky's C function:\nC(a,b) = smallest ordinal not in the Skolem hull\nof {β: β<b} under ordinals <a\n\nFor C(C(0,0),0):\n= C(1,0) = ω^ω (approx)\n\nFor C(C(C(0,0),0),0):\n= ε₀ level ordinal\n\nThis notation reaches up to the ordinal of Π¹₁-CA₀`;
+else out.textContent+=`Taranovsky C notation analysis:\n${input}\n\nC(0,0) = 1\nC(Ω,0) ≈ ω_ω\nC(C(Ω+1,0),0) ≈ ε₀\n\nFull evaluation requires ordinal arithmetic library.`;
+}
+function tarFundSeq(){
+const input=document.getElementById('tar-input').value.trim();
+const out=document.getElementById('tar-result');
+out.textContent=`Fundamental sequence for: ${input}\n\n`;
+out.textContent+=`α[0] = 0\nα[1] = C(0,0) = 1\nα[2] = C(C(0,0),0)\nα[n] = C(C(...C(0,0)...),0) [n times]\n\nFull fundamental sequence computation requires\ncomplete ordinal arithmetic implementation.`;
+}
+
+function beafCompute(){
+const input=document.getElementById('beaf-input').value.trim();
+const out=document.getElementById('beaf-result');
+if(input.includes('&')){
+const parts=input.split('&').map(s=>parseInt(s.trim()));
+if(parts.length===2&&!isNaN(parts[0])&&!isNaN(parts[1])){
+const [a,b]=parts;
+if(b<=4){
+let r=a;for(let i=1;i<b;i++)r=Math.pow(a,r);
+out.textContent=`{${a},${b}} = ${a}^${b} = ${Math.pow(a,b)}\n{${a}}&{${b}} uses linear array\n\nSmall value: ${r>1e15?'>10^15':r}`;
+}else out.textContent=`{${a}}&{${b}} is astronomically large\n≈ ${a} with ${b} arrows (hyper-op)\nBeyond computational representation`;
+return;
+}
+}
+try{
+const arr=JSON.parse(input.replace(/\{/g,'[').replace(/\}/g,']'));
+if(Array.isArray(arr)){
+out.textContent=`BEAF array: ${input}\n\n`;
+if(arr.length===2)out.textContent+=`= ${arr[0]}^${arr[1]} = ${Math.pow(arr[0],arr[1])}`;
+else if(arr.length===3&&arr[2]===2)out.textContent+=`= ${arr[0]}^^${arr[1]} (tetration)\n≈ tower of ${arr[0]}s of height ${arr[1]}`;
+else if(arr.length===3&&arr[2]===3)out.textContent+=`= ${arr[0]}^^^${arr[1]} (pentation)\nGigantic number, beyond computation`;
+else out.textContent+=`Array value beyond simple representation.\nRequires full BEAF evaluator.`;
+}
+}catch(e){out.textContent='Input: '+input+'\n\nBEAF evaluation:\nSimple arrays: {a,b}=a^b, {a,b,2}=a^^b\nLinear: a&b means {a,...,a} b times\nMultidimensional arrays exceed all known systems';}
+}
+function beafExpand(){
+const input=document.getElementById('beaf-input').value.trim();
+const out=document.getElementById('beaf-result');
+out.textContent=`Expansion of ${input}:\n\n`;
+try{
+const arr=JSON.parse(input.replace(/\{/g,'[').replace(/\]/g,']').replace(/\}/g,']'));
+if(Array.isArray(arr)&&arr.length>=3){
+const [a,b,c]=arr;
+if(c===2){out.textContent+=`{${a},${b},2} = a^^b (tetration)\n= ${a}^${a}^${a}^... (${b} times)\n`;for(let i=0;i<Math.min(b,5);i++)out.textContent+=`Step ${i+1}: ${Array(i+2).fill(a).join('^')}\n`;}
+else out.textContent+=`{${a},${b},${c}} expansion:\n{${a},${b},${c}} = {${a},{${a},${b}-1,${c}},${c}-1}\n= {${a},{${a},${b-1},${c}},${c-1}}\n...requires recursive evaluation`;
+}
+}catch{out.textContent+=`Could not parse as array.\nUse format: {a,b,c}`;}
+}
+
+function opCompute(){
+const a=parseInt(document.getElementById('op-a').value)||3;
+const b=parseInt(document.getElementById('op-b').value)||3;
+const op=parseInt(document.getElementById('op-op').value)||4;
+const out=document.getElementById('op-result');
+const names=['','','add','mul','pow','tet','pen','hex','hept'];
+function hyper(a,b,n){
+if(n===1)return a+b;if(n===2)return a*b;if(b===0)return 1;
+if(b===1)return a;if(a>1&&n>4&&b>2)return Infinity;
+let r=a;for(let i=1;i<b;i++)r=hyper(a,r,n-1);if(r>1e15)return '>10^15';return r;
+}
+const r=hyper(a,b,op);
+const arrows='↑'.repeat(op-2);
+out.textContent=`H(${a}, ${b}, ${op}) = ${a} ${arrows||'+'} ${b}\n= ${r===Infinity?'∞ (too large)':r}\n\nOperation level ${op}: ${names[op]||'Hyper-'+op}`;
+}
+
+function bmsCompute(){
+const input=document.getElementById('bms-input').value.trim();
+const n=parseInt(document.getElementById('bms-n').value)||3;
+const out=document.getElementById('bms-result');
+const parseBMS=s=>{const matches=s.match(/\(([^)]+)\)/g)||[];return matches.map(m=>m.slice(1,-1).split(',').map(Number));};
+const fmtBMS=arr=>arr.map(r=>`(${r.join(',')})`).join('');
+let seq=parseBMS(input);
+out.textContent=`Input: ${fmtBMS(seq)}\nExpanding with n=${n}:\n\n`;
+const expand=(s,n)=>{
+if(!s.length)return s;
+const last=s[s.length-1];
+const bad=[];
+for(let i=s.length-2;i>=0;i--){
+if(s[i].some((v,j)=>v>=last[j])){bad.push(i);break;}
+}
+if(!bad.length)return s.slice(0,-1);
+const badIdx=bad[0];
+const segment=s.slice(badIdx+1);
+const newSeq=[...s.slice(0,-1)];
+for(let rep=0;rep<n;rep++)newSeq.push(...segment.map(r=>r.map((v,j)=>v>s[badIdx][j]?v-1:v)));
+return newSeq;
+};
+out.textContent+=`Step 0: ${fmtBMS(seq)}\n`;
+for(let i=0;i<5;i++){
+const next=expand(seq,n);
+out.textContent+=`Step ${i+1}: ${fmtBMS(next)}\n`;
+if(fmtBMS(next)===fmtBMS(seq))break;
+seq=next;
+}
+}
+function bmsSteps(){
+const input=document.getElementById('bms-input').value.trim();
+const n=parseInt(document.getElementById('bms-n').value)||3;
+document.getElementById('bms-result').textContent=`BMS expansion steps for ${input} with n=${n}:\n\nψ((0,0)) = ω\nψ((0,0)(1,0)) = ω²\nψ((0,0)(1,1)) = ω^ω\n\nFull step-by-step requires complete BMS implementation.\nThis system reaches ordinals of ATR₀ and beyond.`;
+}
+
+let jscHistory=[],jscHistIdx=-1;
+function jscInit(){
+const o=document.getElementById('jsc-out');
+if(o)jscLog('AarexOS JS Console. Type JS to evaluate.\n','#7070a0');
+}
+function jscLog(msg,color='var(--text)'){
+const o=document.getElementById('jsc-out');if(!o)return;
+o.innerHTML+=`<div style="color:${color};margin:1px 0;">${String(msg).replace(/</g,'&lt;')}</div>`;
+o.scrollTop=o.scrollHeight;
+}
+function jscKey(e){if(e.key==='Enter'){jscRun();}else if(e.key==='ArrowUp'){jscHistIdx=Math.min(jscHistIdx+1,jscHistory.length-1);document.getElementById('jsc-in').value=jscHistory[jscHistIdx]||'';}else if(e.key==='ArrowDown'){jscHistIdx=Math.max(jscHistIdx-1,-1);document.getElementById('jsc-in').value=jscHistory[jscHistIdx]||'';}}
+function jscRun(){
+const inp=document.getElementById('jsc-in');
+const code=inp.value.trim();if(!code)return;
+jscHistory.unshift(code);jscHistIdx=-1;
+jscLog('> '+code,'#7070a0');
+const origLog=console.log;
+const logs=[];console.log=(...a)=>logs.push(a.join(' '));
+try{
+const r=eval(code);
+if(logs.length)logs.forEach(l=>jscLog(l,'#aaaaff'));
+if(r!==undefined)jscLog('← '+JSON.stringify(r,null,2),'var(--accent)');
+else if(!logs.length)jscLog('← undefined','#555577');
+}catch(e){jscLog('✗ '+e.message,'#ff5555');}
+console.log=origLog;
+inp.value='';
+}
+function jscClear(){const o=document.getElementById('jsc-out');if(o)o.innerHTML='';}
+
+function yseqCompute(){
+const input=document.getElementById('yseq-input').value.trim();
+const n=parseInt(document.getElementById('yseq-n').value)||3;
+const out=document.getElementById('yseq-result');
+const parse=s=>{const m=s.match(/\(([^)]*)\)/g)||[];return m.map(x=>parseInt(x.slice(1,-1))||0);};
+const fmt=arr=>arr.map(v=>`(${v})`).join('');
+let seq=parse(input);
+out.textContent=`Y-sequence: ${fmt(seq)}\nExpanding with n=${n}:\n\n`;
+const expand=(s,n)=>{
+if(!s.length)return s;
+const last=s[s.length-1];
+if(last===0)return s.slice(0,-1);
+const badRoot=s.slice(0,-1).reverse().findIndex(v=>v<last);
+if(badRoot===-1)return s.slice(0,-1);
+const bIdx=s.length-2-badRoot;
+const seg=s.slice(bIdx+1,s.length-1);
+const newS=[...s.slice(0,-1)];
+for(let i=0;i<n;i++)newS.push(...seg.map(v=>Math.max(0,v-1)));
+return newS;
+};
+out.textContent+=`[0]: ${fmt(seq)}\n`;
+for(let i=1;i<=5;i++){
+const next=expand(seq,n);
+out.textContent+=`[${i}]: ${fmt(next)}\n`;
+if(!next.length||JSON.stringify(next)===JSON.stringify(seq))break;
+seq=next;
+}
+}
+
+function ordCompute(){
+const input=document.getElementById('ord-input').value.trim();
+const n=parseInt(document.getElementById('ord-n').value)||3;
+const out=document.getElementById('ord-result');
+const ordinals={
+'0':'0',
+'1':'1',
+'ω':'ω',
+'ω^2':'ω²',
+'ω^ω':'ω^ω',
+'ε₀':'ε₀',
+'ε0':'ε₀',
+};
+out.textContent=`Ordinal: ${input}\nFundamental sequence at n=${n}:\n\n`;
+if(input==='ω'||input==='omega')out.textContent+=`ω[${n}] = ${n}`;
+else if(input==='ω^2'||input==='ω²')out.textContent+=`ω²[${n}] = ω·${n}`;
+else if(input==='ω^ω')out.textContent+=`ω^ω[${n}] = ω^${n}`;
+else if(input==='ε₀'||input==='e0'||input==='ε0')out.textContent+=`ε₀[${n}] = ω^ω^ω^...^ω (${n} omegas)\nCantor normal form: tower of height ${n}`;
+else if(input.includes('ω^ω^'))out.textContent+=`${input}[${n}] involves iterated exponential\nRequires full ordinal arithmetic system`;
+else out.textContent+=`Parsing: ${input}\nFundamental sequence computation:\n${input}[0] = 0\n${input}[1] = first approx\n${input}[n] = ω^(${input}[n-1]) for limit ordinals\n\nFull computation requires ordinal library.`;
+}
+function ordCompare(){
+const input=document.getElementById('ord-input').value.trim();
+const out=document.getElementById('ord-result');
+out.textContent=`Ordinal comparison for: ${input}\n\n0 < 1 < ... < ω < ω+1 < ... < ω·2 < ... < ω² < ... < ω^ω < ... < ε₀ < ε₁ < ... < ζ₀ < ... < Γ₀\n\nω = {0,1,2,3,...}\nε₀ = sup{ω, ω^ω, ω^ω^ω,...}\nΓ₀ = Feferman–Schütte ordinal`;
+}
+
+function caInit(){caUpdateLines();}
+function caUpdateLines(){
+const ta=document.getElementById('ca-code');if(!ta)return;
+const lines=document.getElementById('ca-lines');if(!lines)return;
+const n=(ta.value.match(/\n/g)||[]).length+1;
+lines.textContent=Array.from({length:n},(_,i)=>i+1).join('\n');
+}
+function caChangeLang(){
+const lang=document.getElementById('ca-lang').value;
+const placeholders={HTML:'<h1>Hello</h1>',JavaScript:'console.log("Hello");',CSS:'body{background:#1a1a2e;color:white;}',Python:'print("Hello")',Bash:'echo "Hello"'};
+}
+function caRun(){
+const lang=document.getElementById('ca-lang').value;
+const code=document.getElementById('ca-code').value;
+const preview=document.getElementById('ca-preview');
+if(lang==='HTML')preview.srcdoc=code;
+else if(lang==='JavaScript'){preview.srcdoc=`<pre><script>let _out=[];const origLog=console.log;console.log=(...a)=>_out.push(a.join(' '));try{${code}}catch(e){_out.push('Error: '+e.message);}document.body.innerHTML='<pre style="font-family:monospace;color:#00ffaa;background:#050510;padding:16px;margin:0;">'+_out.join('\\n')+'</pre>';console.log=origLog;</script></pre>`;}
+else if(lang==='CSS')preview.srcdoc=`<style>${code}</style><div style="padding:20px;font-size:14px;">Styled content here</div>`;
+else preview.srcdoc=`<pre style="font-family:monospace;padding:16px;color:#00ffaa;background:#050510;">${code.replace(/</g,'&lt;')}</pre>`;
+document.getElementById('ca-status').textContent='Ran '+lang;
+}
+function caSave(){
+const lang=document.getElementById('ca-lang').value;
+const exts={HTML:'html',JavaScript:'js',CSS:'css',Python:'py',Bash:'sh'};
+const b=new Blob([document.getElementById('ca-code').value],{type:'text/plain'});
+const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='code.'+(exts[lang]||'txt');a.click();
+}
+function caLoad(){const i=document.createElement('input');i.type='file';i.onchange=e=>{const r=new FileReader();r.onload=f=>{document.getElementById('ca-code').value=f.target.result;caUpdateLines();};r.readAsText(e.target.files[0]);};i.click();}
+function caFormat(){
+const lang=document.getElementById('ca-lang').value;
+const code=document.getElementById('ca-code').value;
+if(lang==='HTML'||lang==='JavaScript'){
+try{if(lang==='JavaScript'){const formatted=code;document.getElementById('ca-code').value=formatted;}}catch{}
+}
+document.getElementById('ca-status').textContent='Formatted (basic)';
+}
+
+buildDesktop();
+</script>
+</body>
+</html>

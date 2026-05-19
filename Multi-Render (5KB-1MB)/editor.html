@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+--bg:#000;--bg2:#0a0a0a;--bg3:#111;--bg4:#1a1a1a;--bg5:#222;
+--border:#2a2a2a;--border2:#333;--accent:#e0e0e0;--accent2:#fff;
+--text:#ccc;--text2:#999;--text3:#666;--highlight:#3a7bd5;
+--hl2:#2a5ba5;--red:#c0392b;--green:#27ae60;--yellow:#f39c12;
+}
+body{font-family:'Open Sans',sans-serif;background:var(--bg);color:var(--accent2);height:100vh;overflow:hidden;display:flex;flex-direction:column;font-size:12px;}
+#menubar{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);height:28px;padding:0 8px;gap:0;user-select:none;flex-shrink:0;}
+.menu-item{position:relative;padding:4px 10px;cursor:pointer;font-size:11px;color:var(--text);border-radius:2px;}
+.menu-item:hover,.menu-item.active{background:var(--bg4);color:var(--accent2);}
+.dropdown{display:none;position:absolute;top:100%;left:0;background:var(--bg3);border:1px solid var(--border2);min-width:200px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.8);border-radius:2px;}
+.dropdown.open{display:block;}
+.dd-item{padding:5px 14px;cursor:pointer;color:var(--text);font-size:11px;white-space:nowrap;display:flex;align-items:center;justify-content:space-between;}
+.dd-item:hover{background:var(--highlight);color:#fff;}
+.dd-sep{height:1px;background:var(--border);margin:3px 0;}
+.dd-sub{position:relative;}
+.dd-sub>.dd-item::after{content:'▶';font-size:9px;color:var(--text3);}
+.dd-sub>.dropdown{top:0;left:100%;display:none;}
+.dd-sub:hover>.dropdown{display:block;}
+#workspace{display:flex;flex:1;overflow:hidden;}
+#left-panel{width:200px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+#center-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+#right-panel{width:240px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+#canvas-area{flex:1;position:relative;overflow:hidden;background:#050505;display:flex;align-items:center;justify-content:center;}
+#main-canvas{cursor:crosshair;display:block;}
+#timeline-area{height:160px;background:var(--bg2);border-top:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;}
+.panel-header{background:var(--bg3);padding:5px 10px;font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.panel-section{padding:8px;border-bottom:1px solid var(--border);}
+.section-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.btn{background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:4px 8px;cursor:pointer;font-family:'Open Sans',sans-serif;font-size:10px;border-radius:2px;transition:all .15s;}
+.btn:hover{background:var(--bg5);color:var(--accent2);}
+.btn.active{background:var(--highlight);border-color:var(--highlight);color:#fff;}
+.btn-row{display:flex;gap:4px;flex-wrap:wrap;}
+.prop-row{display:flex;align-items:center;margin-bottom:5px;gap:6px;}
+.prop-label{width:70px;font-size:10px;color:var(--text2);flex-shrink:0;}
+.prop-val{flex:1;background:var(--bg4);border:1px solid var(--border);color:var(--accent2);padding:2px 5px;font-family:'Open Sans',sans-serif;font-size:10px;border-radius:2px;}
+.prop-val:focus{outline:none;border-color:var(--highlight);}
+.slider-wrap{flex:1;display:flex;align-items:center;gap:5px;}
+input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--bg5);border-radius:2px;outline:none;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--highlight);border-radius:50%;cursor:pointer;}
+input[type=range]::-moz-range-thumb{width:10px;height:10px;background:var(--highlight);border-radius:50%;cursor:pointer;border:none;}
+.slider-val{width:36px;text-align:right;font-size:10px;color:var(--text2);}
+.color-swatch{width:20px;height:20px;border-radius:2px;border:1px solid var(--border2);cursor:pointer;flex-shrink:0;}
+select.prop-val{cursor:pointer;}
+option{background:var(--bg3);}
+#layers-list{flex:1;overflow-y:auto;padding:4px;}
+.layer-item{display:flex;align-items:center;padding:4px 6px;margin-bottom:2px;background:var(--bg3);border:1px solid var(--border);border-radius:2px;cursor:pointer;gap:5px;user-select:none;}
+.layer-item:hover{border-color:var(--border2);}
+.layer-item.selected{border-color:var(--highlight);background:rgba(58,123,213,.12);}
+.layer-vis{width:12px;height:12px;background:var(--bg5);border:1px solid var(--border2);border-radius:2px;cursor:pointer;flex-shrink:0;}
+.layer-vis.on{background:var(--highlight);}
+.layer-name{flex:1;font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.layer-type{font-size:9px;color:var(--text3);}
+#timeline-tracks{flex:1;overflow-y:auto;overflow-x:auto;}
+.track-row{display:flex;align-items:center;height:28px;border-bottom:1px solid var(--border);}
+.track-label{width:120px;padding:0 8px;font-size:10px;color:var(--text2);border-right:1px solid var(--border);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.track-content{flex:1;position:relative;height:100%;background:var(--bg3);}
+.track-clip{position:absolute;top:3px;height:22px;background:var(--highlight);border-radius:2px;opacity:.8;cursor:pointer;display:flex;align-items:center;padding:0 4px;font-size:9px;color:#fff;white-space:nowrap;overflow:hidden;}
+.track-clip:hover{opacity:1;}
+#playhead-bar{display:flex;align-items:center;padding:4px 8px;gap:8px;border-bottom:1px solid var(--border);background:var(--bg3);}
+.play-btn{width:22px;height:22px;background:var(--bg5);border:1px solid var(--border2);color:var(--text);cursor:pointer;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:11px;}
+.play-btn:hover{background:var(--highlight);color:#fff;}
+#time-display{font-size:11px;color:var(--accent2);font-family:monospace;letter-spacing:1px;}
+#effects-panel{flex:1;overflow-y:auto;padding:6px;}
+.fx-item{background:var(--bg3);border:1px solid var(--border);border-radius:2px;margin-bottom:5px;overflow:hidden;}
+.fx-header{display:flex;align-items:center;padding:5px 8px;cursor:pointer;gap:6px;}
+.fx-header:hover{background:var(--bg4);}
+.fx-enabled{width:10px;height:10px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.fx-enabled.off{background:var(--text3);}
+.fx-name{flex:1;font-size:10px;color:var(--text);}
+.fx-body{padding:6px 8px;border-top:1px solid var(--border);display:none;}
+.fx-body.open{display:block;}
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99998;align-items:center;justify-content:center;}
+#modal-overlay.show{display:flex;}
+#modal-box{background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:20px;min-width:320px;max-width:500px;z-index:99999;}
+#modal-title{font-size:13px;font-weight:600;margin-bottom:14px;color:var(--accent2);}
+#modal-body{color:var(--text);font-size:11px;line-height:1.6;}
+#modal-footer{margin-top:16px;display:flex;gap:8px;justify-content:flex-end;}
+.modal-btn{padding:5px 14px;border-radius:2px;cursor:pointer;font-size:11px;font-family:'Open Sans',sans-serif;}
+.modal-btn.primary{background:var(--highlight);border:1px solid var(--hl2);color:#fff;}
+.modal-btn.secondary{background:var(--bg5);border:1px solid var(--border2);color:var(--text);}
+.modal-btn:hover{opacity:.85;}
+#status-bar{height:20px;background:var(--bg3);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:16px;flex-shrink:0;}
+.status-item{font-size:10px;color:var(--text3);}
+.blend-select{width:100%;background:var(--bg4);border:1px solid var(--border);color:var(--accent2);padding:3px 5px;font-family:'Open Sans',sans-serif;font-size:10px;border-radius:2px;cursor:pointer;}
+.color-input{width:100%;height:24px;background:var(--bg4);border:1px solid var(--border);border-radius:2px;cursor:pointer;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg2);}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
+.tools-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:6px;}
+.tool-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:5px;cursor:pointer;font-size:14px;border-radius:2px;display:flex;align-items:center;justify-content:center;aspect-ratio:1;}
+.tool-btn:hover{background:var(--bg4);color:var(--accent2);}
+.tool-btn.active{background:var(--highlight);border-color:var(--highlight);color:#fff;}
+#audio-panel{padding:6px;}
+.audio-fx-item{background:var(--bg3);border:1px solid var(--border);border-radius:2px;margin-bottom:5px;overflow:hidden;}
+.afxh{display:flex;align-items:center;padding:5px 8px;cursor:pointer;gap:5px;}
+.afxh:hover{background:var(--bg4);}
+.afxb{padding:6px 8px;border-top:1px solid var(--border);display:none;}
+.afxb.open{display:block;}
+.tab-bar{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);}
+.tab{padding:5px 12px;font-size:10px;color:var(--text2);cursor:pointer;border-right:1px solid var(--border);}
+.tab:hover{color:var(--accent2);}
+.tab.active{color:var(--accent2);background:var(--bg2);border-bottom:2px solid var(--highlight);}
+.tab-panel{display:none;flex:1;overflow-y:auto;}
+.tab-panel.active{display:block;}
+</style>
+</head>
+<body>
+
+<div id="menubar">
+  <div class="menu-item" id="menu-file" onclick="toggleMenu('file')">File
+    <div class="dropdown" id="dd-file">
+      <div class="dd-item" onclick="uploadImageVideo()">Upload Image / Video</div>
+      <div class="dd-sep"></div>
+      <div class="dd-sub">
+        <div class="dd-item">Export As</div>
+        <div class="dropdown">
+          <div class="dd-item" onclick="exportMedia('png')">Export PNG</div>
+          <div class="dd-item" onclick="exportMedia('jpg')">Export JPG</div>
+          <div class="dd-item" onclick="exportMedia('jpeg')">Export JPEG</div>
+          <div class="dd-item" onclick="exportMedia('mp4')">Export MP4</div>
+          <div class="dd-item" onclick="exportMedia('mov')">Export MOV</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="menu-item" id="menu-edit" onclick="toggleMenu('edit')">Edit
+    <div class="dropdown" id="dd-edit">
+      <div class="dd-item" onclick="doUndo()">Undo <span style="color:var(--text3)">Ctrl+Z</span></div>
+      <div class="dd-item" onclick="doRedo()">Redo <span style="color:var(--text3)">Ctrl+Y</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" onclick="doCopy()">Copy <span style="color:var(--text3)">Ctrl+C</span></div>
+      <div class="dd-item" onclick="doPaste()">Paste <span style="color:var(--text3)">Ctrl+V</span></div>
+    </div>
+  </div>
+  <div class="menu-item" id="menu-effects" onclick="toggleMenu('effects')">Effects
+    <div class="dropdown" id="dd-effects" style="min-width:220px;max-height:400px;overflow-y:auto;">
+      <div class="dd-item" onclick="addEffect('Arithmetic Color')">Arithmetic Color</div>
+      <div class="dd-item" onclick="addEffect('Mirror')">Mirror</div>
+      <div class="dd-item" onclick="addEffect('CC Kaleida')">CC Kaleida</div>
+      <div class="dd-item" onclick="addEffect('CC Tiler')">CC Tiler</div>
+      <div class="dd-item" onclick="addEffect('Halftone')">Halftone</div>
+      <div class="dd-item" onclick="addEffect('Motion Tile')">Motion Tile</div>
+      <div class="dd-item" onclick="addEffect('FlysEyeHex')">FlysEyeHex</div>
+      <div class="dd-item" onclick="addEffect('FlysEyeRect')">FlysEyeRect</div>
+      <div class="dd-item" onclick="addEffect('ZebrafyColor')">ZebrafyColor</div>
+      <div class="dd-item" onclick="addEffect('Median')">Median</div>
+      <div class="dd-item" onclick="addEffect('Shake Position')">Shake Position</div>
+      <div class="dd-item" onclick="addEffect('Shake Rotation')">Shake Rotation</div>
+      <div class="dd-item" onclick="addEffect('Shake Scale')">Shake Scale</div>
+      <div class="dd-item" onclick="addEffect('Cube')">Cube</div>
+      <div class="dd-item" onclick="addEffect('Sphere')">Sphere</div>
+      <div class="dd-item" onclick="addEffect('Cylinder')">Cylinder</div>
+      <div class="dd-item" onclick="addEffect('Oscillator')">Oscillator</div>
+      <div class="dd-item" onclick="addEffect('PseudoColor')">PseudoColor</div>
+      <div class="dd-item" onclick="addEffect('Light Sweep')">Light Sweep</div>
+      <div class="dd-item" onclick="addEffect('Gradient Ramp')">Gradient Ramp</div>
+      <div class="dd-item" onclick="addEffect('EFX RGB Split')">EFX RGB Split</div>
+      <div class="dd-item" onclick="addEffect('Channel Exposure')">Channel Exposure</div>
+      <div class="dd-item" onclick="addEffect('VR360 Transform')">VR360 Transform</div>
+      <div class="dd-item" onclick="addEffect('Chromatic Aberration')">Chromatic Aberration</div>
+      <div class="dd-item" onclick="addEffect('Channel Mixer')">Channel Mixer</div>
+      <div class="dd-item" onclick="addEffect('CC Kernel')">CC Kernel</div>
+      <div class="dd-item" onclick="addEffect('Wave Warp')">Wave Warp</div>
+      <div class="dd-item" onclick="addEffect('CC Lens')">CC Lens</div>
+      <div class="dd-item" onclick="addEffect('Optics Compensation')">Optics Compensation</div>
+      <div class="dd-item" onclick="addEffect('Bloom')">Bloom</div>
+      <div class="dd-item" onclick="addEffect('Shear')">Shear</div>
+      <div class="dd-item" onclick="addEffect('Swirl')">Swirl</div>
+      <div class="dd-item" onclick="addEffect('ZigZag')">ZigZag</div>
+      <div class="dd-item" onclick="addEffect('Text')">Text</div>
+      <div class="dd-item" onclick="addEffect('Checkerboard')">Checkerboard</div>
+      <div class="dd-item" onclick="addEffect('Electric Glow')">Electric Glow</div>
+      <div class="dd-item" onclick="addEffect('Tzatzki Lens')">Tzatzki Lens</div>
+      <div class="dd-item" onclick="addEffect('Petzval Lens')">Petzval Lens</div>
+      <div class="dd-item" onclick="addEffect('Ripple')">Ripple</div>
+      <div class="dd-item" onclick="addEffect('Edge Detect')">Edge Detect</div>
+      <div class="dd-item" onclick="addEffect('Colorama')">Colorama</div>
+      <div class="dd-item" onclick="addEffect('Tint')">Tint</div>
+      <div class="dd-item" onclick="addEffect('Color Balance')">Color Balance</div>
+      <div class="dd-item" onclick="addEffect('White Balance')">White Balance</div>
+      <div class="dd-item" onclick="addEffect('Displacement Map')">Displacement Map</div>
+      <div class="dd-item" onclick="addEffect('Dual Pinch')">Dual Pinch</div>
+      <div class="dd-item" onclick="addEffect('Flo Motion')">Flo Motion</div>
+      <div class="dd-item" onclick="addEffect('Heatmap')">Heatmap</div>
+      <div class="dd-item" onclick="addEffect('Tritone')">Tritone</div>
+      <div class="dd-item" onclick="addEffect('Quadtone')">Quadtone</div>
+      <div class="dd-item" onclick="addEffect('Shape Wipe')">Shape Wipe</div>
+      <div class="dd-item" onclick="addEffect('Wipe')">Wipe</div>
+      <div class="dd-item" onclick="addEffect('Radial Wipe')">Radial Wipe</div>
+      <div class="dd-item" onclick="addEffect('Radial Gradient')">Radial Gradient</div>
+      <div class="dd-item" onclick="addEffect('Hue/Saturation')">Hue/Saturation</div>
+      <div class="dd-item" onclick="addEffect('Invert')">Invert</div>
+      <div class="dd-item" onclick="addEffect('Color Temperature')">Color Temperature</div>
+      <div class="dd-item" onclick="addEffect('Colorize')">Colorize</div>
+      <div class="dd-item" onclick="addEffect('Optical Flow')">Optical Flow</div>
+    </div>
+  </div>
+  <div class="menu-item" id="menu-audio" onclick="toggleMenu('audio')">Audio FX
+    <div class="dropdown" id="dd-audio">
+      <div class="dd-item" onclick="addAudioFX('Flanger')">Flanger</div>
+      <div class="dd-item" onclick="addAudioFX('Phaser')">Phaser</div>
+      <div class="dd-item" onclick="addAudioFX('Echo')">Echo</div>
+      <div class="dd-item" onclick="addAudioFX('Delay')">Delay</div>
+      <div class="dd-item" onclick="addAudioFX('Reverb')">Reverb</div>
+      <div class="dd-item" onclick="addAudioFX('Vocoder')">Vocoder</div>
+      <div class="dd-item" onclick="addAudioFX('Pitch Shift')">Pitch Shift</div>
+      <div class="dd-item" onclick="loadVSTPlugin()">Load VST Plugin (C++)</div>
+    </div>
+  </div>
+  <div class="menu-item" id="menu-plugins" onclick="toggleMenu('plugins')">Plugins
+    <div class="dropdown" id="dd-plugins">
+      <div class="dd-item" onclick="createOpenFXPlugin()">Create OpenFX Plugin (C++)</div>
+      <div class="dd-item" onclick="saveOpenFXPlugin()">Save OpenFX Plugin (C++)</div>
+      <div class="dd-item" onclick="loadOpenFXPlugin()">Load OpenFX Plugin (C++)</div>
+    </div>
+  </div>
+</div>
+
+<div id="workspace">
+  <div id="left-panel">
+    <div class="panel-header">Tools</div>
+    <div class="tools-grid" id="tools-grid"></div>
+    <div class="panel-header">Layers</div>
+    <div id="layers-list"></div>
+    <div style="padding:6px;border-top:1px solid var(--border);display:flex;gap:4px;">
+      <button class="btn" onclick="addLayer('image')" style="flex:1;">+ Image</button>
+      <button class="btn" onclick="addLayer('video')" style="flex:1;">+ Video</button>
+      <button class="btn" onclick="addLayer('text')" style="flex:1;">+ Text</button>
+    </div>
+  </div>
+
+  <div id="center-panel">
+    <div id="canvas-area">
+      <canvas id="main-canvas" width="960" height="540"></canvas>
+    </div>
+    <div id="timeline-area">
+      <div id="playhead-bar">
+        <button class="play-btn" onclick="skipToStart()">⏮</button>
+        <button class="play-btn" id="play-pause-btn" onclick="togglePlayback()">▶</button>
+        <button class="play-btn" onclick="skipToEnd()">⏭</button>
+        <div id="time-display">00:00:00</div>
+        <div style="flex:1;"></div>
+        <div class="prop-row" style="margin:0;gap:6px;">
+          <span style="font-size:10px;color:var(--text3);">Speed</span>
+          <div class="slider-wrap" style="width:80px;">
+            <input type="range" id="video-speed-slider" min="10" max="400" value="100" oninput="setVideoSpeed(this.value)">
+          </div>
+          <span class="slider-val" id="speed-val">1.0x</span>
+        </div>
+      </div>
+      <div id="timeline-tracks"></div>
+    </div>
+  </div>
+
+  <div id="right-panel">
+    <div class="tab-bar">
+      <div class="tab active" onclick="switchTab('props')">Properties</div>
+      <div class="tab" onclick="switchTab('effects')">Effects</div>
+      <div class="tab" onclick="switchTab('audio')">Audio</div>
+    </div>
+
+    <div class="tab-panel active" id="tab-props">
+      <div class="panel-section">
+        <div class="section-label">Transform</div>
+        <div class="prop-row"><span class="prop-label">Position X</span><div class="slider-wrap"><input type="range" class="xslider" min="-960" max="960" value="0" oninput="setPropSlider('posX',this.value)"><span class="slider-val" id="posX-val">0</span></div></div>
+        <div class="prop-row"><span class="prop-label">Position Y</span><div class="slider-wrap"><input type="range" class="xslider" min="-540" max="540" value="0" oninput="setPropSlider('posY',this.value)"><span class="slider-val" id="posY-val">0</span></div></div>
+        <div class="prop-row"><span class="prop-label">Scale</span><div class="slider-wrap"><input type="range" class="xslider" min="1" max="400" value="100" oninput="setPropSlider('scale',this.value)"><span class="slider-val" id="scale-val">100</span></div></div>
+        <div class="prop-row"><span class="prop-label">Rotate</span><div class="slider-wrap"><input type="range" class="xslider" min="-180" max="180" value="0" oninput="setPropSlider('rotate',this.value)"><span class="slider-val" id="rotate-val">0°</span></div></div>
+        <div class="prop-row"><span class="prop-label">Opacity</span><div class="slider-wrap"><input type="range" class="xslider" min="0" max="100" value="100" oninput="setPropSlider('opacity',this.value)"><span class="slider-val" id="opacity-val">100</span></div></div>
+      </div>
+      <div class="panel-section">
+        <div class="section-label">Blend Mode</div>
+        <select class="blend-select" onchange="setBlendMode(this.value)">
+          <option>Normal</option><option>Multiply</option><option>Screen</option><option>Overlay</option>
+          <option>Darken</option><option>Lighten</option><option>Color Dodge</option><option>Color Burn</option>
+          <option>Hard Light</option><option>Soft Light</option><option>Difference</option><option>Exclusion</option>
+          <option>Hue</option><option>Saturation</option><option>Color</option><option>Luminosity</option>
+          <option>Add</option><option>Subtract</option>
+        </select>
+      </div>
+      <div class="panel-section">
+        <div class="section-label">Color</div>
+        <div class="prop-row"><span class="prop-label">Fill</span><input type="color" class="color-input" value="#3a7bd5" onchange="setColor('fill',this.value)"></div>
+        <div class="prop-row"><span class="prop-label">Stroke</span><input type="color" class="color-input" value="#ffffff" onchange="setColor('stroke',this.value)"></div>
+      </div>
+      <div class="panel-section">
+        <div class="section-label">Font</div>
+        <select class="blend-select" id="font-select" onchange="setFont(this.value)">
+          <option>Open Sans</option><option>Arial</option><option>Georgia</option><option>Courier New</option>
+          <option>Times New Roman</option><option>Verdana</option><option>Trebuchet MS</option><option>Impact</option>
+        </select>
+        <div class="prop-row" style="margin-top:5px;"><span class="prop-label">Size</span><div class="slider-wrap"><input type="range" min="8" max="200" value="32" oninput="setFontSize(this.value)"><span class="slider-val" id="fs-val">32px</span></div></div>
+      </div>
+      <div class="panel-section">
+        <div class="section-label">Media</div>
+        <div class="btn-row">
+          <button class="btn" onclick="uploadImageVideo()">Upload</button>
+          <button class="btn" onclick="replaceMedia()">Replace</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-panel" id="tab-effects">
+      <div id="effects-panel"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-audio">
+      <div id="audio-panel"></div>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar">
+  <span class="status-item" id="status-tool">Tool: Select</span>
+  <span class="status-item" id="status-layers">Layers: 0</span>
+  <span class="status-item" id="status-res">960×540</span>
+  <span class="status-item" id="status-fps">30 FPS</span>
+  <span class="status-item" id="status-msg"></span>
+</div>
+
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-box">
+    <div id="modal-title"></div>
+    <div id="modal-body"></div>
+    <div id="modal-footer"></div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*,video/*" style="display:none" onchange="onFileSelected(event)">
+<input type="file" id="vst-input" accept=".dll,.vst,.vst3" style="display:none" onchange="onVSTLoaded(event)">
+<input type="file" id="ofx-input" accept=".ofx,.dll,.so,.dylib" style="display:none" onchange="onOFXLoaded(event)">
+
+<script type="text/babel">
+"use strict";
+
+const state = {
+  layers:[],selectedLayer:null,history:[],historyIndex:-1,clipboard:null,
+  effects:[],audioFX:[],playing:false,currentTime:0,duration:10,
+  videoSpeed:1.0,activeTool:'select',blendMode:'Normal',
+  fillColor:'#3a7bd5',strokeColor:'#ffffff',fontSize:32,fontFamily:'Open Sans',
+  props:{posX:0,posY:0,scale:100,rotate:0,opacity:100},
+  plugins:{ofx:[],vst:[]}
+};
+
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+let glCanvas = null;
+let gl = null;
+let animFrame = null;
+
+function initWebGL(){
+  glCanvas = document.createElement('canvas');
+  glCanvas.width = canvas.width;
+  glCanvas.height = canvas.height;
+  gl = glCanvas.getContext('webgl2') || glCanvas.getContext('webgl');
+}
+initWebGL();
+
+const effectShaders = {
+  'Arithmetic Color':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_mul;uniform float u_add;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);gl_FragColor=vec4(clamp(c.rgb*u_mul+u_add,0.0,1.0),c.a);}`,
+    params:[{name:'Multiply',key:'u_mul',min:0,max:4,def:1},{name:'Add',key:'u_add',min:-1,max:1,def:0}]
+  },
+  'Mirror':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_axis;varying vec2 v_uv;void main(){vec2 uv=v_uv;if(u_axis<0.5&&uv.x>0.5)uv.x=1.0-uv.x;else if(u_axis>=0.5&&uv.y>0.5)uv.y=1.0-uv.y;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Axis(0=H,1=V)',key:'u_axis',min:0,max:1,def:0}]
+  },
+  'CC Kaleida':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_segments;varying vec2 v_uv;void main(){vec2 uv=v_uv-0.5;float a=atan(uv.y,uv.x);float r=length(uv);float seg=3.14159*2.0/u_segments;a=mod(a,seg);if(a>seg/2.0)a=seg-a;vec2 nuv=vec2(cos(a),sin(a))*r+0.5;gl_FragColor=texture2D(u_tex,nuv);}`,
+    params:[{name:'Segments',key:'u_segments',min:2,max:24,def:6}]
+  },
+  'CC Tiler':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_tiles;varying vec2 v_uv;void main(){gl_FragColor=texture2D(u_tex,fract(v_uv*u_tiles));}`,
+    params:[{name:'Tiles',key:'u_tiles',min:1,max:20,def:4}]
+  },
+  'Halftone':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_size;varying vec2 v_uv;void main(){vec2 p=floor(v_uv*u_size)/u_size;vec4 c=texture2D(u_tex,p);float br=dot(c.rgb,vec3(0.299,0.587,0.114));vec2 pp=fract(v_uv*u_size)-0.5;float d=length(pp);gl_FragColor=vec4(vec3(step(d,br*0.5)),c.a);}`,
+    params:[{name:'Size',key:'u_size',min:4,max:80,def:20}]
+  },
+  'Motion Tile':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_offset;varying vec2 v_uv;void main(){vec2 uv=fract(v_uv+vec2(u_offset,0.0));gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Offset',key:'u_offset',min:0,max:1,def:0}]
+  },
+  'FlysEyeHex':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_size;varying vec2 v_uv;void main(){float s=u_size;vec2 p=v_uv*s;vec2 hex=floor(p);vec2 frac2=fract(p);vec2 center=vec2(0.5);if(mod(hex.y,2.0)>0.5)center.x=0.0;vec2 uv=(hex+center)/s;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Size',key:'u_size',min:2,max:40,def:10}]
+  },
+  'FlysEyeRect':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_size;varying vec2 v_uv;void main(){vec2 p=floor(v_uv*u_size)/u_size+0.5/u_size;gl_FragColor=texture2D(u_tex,p);}`,
+    params:[{name:'Size',key:'u_size',min:2,max:40,def:10}]
+  },
+  'ZebrafyColor':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_freq;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float stripe=step(0.5,fract(c.r*u_freq));gl_FragColor=vec4(vec3(stripe),c.a);}`,
+    params:[{name:'Frequency',key:'u_freq',min:1,max:20,def:5}]
+  },
+  'Median':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_radius;varying vec2 v_uv;void main(){vec4 acc=vec4(0.0);float n=0.0;float r=u_radius/512.0;for(int i=-2;i<=2;i++){for(int j=-2;j<=2;j++){acc+=texture2D(u_tex,v_uv+vec2(float(i),float(j))*r);n+=1.0;}}gl_FragColor=acc/n;}`,
+    params:[{name:'Radius',key:'u_radius',min:0,max:10,def:2}]
+  },
+  'Shake Position':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_time;varying vec2 v_uv;void main(){vec2 shake=vec2(sin(u_time*47.0),cos(u_time*31.0))*u_amount*0.02;gl_FragColor=texture2D(u_tex,v_uv+shake);}`,
+    params:[{name:'Amount',key:'u_amount',min:0,max:10,def:1},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'Shake Rotation':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_angle;uniform float u_time;varying vec2 v_uv;void main(){float a=sin(u_time*37.0)*u_angle*0.05;vec2 uv=v_uv-0.5;vec2 rot=vec2(uv.x*cos(a)-uv.y*sin(a),uv.x*sin(a)+uv.y*cos(a));gl_FragColor=texture2D(u_tex,rot+0.5);}`,
+    params:[{name:'Angle',key:'u_angle',min:0,max:45,def:5},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'Shake Scale':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_scale;uniform float u_time;varying vec2 v_uv;void main(){float s=1.0+sin(u_time*41.0)*u_scale*0.05;vec2 uv=(v_uv-0.5)*s+0.5;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Scale',key:'u_scale',min:0,max:20,def:3},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'Cube':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_angle;varying vec2 v_uv;void main(){float a=u_angle*0.01745;vec2 uv=v_uv;float px=fract(uv.x+a/6.2832);gl_FragColor=texture2D(u_tex,vec2(px,uv.y));}`,
+    params:[{name:'Rotation',key:'u_angle',min:0,max:360,def:0}]
+  },
+  'Sphere':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_strength;varying vec2 v_uv;void main(){vec2 p=v_uv*2.0-1.0;float r=length(p);if(r>1.0){gl_FragColor=vec4(0,0,0,1);return;}float z=sqrt(1.0-r*r);float lat=acos(p.y/length(vec2(p.y,z)));float lon=atan(p.x,z);vec2 uv=vec2(lon/6.2832+0.5,lat/3.14159);gl_FragColor=texture2D(u_tex,mix(v_uv,uv,u_strength));}`,
+    params:[{name:'Strength',key:'u_strength',min:0,max:1,def:0.5}]
+  },
+  'Cylinder':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_strength;varying vec2 v_uv;void main(){vec2 p=v_uv;float x=p.x*2.0-1.0;float cx=sin(x*1.5707963)*0.5+0.5;vec2 uv=vec2(mix(p.x,cx,u_strength),p.y);gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Strength',key:'u_strength',min:0,max:1,def:0.5}]
+  },
+  'Oscillator':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_freq;uniform float u_amp;uniform float u_time;varying vec2 v_uv;void main(){vec2 uv=v_uv;uv.x+=sin(uv.y*u_freq+u_time)*u_amp*0.05;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Frequency',key:'u_freq',min:1,max:40,def:10},{name:'Amplitude',key:'u_amp',min:0,max:10,def:2},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'PseudoColor':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_shift;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));float h=fract(br+u_shift);float r=abs(h*6.0-3.0)-1.0;float g=2.0-abs(h*6.0-2.0);float b=2.0-abs(h*6.0-4.0);gl_FragColor=vec4(clamp(vec3(r,g,b),0.0,1.0),c.a);}`,
+    params:[{name:'Shift',key:'u_shift',min:0,max:1,def:0}]
+  },
+  'Light Sweep':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_pos;uniform float u_width;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float d=abs(v_uv.x-u_pos);float sw=smoothstep(u_width,0.0,d);gl_FragColor=vec4(c.rgb+sw*0.8,c.a);}`,
+    params:[{name:'Position',key:'u_pos',min:0,max:1,def:0.5},{name:'Width',key:'u_width',min:0.01,max:0.5,def:0.1}]
+  },
+  'Gradient Ramp':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_blend;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 ramp=mix(vec3(0.0,0.0,0.3),vec3(1.0,0.8,0.0),v_uv.y);gl_FragColor=vec4(mix(c.rgb,ramp,u_blend),c.a);}`,
+    params:[{name:'Blend',key:'u_blend',min:0,max:1,def:0.5}]
+  },
+  'EFX RGB Split':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_offset;varying vec2 v_uv;void main(){float o=u_offset*0.01;float r=texture2D(u_tex,v_uv+vec2(o,0)).r;float g=texture2D(u_tex,v_uv).g;float b=texture2D(u_tex,v_uv-vec2(o,0)).b;gl_FragColor=vec4(r,g,b,1.0);}`,
+    params:[{name:'Offset',key:'u_offset',min:0,max:20,def:3}]
+  },
+  'Channel Exposure':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_r;uniform float u_g;uniform float u_b;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);gl_FragColor=vec4(c.r*pow(2.0,u_r),c.g*pow(2.0,u_g),c.b*pow(2.0,u_b),c.a);}`,
+    params:[{name:'Red EV',key:'u_r',min:-4,max:4,def:0},{name:'Green EV',key:'u_g',min:-4,max:4,def:0},{name:'Blue EV',key:'u_b',min:-4,max:4,def:0}]
+  },
+  'VR360 Transform':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_yaw;varying vec2 v_uv;void main(){float y=u_yaw*0.01745;vec2 uv=vec2(fract(v_uv.x+y/6.2832),v_uv.y);gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Yaw',key:'u_yaw',min:-180,max:180,def:0}]
+  },
+  'Chromatic Aberration':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_strength;varying vec2 v_uv;void main(){vec2 dir=(v_uv-0.5)*u_strength*0.02;float r=texture2D(u_tex,v_uv+dir).r;float g=texture2D(u_tex,v_uv).g;float b=texture2D(u_tex,v_uv-dir).b;gl_FragColor=vec4(r,g,b,1.0);}`,
+    params:[{name:'Strength',key:'u_strength',min:0,max:10,def:2}]
+  },
+  'Channel Mixer':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_rr;uniform float u_gg;uniform float u_bb;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);gl_FragColor=vec4(c.r*u_rr,c.g*u_gg,c.b*u_bb,c.a);}`,
+    params:[{name:'R Gain',key:'u_rr',min:0,max:4,def:1},{name:'G Gain',key:'u_gg',min:0,max:4,def:1},{name:'B Gain',key:'u_bb',min:0,max:4,def:1}]
+  },
+  'CC Kernel':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_sharpen;varying vec2 v_uv;void main(){float s=1.0/512.0;vec4 c=texture2D(u_tex,v_uv)*5.0;c-=texture2D(u_tex,v_uv+vec2(s,0))*u_sharpen;c-=texture2D(u_tex,v_uv-vec2(s,0))*u_sharpen;c-=texture2D(u_tex,v_uv+vec2(0,s))*u_sharpen;c-=texture2D(u_tex,v_uv-vec2(0,s))*u_sharpen;gl_FragColor=clamp(c,0.0,1.0);}`,
+    params:[{name:'Sharpen',key:'u_sharpen',min:0,max:2,def:1}]
+  },
+  'Wave Warp':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_freq;uniform float u_amp;uniform float u_time;varying vec2 v_uv;void main(){vec2 uv=v_uv;uv.y+=sin(uv.x*u_freq+u_time)*u_amp*0.05;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Frequency',key:'u_freq',min:1,max:30,def:8},{name:'Amplitude',key:'u_amp',min:0,max:10,def:2},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'CC Lens':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_size;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);float s=u_size*0.3;float bend=r+s*r*r*r;float scl=r>0.0?bend/r:1.0;vec2 uv=p*scl+0.5;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Size',key:'u_size',min:-5,max:5,def:1}]
+  },
+  'Optics Compensation':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_fov;varying vec2 v_uv;void main(){vec2 p=v_uv*2.0-1.0;float r=length(p);float theta=r*u_fov*0.01;float r2=r>0.0?sin(theta)/u_fov*100.0:0.0;vec2 uv=(r>0.0?p/r*r2:p)*0.5+0.5;gl_FragColor=texture2D(u_tex,clamp(uv,0.0,1.0));}`,
+    params:[{name:'FOV',key:'u_fov',min:1,max:100,def:50}]
+  },
+  'Bloom':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_threshold;uniform float u_intensity;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=max(c.r,max(c.g,c.b));vec4 bloom=vec4(0.0);if(br>u_threshold){float s=1.0/256.0;for(int i=-4;i<=4;i++)for(int j=-4;j<=4;j++){bloom+=texture2D(u_tex,v_uv+vec2(float(i),float(j))*s);}bloom/=81.0;}gl_FragColor=c+bloom*u_intensity;}`,
+    params:[{name:'Threshold',key:'u_threshold',min:0,max:1,def:0.7},{name:'Intensity',key:'u_intensity',min:0,max:5,def:1}]
+  },
+  'Shear':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;varying vec2 v_uv;void main(){vec2 uv=v_uv;uv.x+=u_amount*(uv.y-0.5);gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Amount',key:'u_amount',min:-2,max:2,def:0}]
+  },
+  'Swirl':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_angle;uniform float u_radius;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);float twist=u_angle*max(0.0,u_radius-r)/u_radius;float c2=cos(twist);float s2=sin(twist);vec2 uv=vec2(p.x*c2-p.y*s2,p.x*s2+p.y*c2)+0.5;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Angle',key:'u_angle',min:-10,max:10,def:2},{name:'Radius',key:'u_radius',min:0.1,max:2,def:0.5}]
+  },
+  'ZigZag':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_freq;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);float a=atan(p.y,p.x);float zz=sin(r*u_freq)*u_amount*0.05;a+=zz;vec2 uv=vec2(cos(a),sin(a))*r+0.5;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Amount',key:'u_amount',min:0,max:20,def:5},{name:'Frequency',key:'u_freq',min:1,max:30,def:10}]
+  },
+  'Text':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_alpha;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);gl_FragColor=vec4(c.rgb,c.a*u_alpha);}`,
+    params:[{name:'Opacity',key:'u_alpha',min:0,max:1,def:1}]
+  },
+  'Checkerboard':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_size;uniform float u_blend;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 p=floor(v_uv*u_size);float checker=mod(p.x+p.y,2.0);vec3 cb=mix(vec3(0.0),vec3(1.0),checker);gl_FragColor=vec4(mix(c.rgb,cb,u_blend),c.a);}`,
+    params:[{name:'Size',key:'u_size',min:2,max:40,def:8},{name:'Blend',key:'u_blend',min:0,max:1,def:0.5}]
+  },
+  'Electric Glow':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_intensity;uniform float u_time;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));float glow=pow(br,3.0)*u_intensity*(0.8+0.2*sin(u_time*7.0));gl_FragColor=vec4(c.rgb+vec3(0.0,0.3,1.0)*glow,c.a);}`,
+    params:[{name:'Intensity',key:'u_intensity',min:0,max:10,def:2},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'Tzatzki Lens':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_distort;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);float d=1.0+u_distort*r*r;vec2 uv=p/d+0.5;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Distort',key:'u_distort',min:-5,max:5,def:1}]
+  },
+  'Petzval Lens':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_swirl;uniform float u_blur;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);float angle=u_swirl*r*r;float c2=cos(angle);float s2=sin(angle);vec2 uv=vec2(p.x*c2-p.y*s2,p.x*s2+p.y*c2)+0.5;vec4 col=vec4(0.0);float n=0.0;float bs=u_blur*r*0.02;for(int i=-3;i<=3;i++){col+=texture2D(u_tex,uv+vec2(float(i)*bs,0));n+=1.0;}gl_FragColor=col/n;}`,
+    params:[{name:'Swirl',key:'u_swirl',min:0,max:5,def:1},{name:'Blur',key:'u_blur',min:0,max:5,def:1}]
+  },
+  'Ripple':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_speed;uniform float u_freq;uniform float u_amp;uniform float u_time;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);vec2 uv=v_uv+normalize(p)*(sin(r*u_freq-u_time*u_speed)*u_amp*0.02);gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Speed',key:'u_speed',min:0,max:10,def:3},{name:'Frequency',key:'u_freq',min:1,max:30,def:10},{name:'Amplitude',key:'u_amp',min:0,max:10,def:2},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'Edge Detect':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_strength;varying vec2 v_uv;void main(){float s=1.0/512.0;float tl=dot(texture2D(u_tex,v_uv+vec2(-s,-s)).rgb,vec3(0.33));float t=dot(texture2D(u_tex,v_uv+vec2(0,-s)).rgb,vec3(0.33));float tr=dot(texture2D(u_tex,v_uv+vec2(s,-s)).rgb,vec3(0.33));float l=dot(texture2D(u_tex,v_uv+vec2(-s,0)).rgb,vec3(0.33));float r=dot(texture2D(u_tex,v_uv+vec2(s,0)).rgb,vec3(0.33));float bl=dot(texture2D(u_tex,v_uv+vec2(-s,s)).rgb,vec3(0.33));float b=dot(texture2D(u_tex,v_uv+vec2(0,s)).rgb,vec3(0.33));float br=dot(texture2D(u_tex,v_uv+vec2(s,s)).rgb,vec3(0.33));float gx=(-tl-2.0*l-bl+tr+2.0*r+br);float gy=(-tl-2.0*t-tr+bl+2.0*b+br);float edge=sqrt(gx*gx+gy*gy)*u_strength;gl_FragColor=vec4(vec3(edge),1.0);}`,
+    params:[{name:'Strength',key:'u_strength',min:0,max:10,def:1}]
+  },
+  'Colorama':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_phase;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));float h=fract(br+u_phase);float r=abs(h*6.0-3.0)-1.0;float g=2.0-abs(h*6.0-2.0);float b=2.0-abs(h*6.0-4.0);gl_FragColor=vec4(clamp(vec3(r,g,b),0.0,1.0),c.a);}`,
+    params:[{name:'Phase',key:'u_phase',min:0,max:1,def:0}]
+  },
+  'Tint':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform vec3 u_color;uniform float u_amount;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));gl_FragColor=vec4(mix(c.rgb,u_color*br,u_amount),c.a);}`,
+    params:[{name:'Amount',key:'u_amount',min:0,max:1,def:0.5}]
+  },
+  'Color Balance':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_shadows;uniform float u_mids;uniform float u_highs;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));float shadow=1.0-smoothstep(0.0,0.5,br);float mid=1.0-abs(br-0.5)*2.0;float high=smoothstep(0.5,1.0,br);c.r+=shadow*u_shadows*0.1+mid*u_mids*0.1+high*u_highs*0.1;gl_FragColor=clamp(c,0.0,1.0);}`,
+    params:[{name:'Shadows',key:'u_shadows',min:-10,max:10,def:0},{name:'Midtones',key:'u_mids',min:-10,max:10,def:0},{name:'Highlights',key:'u_highs',min:-10,max:10,def:0}]
+  },
+  'White Balance':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_temp;uniform float u_tint;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);c.r+=u_temp*0.01;c.b-=u_temp*0.01;c.g+=u_tint*0.01;gl_FragColor=clamp(c,0.0,1.0);}`,
+    params:[{name:'Temperature',key:'u_temp',min:-50,max:50,def:0},{name:'Tint',key:'u_tint',min:-50,max:50,def:0}]
+  },
+  'Displacement Map':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_scale;varying vec2 v_uv;void main(){vec4 dm=texture2D(u_tex,v_uv);vec2 disp=vec2(dm.r-0.5,dm.g-0.5)*u_scale*0.05;gl_FragColor=texture2D(u_tex,v_uv+disp);}`,
+    params:[{name:'Scale',key:'u_scale',min:0,max:20,def:5}]
+  },
+  'Dual Pinch':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;varying vec2 v_uv;void main(){vec2 p=v_uv-0.5;float r=length(p);float pinch=r+u_amount*0.1*pow(r,3.0);vec2 uv=(r>0.0?p/r*pinch:p)+0.5;gl_FragColor=texture2D(u_tex,clamp(uv,0.0,1.0));}`,
+    params:[{name:'Amount',key:'u_amount',min:-10,max:10,def:2}]
+  },
+  'Flo Motion':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_time;uniform float u_scale;varying vec2 v_uv;void main(){vec2 uv=v_uv;uv.x+=sin(uv.y*u_scale+u_time)*0.02;uv.y+=cos(uv.x*u_scale+u_time)*0.02;gl_FragColor=texture2D(u_tex,uv);}`,
+    params:[{name:'Scale',key:'u_scale',min:1,max:20,def:5},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  },
+  'Heatmap':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));vec3 heat=vec3(br*3.0,br*3.0-1.0,br*3.0-2.0);gl_FragColor=vec4(clamp(heat,0.0,1.0),c.a);}`,
+    params:[]
+  },
+  'Tritone':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));vec3 dark=vec3(0.1,0.0,0.2);vec3 mid=vec3(0.5,0.2,0.8);vec3 hi=vec3(1.0,0.9,1.0);vec3 col=br<0.5?mix(dark,mid,br*2.0):mix(mid,hi,(br-0.5)*2.0);gl_FragColor=vec4(col,c.a);}`,
+    params:[]
+  },
+  'Quadtone':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));vec3 c0=vec3(0.05,0.0,0.1);vec3 c1=vec3(0.3,0.1,0.5);vec3 c2=vec3(0.7,0.5,0.2);vec3 c3=vec3(1.0,0.95,0.8);vec3 col;if(br<0.33)col=mix(c0,c1,br*3.0);else if(br<0.66)col=mix(c1,c2,(br-0.33)*3.0);else col=mix(c2,c3,(br-0.66)*3.0);gl_FragColor=vec4(col,c.a);}`,
+    params:[]
+  },
+  'Shape Wipe':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_progress;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float d=length(v_uv-0.5);float mask=step(u_progress,d);gl_FragColor=vec4(c.rgb,c.a*mask);}`,
+    params:[{name:'Progress',key:'u_progress',min:0,max:1,def:0}]
+  },
+  'Wipe':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_progress;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float mask=step(v_uv.x,u_progress);gl_FragColor=vec4(c.rgb,c.a*mask);}`,
+    params:[{name:'Progress',key:'u_progress',min:0,max:1,def:0}]
+  },
+  'Radial Wipe':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_progress;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 p=v_uv-0.5;float a=(atan(p.y,p.x)+3.14159)/(3.14159*2.0);float mask=step(a,u_progress);gl_FragColor=vec4(c.rgb,c.a*mask);}`,
+    params:[{name:'Progress',key:'u_progress',min:0,max:1,def:0}]
+  },
+  'Radial Gradient':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_radius;uniform float u_blend;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float d=length(v_uv-0.5);float grad=1.0-smoothstep(0.0,u_radius,d);gl_FragColor=vec4(mix(c.rgb,vec3(0.0),u_blend*(1.0-grad)),c.a);}`,
+    params:[{name:'Radius',key:'u_radius',min:0.1,max:1,def:0.5},{name:'Blend',key:'u_blend',min:0,max:1,def:0.5}]
+  },
+  'Hue/Saturation':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_hue;uniform float u_sat;uniform float u_val;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float mn=min(c.r,min(c.g,c.b));float mx=max(c.r,max(c.g,c.b));float d=mx-mn;float h=0.0;if(d>0.0){if(mx==c.r)h=mod((c.g-c.b)/d,6.0);else if(mx==c.g)h=(c.b-c.r)/d+2.0;else h=(c.r-c.g)/d+4.0;h/=6.0;}float s=mx>0.0?d/mx:0.0;float v=mx;h=fract(h+u_hue/360.0);s=clamp(s*u_sat,0.0,1.0);v=clamp(v*u_val,0.0,1.0);float i=floor(h*6.0);float f=h*6.0-i;float p=v*(1.0-s);float q2=v*(1.0-f*s);float t2=v*(1.0-(1.0-f)*s);vec3 rgb;int ii=int(mod(i,6.0));if(ii==0)rgb=vec3(v,t2,p);else if(ii==1)rgb=vec3(q2,v,p);else if(ii==2)rgb=vec3(p,v,t2);else if(ii==3)rgb=vec3(p,q2,v);else if(ii==4)rgb=vec3(t2,p,v);else rgb=vec3(v,p,q2);gl_FragColor=vec4(rgb,c.a);}`,
+    params:[{name:'Hue',key:'u_hue',min:-180,max:180,def:0},{name:'Saturation',key:'u_sat',min:0,max:3,def:1},{name:'Value',key:'u_val',min:0,max:2,def:1}]
+  },
+  'Invert':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);gl_FragColor=vec4(mix(c.rgb,1.0-c.rgb,u_amount),c.a);}`,
+    params:[{name:'Amount',key:'u_amount',min:0,max:1,def:1}]
+  },
+  'Color Temperature':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_temp;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float t=u_temp*0.01;gl_FragColor=vec4(c.r+t,c.g,c.b-t,c.a);}`,
+    params:[{name:'Temperature',key:'u_temp',min:-100,max:100,def:0}]
+  },
+  'Colorize':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform vec3 u_color;uniform float u_amount;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float br=dot(c.rgb,vec3(0.299,0.587,0.114));gl_FragColor=vec4(mix(c.rgb,u_color*br,u_amount),c.a);}`,
+    params:[{name:'Amount',key:'u_amount',min:0,max:1,def:0.8}]
+  },
+  'Optical Flow':{
+    vert:`attribute vec2 a_pos;varying vec2 v_uv;void main(){v_uv=(a_pos+1.0)/2.0;gl_Position=vec4(a_pos,0,1);}`,
+    frag:`precision mediump float;uniform sampler2D u_tex;uniform float u_amount;uniform float u_time;varying vec2 v_uv;void main(){vec2 flow=vec2(sin(v_uv.y*10.0+u_time),cos(v_uv.x*10.0+u_time))*u_amount*0.01;gl_FragColor=texture2D(u_tex,v_uv+flow);}`,
+    params:[{name:'Amount',key:'u_amount',min:0,max:10,def:2},{name:'Time',key:'u_time',min:0,max:100,def:0}]
+  }
+};
+
+const audioFXDefs = {
+  Flanger:[{name:'Rate',min:0,max:10,def:1},{name:'Depth',min:0,max:1,def:0.5},{name:'Feedback',min:0,max:1,def:0.3},{name:'Wet',min:0,max:1,def:0.5}],
+  Phaser:[{name:'Rate',min:0,max:10,def:1},{name:'Depth',min:0,max:1,def:0.8},{name:'Stages',min:1,max:12,def:4},{name:'Wet',min:0,max:1,def:0.5}],
+  Echo:[{name:'Delay (ms)',min:10,max:2000,def:250},{name:'Feedback',min:0,max:1,def:0.4},{name:'Wet',min:0,max:1,def:0.5}],
+  Delay:[{name:'Time (ms)',min:10,max:2000,def:500},{name:'Feedback',min:0,max:1,def:0.3},{name:'Mix',min:0,max:1,def:0.5}],
+  Reverb:[{name:'Room Size',min:0,max:1,def:0.5},{name:'Damping',min:0,max:1,def:0.5},{name:'Wet',min:0,max:1,def:0.4},{name:'Width',min:0,max:1,def:0.8}],
+  Vocoder:[{name:'Bands',min:4,max:32,def:16},{name:'Formant',min:-6,max:6,def:0},{name:'Wet',min:0,max:1,def:1}],
+  'Pitch Shift':[{name:'Semitones',min:-24,max:24,def:0},{name:'Fine',min:-100,max:100,def:0},{name:'Formant Preserve',min:0,max:1,def:0}]
+};
+
+const shaderPrograms = {};
+
+function compileShader(src,type){
+  if(!gl)return null;
+  const s=gl.createShader(type);
+  gl.shaderSource(s,src);
+  gl.compileShader(s);
+  return s;
+}
+
+function getShaderProgram(name){
+  if(shaderPrograms[name])return shaderPrograms[name];
+  const def=effectShaders[name];
+  if(!def||!gl)return null;
+  const vert=compileShader(def.vert,gl.VERTEX_SHADER);
+  const frag=compileShader(def.frag,gl.FRAGMENT_SHADER);
+  const prog=gl.createProgram();
+  gl.attachShader(prog,vert);
+  gl.attachShader(prog,frag);
+  gl.linkProgram(prog);
+  shaderPrograms[name]=prog;
+  return prog;
+}
+
+const toolDefs=[
+  {id:'select',icon:'↖',label:'Select'},
+  {id:'move',icon:'✥',label:'Move'},
+  {id:'scale',icon:'⤢',label:'Scale'},
+  {id:'rotate',icon:'↻',label:'Rotate'},
+  {id:'crop',icon:'⊡',label:'Crop'},
+  {id:'pen',icon:'✏',label:'Pen'},
+  {id:'text',icon:'T',label:'Text'},
+  {id:'shape',icon:'◻',label:'Shape'},
+  {id:'marker',icon:'◈',label:'Marker'},
+  {id:'point',icon:'⊕',label:'Point'},
+  {id:'boolean',icon:'⊗',label:'Boolean'},
+  {id:'color',icon:'◉',label:'Color Pick'},
+];
+
+function buildTools(){
+  const g=document.getElementById('tools-grid');
+  g.innerHTML='';
+  toolDefs.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tool-btn'+(state.activeTool===t.id?' active':'');
+    b.title=t.label;
+    b.textContent=t.icon;
+    b.onclick=()=>setTool(t.id);
+    g.appendChild(b);
+  });
+}
+
+function setTool(id){
+  state.activeTool=id;
+  document.getElementById('status-tool').textContent='Tool: '+toolDefs.find(t=>t.id===id).label;
+  buildTools();
+}
+
+function toggleMenu(name){
+  const all=['file','edit','effects','audio','plugins'];
+  all.forEach(n=>{
+    const mi=document.getElementById('menu-'+n);
+    const dd=document.getElementById('dd-'+n);
+    if(n===name){
+      const isOpen=dd.classList.contains('open');
+      if(isOpen){dd.classList.remove('open');mi.classList.remove('active');}
+      else{dd.classList.add('open');mi.classList.add('active');}
+    }else{
+      if(dd)dd.classList.remove('open');
+      if(mi)mi.classList.remove('active');
+    }
+  });
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#menubar')){
+    ['file','edit','effects','audio','plugins'].forEach(n=>{
+      const dd=document.getElementById('dd-'+n);
+      const mi=document.getElementById('menu-'+n);
+      if(dd)dd.classList.remove('open');
+      if(mi)mi.classList.remove('active');
+    });
+  }
+});
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const names=['props','effects','audio'];
+    t.classList.toggle('active',names[i]===name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    p.classList.toggle('active',p.id==='tab-'+name);
+  });
+}
+
+function addLayer(type){
+  const id='layer_'+Date.now();
+  const layer={id,type,name:type+' '+(state.layers.length+1),visible:true,
+    posX:0,posY:0,scale:100,rotate:0,opacity:100,blendMode:'Normal',
+    fillColor:'#3a7bd5',strokeColor:'#ffffff',src:null,element:null,text:'Sample Text',
+    effects:[],fontSize:32,fontFamily:'Open Sans'
+  };
+  pushHistory();
+  state.layers.unshift(layer);
+  state.selectedLayer=id;
+  renderLayers();
+  renderTimeline();
+  renderCanvas();
+  setStatus('layers','Layers: '+state.layers.length);
+}
+
+function renderLayers(){
+  const list=document.getElementById('layers-list');
+  list.innerHTML='';
+  state.layers.forEach(layer=>{
+    const item=document.createElement('div');
+    item.className='layer-item'+(state.selectedLayer===layer.id?' selected':'');
+    item.onclick=()=>{state.selectedLayer=layer.id;renderLayers();};
+    const vis=document.createElement('div');
+    vis.className='layer-vis'+(layer.visible?' on':'');
+    vis.onclick=e=>{e.stopPropagation();layer.visible=!layer.visible;renderLayers();renderCanvas();};
+    const name=document.createElement('div');
+    name.className='layer-name';
+    name.textContent=layer.name;
+    const type=document.createElement('div');
+    type.className='layer-type';
+    type.textContent=layer.type.toUpperCase();
+    item.appendChild(vis);
+    item.appendChild(name);
+    item.appendChild(type);
+    list.appendChild(item);
+  });
+}
+
+function renderTimeline(){
+  const tracks=document.getElementById('timeline-tracks');
+  tracks.innerHTML='';
+  const totalW=tracks.parentElement.offsetWidth-120;
+  state.layers.forEach(layer=>{
+    const row=document.createElement('div');
+    row.className='track-row';
+    const label=document.createElement('div');
+    label.className='track-label';
+    label.textContent=layer.name;
+    const content=document.createElement('div');
+    content.className='track-content';
+    const clip=document.createElement('div');
+    clip.className='track-clip';
+    clip.style.left='0px';
+    clip.style.width=(totalW*0.8)+'px';
+    clip.textContent=layer.name;
+    content.appendChild(clip);
+    row.appendChild(label);
+    row.appendChild(content);
+    tracks.appendChild(row);
+  });
+}
+
+function renderCanvas(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#111';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const visLayers=[...state.layers].reverse().filter(l=>l.visible);
+  visLayers.forEach(layer=>{
+    ctx.save();
+    const cx=canvas.width/2+layer.posX;
+    const cy=canvas.height/2+layer.posY;
+    ctx.translate(cx,cy);
+    ctx.rotate(layer.rotate*Math.PI/180);
+    ctx.scale(layer.scale/100,layer.scale/100);
+    ctx.globalAlpha=layer.opacity/100;
+    const gco=blendModeToGCO(layer.blendMode);
+    ctx.globalCompositeOperation=gco;
+    if(layer.type==='image'&&layer.element){
+      const w=layer.element.width||200;
+      const h=layer.element.height||150;
+      if(layer.effects&&layer.effects.length>0){
+        applyEffectsWebGL(layer);
+        ctx.drawImage(glCanvas,-w/2,-h/2,w,h);
+      }else{
+        ctx.drawImage(layer.element,-w/2,-h/2,w,h);
+      }
+    }else if(layer.type==='video'&&layer.element){
+      const w=layer.element.videoWidth||320;
+      const h=layer.element.videoHeight||180;
+      if(layer.effects&&layer.effects.length>0){
+        applyEffectsWebGL(layer);
+        ctx.drawImage(glCanvas,-w/2,-h/2,w,h);
+      }else{
+        ctx.drawImage(layer.element,-w/2,-h/2,w,h);
+      }
+    }else if(layer.type==='text'){
+      ctx.font=`${layer.fontSize||32}px '${layer.fontFamily||'Open Sans'}'`;
+      ctx.fillStyle=layer.fillColor||'#fff';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(layer.text||'Text',0,0);
+    }else{
+      ctx.fillStyle=layer.fillColor||'#3a7bd5';
+      ctx.fillRect(-60,-40,120,80);
+      ctx.fillStyle='rgba(255,255,255,0.8)';
+      ctx.font='12px Open Sans';
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.fillText(layer.type,0,0);
+    }
+    ctx.restore();
+  });
+  if(state.selectedLayer){
+    const sel=state.layers.find(l=>l.id===state.selectedLayer);
+    if(sel){
+      ctx.save();
+      ctx.translate(canvas.width/2+sel.posX,canvas.height/2+sel.posY);
+      ctx.rotate(sel.rotate*Math.PI/180);
+      ctx.scale(sel.scale/100,sel.scale/100);
+      ctx.strokeStyle='rgba(58,123,213,0.8)';
+      ctx.lineWidth=1.5;
+      ctx.setLineDash([4,3]);
+      const w=(sel.element?sel.element.width||200:120);
+      const h=(sel.element?sel.element.height||150:80);
+      ctx.strokeRect(-w/2,-h/2,w,h);
+      ctx.restore();
+    }
+  }
+}
+
+function applyEffectsWebGL(layer){
+  if(!gl)return;
+  const tempCanvas=document.createElement('canvas');
+  const w=layer.element.width||layer.element.videoWidth||320;
+  const h=layer.element.height||layer.element.videoHeight||180;
+  glCanvas.width=w;
+  glCanvas.height=h;
+  gl.viewport(0,0,w,h);
+  const tc=tempCanvas.getContext('2d');
+  tempCanvas.width=w;
+  tempCanvas.height=h;
+  tc.drawImage(layer.element,0,0,w,h);
+  const tex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,tempCanvas);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  const verts=new Float32Array([-1,-1,1,-1,-1,1,1,1]);
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,verts,gl.STATIC_DRAW);
+  const enabledFX=state.effects.filter(e=>e.enabled);
+  if(enabledFX.length===0){
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    return;
+  }
+  const lastFX=enabledFX[enabledFX.length-1];
+  const prog=getShaderProgram(lastFX.name);
+  if(!prog)return;
+  gl.useProgram(prog);
+  const aPos=gl.getAttribLocation(prog,'a_pos');
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+  gl.uniform1i(gl.getUniformLocation(prog,'u_tex'),0);
+  const def=effectShaders[lastFX.name];
+  if(def&&def.params){
+    def.params.forEach(p=>{
+      const loc=gl.getUniformLocation(prog,p.key);
+      if(loc!==null){
+        const val=lastFX.paramVals&&lastFX.paramVals[p.key]!==undefined?lastFX.paramVals[p.key]:p.def;
+        gl.uniform1f(loc,parseFloat(val));
+      }
+    });
+  }
+  if(prog&&gl.getUniformLocation(prog,'u_color')!==null){
+    gl.uniform3f(gl.getUniformLocation(prog,'u_color'),0.5,0.3,1.0);
+  }
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+}
+
+function blendModeToGCO(mode){
+  const map={'Normal':'source-over','Multiply':'multiply','Screen':'screen','Overlay':'overlay',
+    'Darken':'darken','Lighten':'lighten','Color Dodge':'color-dodge','Color Burn':'color-burn',
+    'Hard Light':'hard-light','Soft Light':'soft-light','Difference':'difference',
+    'Exclusion':'exclusion','Hue':'hue','Saturation':'saturation','Color':'color',
+    'Luminosity':'luminosity','Add':'lighter','Subtract':'source-over'};
+  return map[mode]||'source-over';
+}
+
+function addEffect(name){
+  closeAllMenus();
+  const fx={id:'fx_'+Date.now(),name,enabled:true,open:false,paramVals:{}};
+  const def=effectShaders[name];
+  if(def&&def.params)def.params.forEach(p=>{fx.paramVals[p.key]=p.def;});
+  state.effects.push(fx);
+  renderEffectsPanel();
+  switchTab('effects');
+  setStatusMsg('Added effect: '+name);
+  renderCanvas();
+}
+
+function renderEffectsPanel(){
+  const panel=document.getElementById('effects-panel');
+  panel.innerHTML='';
+  state.effects.forEach((fx,idx)=>{
+    const def=effectShaders[fx.name];
+    const item=document.createElement('div');
+    item.className='fx-item';
+    const header=document.createElement('div');
+    header.className='fx-header';
+    const dot=document.createElement('div');
+    dot.className='fx-enabled'+(fx.enabled?'':' off');
+    dot.onclick=e=>{e.stopPropagation();fx.enabled=!fx.enabled;renderEffectsPanel();renderCanvas();};
+    const nm=document.createElement('div');
+    nm.className='fx-name';
+    nm.textContent=fx.name;
+    const del=document.createElement('button');
+    del.className='btn';
+    del.style.padding='1px 5px';
+    del.style.fontSize='10px';
+    del.textContent='✕';
+    del.onclick=e=>{e.stopPropagation();state.effects.splice(idx,1);renderEffectsPanel();renderCanvas();};
+    header.appendChild(dot);
+    header.appendChild(nm);
+    header.appendChild(del);
+    header.onclick=()=>{fx.open=!fx.open;renderEffectsPanel();};
+    item.appendChild(header);
+    if(fx.open&&def&&def.params&&def.params.length>0){
+      const body=document.createElement('div');
+      body.className='fx-body open';
+      def.params.forEach(p=>{
+        const row=document.createElement('div');
+        row.className='prop-row';
+        const label=document.createElement('span');
+        label.className='prop-label';
+        label.textContent=p.name;
+        label.style.width='90px';
+        const sw=document.createElement('div');
+        sw.className='slider-wrap';
+        const sl=document.createElement('input');
+        sl.type='range';
+        sl.min=p.min;sl.max=p.max;
+        sl.step=(p.max-p.min)/200;
+        sl.value=fx.paramVals[p.key]!==undefined?fx.paramVals[p.key]:p.def;
+        const sv=document.createElement('span');
+        sv.className='slider-val';
+        sv.textContent=parseFloat(sl.value).toFixed(2);
+        sl.oninput=()=>{fx.paramVals[p.key]=parseFloat(sl.value);sv.textContent=parseFloat(sl.value).toFixed(2);renderCanvas();};
+        sw.appendChild(sl);
+        sw.appendChild(sv);
+        row.appendChild(label);
+        row.appendChild(sw);
+        body.appendChild(row);
+      });
+      item.appendChild(body);
+    }else if(fx.open&&(!def||!def.params||def.params.length===0)){
+      const body=document.createElement('div');
+      body.className='fx-body open';
+      body.innerHTML='<span style="color:var(--text3);font-size:10px;">No parameters</span>';
+      item.appendChild(body);
+    }
+    panel.appendChild(item);
+  });
+}
+
+function addAudioFX(name){
+  closeAllMenus();
+  const fx={id:'afx_'+Date.now(),name,enabled:true,open:false,paramVals:{}};
+  const params=audioFXDefs[name]||[];
+  params.forEach(p=>{fx.paramVals[p.name]=p.def;});
+  state.audioFX.push(fx);
+  renderAudioPanel();
+  switchTab('audio');
+  setStatusMsg('Added audio FX: '+name);
+}
+
+function renderAudioPanel(){
+  const panel=document.getElementById('audio-panel');
+  panel.innerHTML='';
+  state.audioFX.forEach((fx,idx)=>{
+    const params=audioFXDefs[fx.name]||[];
+    const item=document.createElement('div');
+    item.className='audio-fx-item';
+    const head=document.createElement('div');
+    head.className='afxh';
+    const dot=document.createElement('div');
+    dot.className='fx-enabled'+(fx.enabled?'':' off');
+    dot.onclick=e=>{e.stopPropagation();fx.enabled=!fx.enabled;renderAudioPanel();};
+    const nm=document.createElement('div');
+    nm.className='fx-name';
+    nm.textContent=fx.name;
+    const del=document.createElement('button');
+    del.className='btn';
+    del.style.cssText='padding:1px 5px;font-size:10px;';
+    del.textContent='✕';
+    del.onclick=e=>{e.stopPropagation();state.audioFX.splice(idx,1);renderAudioPanel();};
+    head.appendChild(dot);head.appendChild(nm);head.appendChild(del);
+    head.onclick=()=>{fx.open=!fx.open;renderAudioPanel();};
+    item.appendChild(head);
+    if(fx.open&&params.length>0){
+      const body=document.createElement('div');
+      body.className='afxb open';
+      params.forEach(p=>{
+        const row=document.createElement('div');
+        row.className='prop-row';
+        const lbl=document.createElement('span');
+        lbl.className='prop-label';
+        lbl.textContent=p.name;
+        lbl.style.width='90px';
+        const sw=document.createElement('div');
+        sw.className='slider-wrap';
+        const sl=document.createElement('input');
+        sl.type='range';sl.min=p.min;sl.max=p.max;
+        sl.step=(p.max-p.min)/200;
+        sl.value=fx.paramVals[p.name]!==undefined?fx.paramVals[p.name]:p.def;
+        const sv=document.createElement('span');
+        sv.className='slider-val';
+        sv.textContent=parseFloat(sl.value).toFixed(2);
+        sl.oninput=()=>{fx.paramVals[p.name]=parseFloat(sl.value);sv.textContent=parseFloat(sl.value).toFixed(2);};
+        sw.appendChild(sl);sw.appendChild(sv);
+        row.appendChild(lbl);row.appendChild(sw);
+        body.appendChild(row);
+      });
+      item.appendChild(body);
+    }
+    panel.appendChild(item);
+  });
+}
+
+function uploadImageVideo(){
+  closeAllMenus();
+  document.getElementById('file-input').click();
+}
+
+function onFileSelected(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const isVideo=file.type.startsWith('video');
+  const url=URL.createObjectURL(file);
+  if(isVideo){
+    const vid=document.createElement('video');
+    vid.src=url;
+    vid.loop=true;
+    vid.muted=true;
+    vid.playbackRate=state.videoSpeed;
+    vid.onloadeddata=()=>{
+      const layer=state.layers.find(l=>l.id===state.selectedLayer)||null;
+      if(layer&&(layer.type==='video'||layer.type==='image')){
+        layer.element=vid;layer.type='video';layer.src=url;
+      }else{
+        pushHistory();
+        const nl={id:'layer_'+Date.now(),type:'video',name:file.name,visible:true,
+          posX:0,posY:0,scale:100,rotate:0,opacity:100,blendMode:'Normal',
+          fillColor:'#fff',strokeColor:'#fff',src:url,element:vid,effects:[]};
+        state.layers.unshift(nl);
+        state.selectedLayer=nl.id;
+      }
+      if(state.playing)vid.play();
+      renderLayers();renderTimeline();renderCanvas();
+      setStatusMsg('Loaded video: '+file.name);
+    };
+  }else{
+    const img=new Image();
+    img.onload=()=>{
+      const layer=state.layers.find(l=>l.id===state.selectedLayer)||null;
+      if(layer&&(layer.type==='image'||layer.type==='video')){
+        layer.element=img;layer.type='image';layer.src=url;
+      }else{
+        pushHistory();
+        const nl={id:'layer_'+Date.now(),type:'image',name:file.name,visible:true,
+          posX:0,posY:0,scale:100,rotate:0,opacity:100,blendMode:'Normal',
+          fillColor:'#fff',strokeColor:'#fff',src:url,element:img,effects:[]};
+        state.layers.unshift(nl);
+        state.selectedLayer=nl.id;
+      }
+      renderLayers();renderTimeline();renderCanvas();
+      setStatusMsg('Loaded image: '+file.name);
+    };
+    img.src=url;
+  }
+  e.target.value='';
+}
+
+function replaceMedia(){
+  document.getElementById('file-input').click();
+}
+
+function exportMedia(format){
+  closeAllMenus();
+  renderCanvas();
+  if(format==='png'||format==='jpg'||format==='jpeg'){
+    const mime=format==='png'?'image/png':'image/jpeg';
+    const data=canvas.toDataURL(mime,0.95);
+    const a=document.createElement('a');
+    a.href=data;
+    a.download='export.'+format;
+    a.click();
+    setStatusMsg('Exported as '+format.toUpperCase());
+  }else if(format==='mp4'||format==='mov'){
+    showModal('Export Video','Video export as '+format.toUpperCase()+' requires server-side encoding. Download initiated as WebM (browser-native).',
+      [{label:'Export WebM',primary:true,action:()=>{
+        const stream=canvas.captureStream(30);
+        const rec=new MediaRecorder(stream,{mimeType:'video/webm'});
+        const chunks=[];
+        rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+        rec.onstop=()=>{
+          const blob=new Blob(chunks,{type:'video/webm'});
+          const url=URL.createObjectURL(blob);
+          const a=document.createElement('a');
+          a.href=url;a.download='export.webm';a.click();
+          setStatusMsg('Exported as WebM');
+        };
+        rec.start();
+        setTimeout(()=>rec.stop(),Math.min(state.duration*1000,5000));
+        closeModal();
+      }},{label:'Cancel',primary:false,action:closeModal}]
+    );
+  }
+}
+
+function doUndo(){
+  closeAllMenus();
+  if(state.historyIndex>0){
+    state.historyIndex--;
+    restoreHistory(state.historyIndex);
+    setStatusMsg('Undo');
+  }
+}
+
+function doRedo(){
+  closeAllMenus();
+  if(state.historyIndex<state.history.length-1){
+    state.historyIndex++;
+    restoreHistory(state.historyIndex);
+    setStatusMsg('Redo');
+  }
+}
+
+function pushHistory(){
+  const snap=JSON.stringify(state.layers.map(l=>({...l,element:null})));
+  state.history=state.history.slice(0,state.historyIndex+1);
+  state.history.push(snap);
+  if(state.history.length>50)state.history.shift();
+  state.historyIndex=state.history.length-1;
+}
+
+function restoreHistory(idx){
+  const snap=JSON.parse(state.history[idx]);
+  state.layers.forEach((l,i)=>{
+    const s=snap[i];
+    if(s){Object.assign(l,s);}
+  });
+  renderLayers();renderTimeline();renderCanvas();
+}
+
+function doCopy(){
+  closeAllMenus();
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel){state.clipboard={...sel,element:sel.element};setStatusMsg('Copied: '+sel.name);}
+}
+
+function doPaste(){
+  closeAllMenus();
+  if(!state.clipboard)return;
+  pushHistory();
+  const nl={...state.clipboard,id:'layer_'+Date.now(),name:state.clipboard.name+' copy',posX:state.clipboard.posX+10,posY:state.clipboard.posY+10};
+  state.layers.unshift(nl);
+  state.selectedLayer=nl.id;
+  renderLayers();renderTimeline();renderCanvas();
+  setStatusMsg('Pasted: '+nl.name);
+}
+
+function setPropSlider(prop,val){
+  const v=parseFloat(val);
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel)sel[prop]=v;
+  const labels={posX:'posX-val',posY:'posY-val',scale:'scale-val',rotate:'rotate-val',opacity:'opacity-val'};
+  const el=document.getElementById(labels[prop]);
+  if(el)el.textContent=prop==='rotate'?v+'°':v;
+  renderCanvas();
+}
+
+function setBlendMode(mode){
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel){sel.blendMode=mode;renderCanvas();}
+}
+
+function setColor(type,val){
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel){if(type==='fill')sel.fillColor=val;else sel.strokeColor=val;renderCanvas();}
+}
+
+function setFont(val){
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel){sel.fontFamily=val;renderCanvas();}
+}
+
+function setFontSize(val){
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel){sel.fontSize=parseInt(val);renderCanvas();}
+  const el=document.getElementById('fs-val');
+  if(el)el.textContent=val+'px';
+}
+
+function setVideoSpeed(val){
+  state.videoSpeed=val/100;
+  document.getElementById('speed-val').textContent=state.videoSpeed.toFixed(1)+'x';
+  state.layers.forEach(l=>{
+    if(l.type==='video'&&l.element){l.element.playbackRate=state.videoSpeed;}
+  });
+}
+
+function togglePlayback(){
+  state.playing=!state.playing;
+  const btn=document.getElementById('play-pause-btn');
+  btn.textContent=state.playing?'⏸':'▶';
+  state.layers.forEach(l=>{
+    if(l.type==='video'&&l.element){
+      if(state.playing)l.element.play();else l.element.pause();
+    }
+  });
+  if(state.playing)startLoop();else stopLoop();
+}
+
+function skipToStart(){
+  state.currentTime=0;
+  state.layers.forEach(l=>{if(l.type==='video'&&l.element)l.element.currentTime=0;});
+  updateTimeDisplay();
+}
+
+function skipToEnd(){
+  state.currentTime=state.duration;
+  state.layers.forEach(l=>{if(l.type==='video'&&l.element)l.element.currentTime=l.element.duration||0;});
+  updateTimeDisplay();
+}
+
+function startLoop(){
+  if(animFrame)cancelAnimationFrame(animFrame);
+  const tick=()=>{
+    state.currentTime+=1/30;
+    if(state.currentTime>=state.duration){
+      state.currentTime=0;
+      state.layers.forEach(l=>{if(l.type==='video'&&l.element)l.element.currentTime=0;});
+    }
+    updateTimeDisplay();
+    renderCanvas();
+    animFrame=requestAnimationFrame(tick);
+  };
+  animFrame=requestAnimationFrame(tick);
+}
+
+function stopLoop(){
+  if(animFrame){cancelAnimationFrame(animFrame);animFrame=null;}
+}
+
+function updateTimeDisplay(){
+  const t=state.currentTime;
+  const h=Math.floor(t/3600);
+  const m=Math.floor((t%3600)/60);
+  const s=Math.floor(t%60);
+  document.getElementById('time-display').textContent=
+    String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function loadVSTPlugin(){
+  closeAllMenus();
+  document.getElementById('vst-input').click();
+}
+
+function onVSTLoaded(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  state.plugins.vst.push({name:file.name,file});
+  showModal('VST Plugin Loaded',
+    `Plugin "${file.name}" loaded. VST processing requires native C++ host. Plugin registered for export.\n\nPlugin Path: ${file.name}\nFormat: VST/VST3\nStatus: Registered`,
+    [{label:'OK',primary:true,action:closeModal}]
+  );
+  e.target.value='';
+}
+
+function createOpenFXPlugin(){
+  closeAllMenus();
+  const code=`// OpenFX Plugin Template - C++
+#include "ofxImageEffect.h"
+#include "ofxPixels.h"
+
+static OfxStatus describe(OfxImageEffectHandle effect) {
+  // Describe plugin
+  return kOfxStatOK;
+}
+
+static OfxStatus render(OfxImageEffectHandle effect,
+                         OfxPropertySetHandle inArgs) {
+  // Process pixels
+  return kOfxStatOK;
+}
+
+static OfxStatus pluginMain(const char *action,
+    const void *handle, OfxPropertySetHandle inArgs,
+    OfxPropertySetHandle outArgs) {
+  if (strcmp(action, kOfxActionDescribe) == 0)
+    return describe((OfxImageEffectHandle)handle);
+  if (strcmp(action, kOfxImageEffectActionRender) == 0)
+    return render((OfxImageEffectHandle)handle, inArgs);
+  return kOfxStatReplyDefault;
+}
+
+OfxExport int OfxGetNumberOfPlugins(void) { return 1; }
+OfxExport OfxPlugin *OfxGetPlugin(int nth) {
+  static OfxPlugin plugin = {
+    kOfxImageEffectPluginApi, 1,
+    "com.studio.myeffect", 1, 0,
+    NULL, pluginMain
+  };
+  return &plugin;
+}`;
+  showModal('Create OpenFX Plugin (C++)',
+    `<pre style="font-family:monospace;font-size:9px;overflow:auto;max-height:300px;white-space:pre-wrap;color:var(--text)">${code}</pre>`,
+    [{label:'Copy Code',primary:true,action:()=>{navigator.clipboard&&navigator.clipboard.writeText(code);closeModal();}},
+     {label:'Close',primary:false,action:closeModal}]
+  );
+}
+
+function saveOpenFXPlugin(){
+  closeAllMenus();
+  const code=`// OpenFX Plugin - Saved\n// Compile with: g++ -shared -fPIC -o plugin.ofx plugin.cpp\n#include "ofxImageEffect.h"\n// Plugin implementation here`;
+  const blob=new Blob([code],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='plugin.cpp';a.click();
+  setStatusMsg('OpenFX plugin saved as plugin.cpp');
+}
+
+function loadOpenFXPlugin(){
+  closeAllMenus();
+  document.getElementById('ofx-input').click();
+}
+
+function onOFXLoaded(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  state.plugins.ofx.push({name:file.name});
+  showModal('OpenFX Plugin Loaded',
+    `Plugin "${file.name}" loaded.\nStatus: Registered\nNote: Native execution requires OpenFX host runtime.`,
+    [{label:'OK',primary:true,action:closeModal}]
+  );
+  e.target.value='';
+}
+
+function showModal(title,body,buttons){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=typeof body==='string'?body.replace(/\n/g,'<br>'):body;
+  const footer=document.getElementById('modal-footer');
+  footer.innerHTML='';
+  (buttons||[]).forEach(b=>{
+    const btn=document.createElement('button');
+    btn.className='modal-btn '+(b.primary?'primary':'secondary');
+    btn.textContent=b.label;
+    btn.onclick=b.action;
+    footer.appendChild(btn);
+  });
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+function closeModal(e){
+  if(!e||e.target===document.getElementById('modal-overlay')){
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+}
+
+function closeAllMenus(){
+  ['file','edit','effects','audio','plugins'].forEach(n=>{
+    const dd=document.getElementById('dd-'+n);
+    const mi=document.getElementById('menu-'+n);
+    if(dd)dd.classList.remove('open');
+    if(mi)mi.classList.remove('active');
+  });
+}
+
+function setStatus(key,val){
+  const el=document.getElementById('status-'+key);
+  if(el)el.textContent=val;
+}
+
+function setStatusMsg(msg){
+  document.getElementById('status-msg').textContent=msg;
+  setTimeout(()=>{document.getElementById('status-msg').textContent='';},3000);
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey){
+    if(e.key==='z'){e.preventDefault();doUndo();}
+    if(e.key==='y'||e.key==='Z'){e.preventDefault();doRedo();}
+    if(e.key==='c'){e.preventDefault();doCopy();}
+    if(e.key==='v'){e.preventDefault();doPaste();}
+  }
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(!e.target.matches('input,select,textarea')){
+      const idx=state.layers.findIndex(l=>l.id===state.selectedLayer);
+      if(idx>=0){pushHistory();state.layers.splice(idx,1);state.selectedLayer=null;renderLayers();renderTimeline();renderCanvas();setStatus('layers','Layers: '+state.layers.length);}
+    }
+  }
+});
+
+let isDragging=false;
+let dragStart={x:0,y:0};
+let dragLayerStart={x:0,y:0};
+
+canvas.addEventListener('mousedown',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const my=(e.clientY-rect.top)*(canvas.height/rect.height);
+  const cx=mx-canvas.width/2;
+  const cy=my-canvas.height/2;
+  for(let i=0;i<state.layers.length;i++){
+    const l=state.layers[i];
+    if(!l.visible)continue;
+    const lx=cx-l.posX;
+    const ly=cy-l.posY;
+    const w=(l.element?l.element.width||l.element.videoWidth||120:120)*(l.scale/100)/2;
+    const h=(l.element?l.element.height||l.element.videoHeight||80:80)*(l.scale/100)/2;
+    if(Math.abs(lx)<w&&Math.abs(ly)<h){
+      state.selectedLayer=l.id;
+      isDragging=true;
+      dragStart={x:e.clientX,y:e.clientY};
+      dragLayerStart={x:l.posX,y:l.posY};
+      renderLayers();
+      break;
+    }
+  }
+});
+
+canvas.addEventListener('mousemove',e=>{
+  if(!isDragging)return;
+  if(state.activeTool!=='select'&&state.activeTool!=='move')return;
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=canvas.width/rect.width;
+  const scaleY=canvas.height/rect.height;
+  const dx=(e.clientX-dragStart.x)*scaleX;
+  const dy=(e.clientY-dragStart.y)*scaleY;
+  const sel=state.layers.find(l=>l.id===state.selectedLayer);
+  if(sel){
+    sel.posX=dragLayerStart.x+dx;
+    sel.posY=dragLayerStart.y+dy;
+    document.querySelector('input[oninput*="posX"]').value=sel.posX;
+    document.querySelector('input[oninput*="posY"]').value=sel.posY;
+    document.getElementById('posX-val').textContent=Math.round(sel.posX);
+    document.getElementById('posY-val').textContent=Math.round(sel.posY);
+    renderCanvas();
+  }
+});
+
+canvas.addEventListener('mouseup',()=>{isDragging=false;});
+canvas.addEventListener('mouseleave',()=>{isDragging=false;});
+
+function init(){
+  buildTools();
+  renderLayers();
+  renderTimeline();
+  renderCanvas();
+  setStatus('layers','Layers: 0');
+  setStatus('res','960×540');
+  setStatus('fps','30 FPS');
+}
+
+init();
+</script>
+</body>
+</html>

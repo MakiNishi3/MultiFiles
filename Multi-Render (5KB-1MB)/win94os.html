@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows 94 OS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+--win-bg:#008080;
+--win-title:#000080;
+--win-title-text:#fff;
+--win-border-light:#dfdfdf;
+--win-border-dark:#808080;
+--win-border-darker:#404040;
+--win-body:#c0c0c0;
+--win-btn:#c0c0c0;
+--win-text:#000;
+--win-select:#000080;
+--win-select-text:#fff;
+--taskbar:#c0c0c0;
+--font:'Courier New',monospace;
+}
+body{font-family:var(--font);background:var(--win-bg);overflow:hidden;width:100vw;height:100vh;user-select:none;}
+/* DESKTOP */
+#desktop{width:100vw;height:calc(100vh - 30px);position:relative;overflow:hidden;}
+.desktop-icon{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:pointer;width:64px;gap:2px;padding:4px;color:#fff;text-shadow:1px 1px 2px #000;}
+.desktop-icon:hover .icon-img{outline:1px dotted #fff;}
+.desktop-icon.selected .icon-img{background:rgba(0,0,128,0.5);outline:1px dotted #fff;}
+.desktop-icon span{font-size:11px;text-align:center;line-height:1.2;word-break:break-word;}
+.icon-img{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:28px;}
+/* TASKBAR */
+#taskbar{position:fixed;bottom:0;left:0;width:100%;height:30px;background:var(--taskbar);border-top:2px solid var(--win-border-light);display:flex;align-items:center;gap:2px;padding:0 2px;z-index:9999;}
+#start-btn{display:flex;align-items:center;gap:4px;padding:2px 8px;font-weight:bold;font-size:13px;font-family:var(--font);cursor:pointer;height:24px;background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);}
+#start-btn:active,#start-btn.pressed{border-top:2px solid var(--win-border-darker);border-left:2px solid var(--win-border-darker);border-bottom:2px solid var(--win-border-light);border-right:2px solid var(--win-border-light);}
+#taskbar-clock{margin-left:auto;padding:2px 8px;font-size:12px;border:inset 1px solid #888;background:var(--taskbar);}
+#taskbar-apps{display:flex;gap:2px;flex:1;overflow:hidden;}
+.taskbar-app-btn{padding:2px 8px;font-size:11px;font-family:var(--font);cursor:pointer;height:24px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);}
+.taskbar-app-btn.active{border-top:2px solid var(--win-border-darker);border-left:2px solid var(--win-border-darker);border-bottom:2px solid var(--win-border-light);border-right:2px solid var(--win-border-light);}
+/* START MENU */
+#start-menu{position:fixed;bottom:30px;left:0;width:200px;background:var(--win-body);border:2px solid;border-color:var(--win-border-light) var(--win-border-darker) var(--win-border-darker) var(--win-border-light);display:none;z-index:99999;box-shadow:2px 2px 4px rgba(0,0,0,0.5);}
+#start-menu.open{display:block;}
+.start-menu-sidebar{position:absolute;left:0;top:0;bottom:0;width:24px;background:var(--win-title);display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;}
+.start-menu-sidebar span{writing-mode:vertical-rl;transform:rotate(180deg);color:#fff;font-size:14px;font-weight:bold;letter-spacing:2px;}
+.start-menu-items{margin-left:24px;}
+.start-menu-item{padding:6px 16px 6px 8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.start-menu-item:hover{background:var(--win-select);color:var(--win-select-text);}
+.start-menu-divider{border-top:1px solid var(--win-border-dark);margin:2px 0;}
+/* WINDOWS */
+.window{position:absolute;background:var(--win-body);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);box-shadow:4px 4px 8px rgba(0,0,0,0.4);min-width:200px;min-height:120px;display:none;flex-direction:column;}
+.window.visible{display:flex;}
+.window.maximized{left:0!important;top:0!important;width:100vw!important;height:calc(100vh - 30px)!important;}
+.title-bar{background:var(--win-title);color:var(--win-title-text);padding:3px 4px;display:flex;align-items:center;gap:4px;cursor:move;font-size:13px;font-weight:bold;flex-shrink:0;}
+.title-bar-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.title-bar-btn{width:16px;height:14px;background:var(--win-btn);color:#000;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;border-top:1px solid var(--win-border-light);border-left:1px solid var(--win-border-light);border-bottom:1px solid var(--win-border-darker);border-right:1px solid var(--win-border-darker);}
+.title-bar-btn:active{border-top:1px solid var(--win-border-darker);border-left:1px solid var(--win-border-darker);border-bottom:1px solid var(--win-border-light);border-right:1px solid var(--win-border-light);}
+.window-menu-bar{background:var(--win-body);padding:2px 4px;display:flex;gap:0;font-size:12px;border-bottom:1px solid var(--win-border-dark);flex-shrink:0;}
+.menu-item{padding:2px 8px;cursor:pointer;}
+.menu-item:hover{background:var(--win-select);color:var(--win-select-text);}
+.window-content{flex:1;overflow:auto;padding:4px;font-size:13px;}
+.window-statusbar{background:var(--win-body);border-top:1px solid var(--win-border-dark);padding:2px 8px;font-size:11px;flex-shrink:0;}
+.resize-handle{position:absolute;right:0;bottom:0;width:10px;height:10px;cursor:se-resize;}
+/* WIDGETS */
+.win-btn{padding:4px 16px;background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);font-family:var(--font);font-size:12px;cursor:pointer;}
+.win-btn:active{border-top:2px solid var(--win-border-darker);border-left:2px solid var(--win-border-darker);border-bottom:2px solid var(--win-border-light);border-right:2px solid var(--win-border-light);}
+.win-input{border-top:1px solid var(--win-border-darker);border-left:1px solid var(--win-border-darker);border-bottom:1px solid var(--win-border-light);border-right:1px solid var(--win-border-light);background:#fff;padding:2px 4px;font-family:var(--font);font-size:12px;}
+.win-select{border-top:1px solid var(--win-border-darker);border-left:1px solid var(--win-border-darker);border-bottom:1px solid var(--win-border-light);border-right:1px solid var(--win-border-light);background:#fff;padding:2px;font-family:var(--font);font-size:12px;}
+textarea.win-input{resize:none;}
+/* SLIDER */
+.win-slider{width:100%;height:4px;-webkit-appearance:none;background:var(--win-border-dark);outline:none;}
+.win-slider::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:20px;background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);cursor:pointer;}
+/* CALC */
+#calc-display{width:100%;background:#c8dcc8;border:inset 2px solid #888;padding:4px 8px;text-align:right;font-size:22px;font-family:'Courier New',monospace;margin-bottom:8px;min-height:36px;}
+.calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
+.calc-btn{padding:8px;font-size:14px;font-family:var(--font);cursor:pointer;background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);}
+.calc-btn:active{border-top:2px solid var(--win-border-darker);border-left:2px solid var(--win-border-darker);border-bottom:2px solid var(--win-border-light);border-right:2px solid var(--win-border-light);}
+/* CALENDAR */
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:12px;}
+.cal-day-header{font-weight:bold;padding:2px;}
+.cal-day{padding:3px;cursor:pointer;}
+.cal-day:hover{background:var(--win-select);color:var(--win-select-text);}
+.cal-day.today{background:#000080;color:#fff;}
+.cal-day.other-month{color:#808080;}
+/* TERMINAL */
+#terminal-output{background:#000;color:#00ff00;font-family:'Courier New',monospace;font-size:13px;padding:8px;flex:1;overflow-y:auto;white-space:pre-wrap;word-break:break-all;}
+#terminal-input-row{display:flex;align-items:center;background:#000;padding:4px 8px;}
+#terminal-prompt{color:#00ff00;font-family:'Courier New',monospace;font-size:13px;white-space:nowrap;}
+#terminal-input{flex:1;background:transparent;border:none;outline:none;color:#00ff00;font-family:'Courier New',monospace;font-size:13px;caret-color:#00ff00;}
+/* FILE EXPLORER */
+.file-tree{width:140px;border-right:1px solid var(--win-border-dark);overflow-y:auto;padding:4px;}
+.file-list{flex:1;padding:4px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;}
+.file-icon{width:64px;display:flex;flex-direction:column;align-items:center;cursor:pointer;padding:4px;font-size:11px;text-align:center;gap:2px;}
+.file-icon:hover,.file-icon.selected{background:var(--win-select);color:var(--win-select-text);}
+.file-icon span.fi{font-size:28px;}
+.file-tree-item{padding:2px 4px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:4px;}
+.file-tree-item:hover{background:var(--win-select);color:var(--win-select-text);}
+.file-tree-item.selected{background:var(--win-select);color:var(--win-select-text);}
+/* NOTEPAD */
+#notepad-area{width:100%;height:100%;resize:none;font-family:'Courier New',monospace;font-size:13px;border:inset 1px solid #888;background:#fff;padding:4px;outline:none;}
+/* PAINT */
+#paint-canvas{cursor:crosshair;display:block;}
+.paint-toolbar{display:flex;flex-wrap:wrap;gap:4px;padding:4px;border-bottom:1px solid var(--win-border-dark);align-items:center;}
+.paint-tool-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);}
+.paint-tool-btn.active{border-top:2px solid var(--win-border-darker);border-left:2px solid var(--win-border-darker);border-bottom:2px solid var(--win-border-light);border-right:2px solid var(--win-border-light);}
+.color-swatch{width:20px;height:20px;cursor:pointer;border:2px solid #000;}
+/* IPTV */
+.iptv-list{list-style:none;overflow-y:auto;flex:1;}
+.iptv-item{padding:4px 8px;cursor:pointer;font-size:12px;border-bottom:1px solid #ddd;}
+.iptv-item:hover{background:var(--win-select);color:var(--win-select-text);}
+/* MEDIA PLAYER */
+#media-player video,#media-player audio{width:100%;max-height:200px;background:#000;}
+/* 2048 */
+.game-2048{display:grid;grid-template-columns:repeat(4,80px);grid-template-rows:repeat(4,80px);gap:8px;background:#bbada0;padding:8px;border-radius:4px;}
+.tile-2048{width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;border-radius:4px;transition:all 0.1s;}
+/* SHADER */
+#shader-canvas{display:block;width:100%;background:#000;}
+#shader-code{width:100%;height:140px;font-family:'Courier New',monospace;font-size:11px;background:#1e1e1e;color:#d4d4d4;border:none;resize:none;outline:none;padding:4px;}
+/* JSON EDITOR */
+#json-input{width:100%;height:100%;font-family:'Courier New',monospace;font-size:12px;background:#fff;border:inset 1px #888;padding:4px;resize:none;outline:none;}
+/* JS CONSOLE */
+#jsconsole-output{background:#fff;border:inset 1px #888;flex:1;overflow-y:auto;padding:4px;font-family:'Courier New',monospace;font-size:12px;}
+.jsconsole-log{color:#000;}
+.jsconsole-error{color:#c00;}
+.jsconsole-warn{color:#880;}
+.jsconsole-info{color:#008;}
+/* BYTEBEAT */
+#bytebeat-code{width:100%;font-family:'Courier New',monospace;font-size:13px;padding:4px;}
+/* STICKY NOTE */
+.sticky-note-content{width:100%;height:100%;background:#ffff88;font-family:'Courier New',monospace;font-size:13px;resize:none;border:none;outline:none;padding:8px;}
+/* SETTINGS */
+.settings-section{margin-bottom:12px;}
+.settings-section h3{font-size:13px;font-weight:bold;margin-bottom:6px;border-bottom:1px solid #888;padding-bottom:2px;}
+.theme-btn{margin:2px;padding:4px 12px;font-size:12px;cursor:pointer;}
+/* WIN94 HUB */
+.hub-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px;}
+.hub-card{background:var(--win-btn);border-top:2px solid var(--win-border-light);border-left:2px solid var(--win-border-light);border-bottom:2px solid var(--win-border-darker);border-right:2px solid var(--win-border-darker);padding:8px;cursor:pointer;text-align:center;font-size:12px;}
+.hub-card:hover{background:#d0d0d0;}
+.hub-card .hub-icon{font-size:28px;}
+/* CODE MAKER */
+#code-area{width:100%;height:160px;font-family:'Courier New',monospace;font-size:12px;background:#1e1e1e;color:#d4d4d4;border:none;resize:none;outline:none;padding:4px;}
+#code-preview{flex:1;background:#fff;border:inset 1px #888;overflow:auto;}
+/* WEB APP MAKER */
+#webapp-prompt{width:100%;height:60px;resize:none;}
+#webapp-iframe{flex:1;width:100%;border:inset 1px #888;background:#fff;}
+/* WORDPAD */
+#wordpad-area{width:100%;height:100%;resize:none;font-family:serif;font-size:14px;border:none;background:#fff;padding:8px;outline:none;}
+.wordpad-toolbar{display:flex;gap:4px;padding:4px;border-bottom:1px solid #888;align-items:center;flex-wrap:wrap;}
+/* WINDOW THEMES */
+body.theme-win98{--win-bg:#008080;--win-title:#000080;--win-body:#c0c0c0;--taskbar:#c0c0c0;}
+body.theme-win7{--win-bg:#1e6bb0;--win-title:#1e6bb0;--win-body:#f0f0f0;--taskbar:#1e1e1e;--win-title-text:#fff;}
+body.theme-win10{--win-bg:#2d7cd6;--win-title:#202020;--win-body:#f3f3f3;--taskbar:#1c1c1c;--win-title-text:#fff;}
+/* PROGRESS BAR */
+.win-progress{width:100%;height:20px;background:#fff;border:inset 2px #888;overflow:hidden;}
+.win-progress-fill{height:100%;background:var(--win-title);transition:width 0.3s;}
+/* DISK SIZE */
+.disk-info{font-size:12px;margin:4px 0;}
+</style>
+</head>
+<body>
+<div id="desktop"></div>
+<div id="taskbar">
+  <button id="start-btn" onclick="toggleStartMenu()">🪟 Start</button>
+  <div id="taskbar-apps"></div>
+  <div id="taskbar-clock"></div>
+</div>
+<div id="start-menu">
+  <div class="start-menu-sidebar"><span>Windows 94</span></div>
+  <div class="start-menu-items">
+    <div class="start-menu-item" onclick="openApp('webappmaker')">🌐 Web App Maker</div>
+    <div class="start-menu-item" onclick="openApp('codemaker')">💻 Code App Maker</div>
+    <div class="start-menu-item" onclick="openApp('win94hub')">🏠 Windows94 Hub</div>
+    <div class="start-menu-item" onclick="openApp('notepad')">📝 Notepad+++</div>
+    <div class="start-menu-item" onclick="openApp('wordpad')">📄 WordPad</div>
+    <div class="start-menu-item" onclick="openApp('paint')">🎨 JS Paint</div>
+    <div class="start-menu-item" onclick="openApp('calc')">🔢 Calculator</div>
+    <div class="start-menu-item" onclick="openApp('calendar')">📅 Calendar</div>
+    <div class="start-menu-item" onclick="openApp('terminal')">🖥️ Pseudo-Bash</div>
+    <div class="start-menu-item" onclick="openApp('fileexplorer')">📁 File Explorer</div>
+    <div class="start-menu-item" onclick="openApp('iptv')">📺 IPTV Playlist</div>
+    <div class="start-menu-item" onclick="openApp('mediaplayer')">▶️ Media Player</div>
+    <div class="start-menu-item" onclick="openApp('shader')">🔆 Shader Editor</div>
+    <div class="start-menu-item" onclick="openApp('jsoneditor')">📋 JSON Editor</div>
+    <div class="start-menu-item" onclick="openApp('jsconsole')">⚡ JS Console</div>
+    <div class="start-menu-item" onclick="openApp('bytebeat')">🎵 Bytebeat JS</div>
+    <div class="start-menu-item" onclick="openApp('stickynote')">📌 Sticky Note</div>
+    <div class="start-menu-item" onclick="openApp('game2048')">🎮 2048 Game</div>
+    <div class="start-menu-item" onclick="openApp('settings')">⚙️ Settings</div>
+    <div class="start-menu-divider"></div>
+    <div class="start-menu-item" onclick="closeStartMenu()">❌ Close Menu</div>
+  </div>
+</div>
+
+<!-- WINDOWS CONTAINER -->
+<div id="windows-container"></div>
+
+<script>
+var windows={};
+var zBase=100;
+var diskSize=10*1024*1024*1024;
+var virtualFS={
+  'C:':{'Documents':{'readme.txt':'Welcome to Windows 94!'},'System':{'win94.sys':'[System File]'},'Desktop':{},'Programs':{}},
+  'D:':{}
+};
+var currentPath='C:/Desktop';
+var taskbarApps={};
+var dragState=null;
+var resizeState=null;
+var byteAudioCtx=null;
+var byteNode=null;
+var shaderGL=null;
+var shaderProgram=null;
+var shaderAnim=null;
+var iptvChannels=[
+  {name:'Big Buck Bunny',url:'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8'},
+  {name:'Elephant Dream',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4'},
+  {name:'Tears of Steel',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'},
+  {name:'Sample MP4',url:'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'},
+];
+var paintState={tool:'pencil',color:'#000000',size:4,drawing:false,lastX:0,lastY:0};
+var calcState={display:'0',operator:null,prevVal:null,waitNew:false};
+var game2048State=null;
+var byteTime=0;
+var notepadContent='';
+var wordpadContent='';
+var stickyContent='';
+var jsonContent='{}';
+var webappHistory=[];
+var codeContent='// Write your code here\nconsole.log("Hello, World!");';
+
+function clock(){
+  var d=new Date();
+  document.getElementById('taskbar-clock').textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+}
+setInterval(clock,1000);clock();
+
+function toggleStartMenu(){
+  var m=document.getElementById('start-menu');
+  m.classList.toggle('open');
+  document.getElementById('start-btn').classList.toggle('pressed',m.classList.contains('open'));
+}
+function closeStartMenu(){
+  document.getElementById('start-menu').classList.remove('open');
+  document.getElementById('start-btn').classList.remove('pressed');
+}
+document.addEventListener('mousedown',function(e){
+  if(!e.target.closest('#start-menu')&&!e.target.closest('#start-btn'))closeStartMenu();
+});
+
+function createWindow(id,title,width,height,content,menuBar,statusBar){
+  if(windows[id]&&document.getElementById('win-'+id)){
+    focusWindow(id);
+    document.getElementById('win-'+id).classList.add('visible');
+    updateTaskbar(id,title,true);
+    return;
+  }
+  var w=document.createElement('div');
+  w.className='window visible';
+  w.id='win-'+id;
+  w.style.width=width+'px';
+  w.style.height=height+'px';
+  w.style.left=(100+Math.random()*200)+'px';
+  w.style.top=(60+Math.random()*100)+'px';
+  w.style.zIndex=++zBase;
+  var menuHtml=menuBar?'<div class="window-menu-bar">'+menuBar+'</div>':'';
+  var statusHtml=statusBar?'<div class="window-statusbar" id="status-'+id+'">'+statusBar+'</div>':'';
+  w.innerHTML='<div class="title-bar" id="titlebar-'+id+'"><span class="title-bar-text">'+title+'</span><div class="title-bar-btn" onclick="minimizeWindow(\''+id+'\')">_</div><div class="title-bar-btn" onclick="toggleMaximize(\''+id+'\')">□</div><div class="title-bar-btn" onclick="closeWindow(\''+id+'\')">✕</div></div>'+menuHtml+'<div class="window-content" id="content-'+id+'">'+content+'</div>'+statusHtml+'<div class="resize-handle" id="resize-'+id+'"></div>';
+  document.getElementById('windows-container').appendChild(w);
+  windows[id]={title:title,minimized:false,maximized:false};
+  makeDraggable(id);
+  makeResizable(id);
+  focusWindow(id);
+  updateTaskbar(id,title,true);
+  if(id==='calc')initCalc();
+  if(id==='calendar')initCalendar();
+  if(id==='paint')initPaint();
+  if(id==='shader')initShader();
+  if(id==='game2048')init2048();
+  if(id==='terminal')initTerminal();
+  if(id==='fileexplorer')initFileExplorer();
+  if(id==='iptv')initIPTV();
+  if(id==='bytebeat')initBytebeat();
+}
+
+function focusWindow(id){
+  var w=document.getElementById('win-'+id);
+  if(w){w.style.zIndex=++zBase;}
+  Object.keys(taskbarApps).forEach(function(k){
+    var btn=document.getElementById('taskbarbtn-'+k);
+    if(btn)btn.classList.toggle('active',k===id);
+  });
+}
+
+function closeWindow(id){
+  var w=document.getElementById('win-'+id);
+  if(w){w.remove();}
+  delete windows[id];
+  updateTaskbar(id,null,false);
+  if(id==='bytebeat')stopBytebeat();
+  if(id==='shader')stopShader();
+}
+
+function minimizeWindow(id){
+  var w=document.getElementById('win-'+id);
+  if(!w)return;
+  if(windows[id].minimized){
+    w.classList.add('visible');
+    windows[id].minimized=false;
+    focusWindow(id);
+  } else {
+    w.classList.remove('visible');
+    windows[id].minimized=true;
+  }
+}
+
+function toggleMaximize(id){
+  var w=document.getElementById('win-'+id);
+  if(!w)return;
+  if(windows[id].maximized){
+    w.classList.remove('maximized');
+    windows[id].maximized=false;
+  } else {
+    w.classList.add('maximized');
+    windows[id].maximized=true;
+  }
+}
+
+function updateTaskbar(id,title,show){
+  if(show){
+    taskbarApps[id]=title;
+    if(!document.getElementById('taskbarbtn-'+id)){
+      var btn=document.createElement('button');
+      btn.className='taskbar-app-btn';
+      btn.id='taskbarbtn-'+id;
+      btn.textContent=title||id;
+      btn.onclick=function(){
+        var w=windows[id];
+        if(!w)return;
+        if(w.minimized){minimizeWindow(id);}
+        else{focusWindow(id);}
+      };
+      document.getElementById('taskbar-apps').appendChild(btn);
+    }
+  } else {
+    delete taskbarApps[id];
+    var btn=document.getElementById('taskbarbtn-'+id);
+    if(btn)btn.remove();
+  }
+}
+
+function makeDraggable(id){
+  var tb=document.getElementById('titlebar-'+id);
+  var w=document.getElementById('win-'+id);
+  if(!tb||!w)return;
+  tb.addEventListener('mousedown',function(e){
+    if(e.target.classList.contains('title-bar-btn'))return;
+    if(windows[id]&&windows[id].maximized)return;
+    dragState={id:id,startX:e.clientX-w.offsetLeft,startY:e.clientY-w.offsetTop};
+    focusWindow(id);
+    e.preventDefault();
+  });
+}
+
+function makeResizable(id){
+  var rh=document.getElementById('resize-'+id);
+  var w=document.getElementById('win-'+id);
+  if(!rh||!w)return;
+  rh.addEventListener('mousedown',function(e){
+    resizeState={id:id,startX:e.clientX,startY:e.clientY,startW:w.offsetWidth,startH:w.offsetHeight};
+    e.preventDefault();e.stopPropagation();
+  });
+}
+
+document.addEventListener('mousemove',function(e){
+  if(dragState){
+    var w=document.getElementById('win-'+dragState.id);
+    if(w){
+      w.style.left=(e.clientX-dragState.startX)+'px';
+      w.style.top=Math.max(0,e.clientY-dragState.startY)+'px';
+    }
+  }
+  if(resizeState){
+    var w=document.getElementById('win-'+resizeState.id);
+    if(w){
+      w.style.width=Math.max(200,resizeState.startW+(e.clientX-resizeState.startX))+'px';
+      w.style.height=Math.max(120,resizeState.startH+(e.clientY-resizeState.startY))+'px';
+    }
+  }
+});
+document.addEventListener('mouseup',function(){
+  dragState=null;resizeState=null;
+});
+
+/* =================== APP LAUNCHER =================== */
+function openApp(id){
+  closeStartMenu();
+  switch(id){
+    case 'calc':openCalc();break;
+    case 'calendar':openCalendar();break;
+    case 'notepad':openNotepad();break;
+    case 'wordpad':openWordpad();break;
+    case 'paint':openPaint();break;
+    case 'terminal':openTerminal();break;
+    case 'fileexplorer':openFileExplorer();break;
+    case 'iptv':openIPTV();break;
+    case 'mediaplayer':openMediaPlayer();break;
+    case 'shader':openShader();break;
+    case 'jsoneditor':openJsonEditor();break;
+    case 'jsconsole':openJsConsole();break;
+    case 'bytebeat':openBytebeat();break;
+    case 'stickynote':openStickyNote();break;
+    case 'game2048':open2048();break;
+    case 'settings':openSettings();break;
+    case 'win94hub':openWin94Hub();break;
+    case 'webappmaker':openWebAppMaker();break;
+    case 'codemaker':openCodeMaker();break;
+  }
+}
+
+/* ====== CALCULATOR ====== */
+function openCalc(){
+  createWindow('calc','Calculator',280,340,
+    '<div id="calc-display">0</div><div class="calc-grid">'+
+    ['MC','MR','MS','M+','←','CE','C','±',
+     '7','8','9','÷','4','5','6','×','1','2','3','-','0','.','=','+']
+    .map(function(k){return '<button class="calc-btn" onclick="calcKey(\''+k+'\')">'+k+'</button>';}).join('')+
+    '</div>',
+    null,'Standard');
+}
+function initCalc(){}
+function calcKey(k){
+  var d=document.getElementById('calc-display');
+  if(!d)return;
+  if(k>='0'&&k<='9'||k==='.'){
+    if(calcState.waitNew){calcState.display=k;calcState.waitNew=false;}
+    else{calcState.display=calcState.display==='0'?k:(calcState.display.length<15?calcState.display+k:calcState.display);}
+  } else if(k==='C'){calcState={display:'0',operator:null,prevVal:null,waitNew:false};}
+  else if(k==='CE'){calcState.display='0';}
+  else if(k==='←'){calcState.display=calcState.display.length>1?calcState.display.slice(0,-1):'0';}
+  else if(k==='±'){calcState.display=calcState.display.startsWith('-')?calcState.display.slice(1):'-'+calcState.display;}
+  else if(['+','-','×','÷'].includes(k)){
+    calcState.prevVal=parseFloat(calcState.display);
+    calcState.operator=k;calcState.waitNew=true;
+  } else if(k==='='){
+    if(calcState.operator&&calcState.prevVal!==null){
+      var a=calcState.prevVal,b=parseFloat(calcState.display),r;
+      if(calcState.operator==='+')r=a+b;
+      else if(calcState.operator==='-')r=a-b;
+      else if(calcState.operator==='×')r=a*b;
+      else if(calcState.operator==='÷')r=b===0?'Error':a/b;
+      calcState.display=String(isNaN(r)?'Error':parseFloat(r.toFixed(10)));
+      calcState.operator=null;calcState.prevVal=null;calcState.waitNew=true;
+    }
+  }
+  d.textContent=calcState.display;
+}
+
+/* ====== CALENDAR ====== */
+function openCalendar(){
+  createWindow('calendar','Calendar',320,280,
+    '<div id="cal-container"></div>',null,null);
+}
+var calDate=new Date();
+function initCalendar(){
+  renderCalendar();
+}
+function renderCalendar(){
+  var c=document.getElementById('cal-container');
+  if(!c)return;
+  var y=calDate.getFullYear(),m=calDate.getMonth();
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var days=['Su','Mo','Tu','We','Th','Fr','Sa'];
+  var first=new Date(y,m,1).getDay();
+  var last=new Date(y,m+1,0).getDate();
+  var today=new Date();
+  var html='<div class="cal-header"><button class="win-btn" onclick="calNav(-1)">◀</button><b>'+months[m]+' '+y+'</b><button class="win-btn" onclick="calNav(1)">▶</button></div>';
+  html+='<div class="cal-grid">';
+  days.forEach(function(d){html+='<div class="cal-day-header">'+d+'</div>';});
+  for(var i=0;i<first;i++)html+='<div class="cal-day other-month"></div>';
+  for(var d=1;d<=last;d++){
+    var isToday=d===today.getDate()&&m===today.getMonth()&&y===today.getFullYear();
+    html+='<div class="cal-day'+(isToday?' today':'')+'" onclick="calSelect('+d+')">'+d+'</div>';
+  }
+  html+='</div>';
+  c.innerHTML=html;
+}
+function calNav(dir){calDate=new Date(calDate.getFullYear(),calDate.getMonth()+dir,1);renderCalendar();}
+function calSelect(d){var s=document.getElementById('status-calendar');if(s)s.textContent='Selected: '+d+'/'+( calDate.getMonth()+1)+'/'+calDate.getFullYear();}
+
+/* ====== NOTEPAD +++ ====== */
+function openNotepad(){
+  createWindow('notepad','Notepad+++',600,500,
+    '<textarea id="notepad-area" spellcheck="true">'+notepadContent+'</textarea>',
+    '<span class="menu-item" onclick="notepadNew()">New</span><span class="menu-item" onclick="notepadSave()">Save</span><span class="menu-item" onclick="notepadOpen()">Open</span><span class="menu-item" onclick="notepadFind()">Find</span>',
+    'Ln 1, Col 1 | UTF-8');
+  setTimeout(function(){
+    var a=document.getElementById('notepad-area');
+    if(a){a.addEventListener('input',function(){notepadContent=a.value;});
+    a.addEventListener('keyup',function(){
+      var lines=a.value.substring(0,a.selectionStart).split('\n');
+      var s=document.getElementById('status-notepad');
+      if(s)s.textContent='Ln '+(lines.length)+', Col '+(lines[lines.length-1].length+1)+' | UTF-8';
+    });}
+  },100);
+}
+function notepadNew(){var a=document.getElementById('notepad-area');if(a){a.value='';notepadContent='';}}
+function notepadSave(){
+  var a=document.getElementById('notepad-area');
+  if(!a)return;
+  var blob=new Blob([a.value],{type:'text/plain'});
+  var url=URL.createObjectURL(blob);
+  var lnk=document.createElement('a');lnk.href=url;lnk.download='document.txt';lnk.click();
+  URL.revokeObjectURL(url);
+}
+function notepadOpen(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.txt,.js,.html,.css,.json,.md';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(ev){
+      var a=document.getElementById('notepad-area');
+      if(a){a.value=ev.target.result;notepadContent=ev.target.result;}
+    };r.readAsText(f);
+  };inp.click();
+}
+function notepadFind(){
+  var q=prompt('Find:');if(!q)return;
+  var a=document.getElementById('notepad-area');if(!a)return;
+  var i=a.value.indexOf(q,a.selectionEnd);
+  if(i===-1)i=a.value.indexOf(q);
+  if(i>=0){a.focus();a.setSelectionRange(i,i+q.length);}
+  else alert('Not found: '+q);
+}
+
+/* ====== WORDPAD ====== */
+function openWordpad(){
+  createWindow('wordpad','WordPad',680,520,
+    '<div class="wordpad-toolbar">'+
+    '<button class="win-btn" onclick="wordpadFormat(\'bold\')"><b>B</b></button>'+
+    '<button class="win-btn" onclick="wordpadFormat(\'italic\')"><i>I</i></button>'+
+    '<button class="win-btn" onclick="wordpadFormat(\'underline\')"><u>U</u></button>'+
+    '<select class="win-select" onchange="wordpadSize(this.value)">'+
+    [8,10,12,14,16,18,24,32,48].map(function(s){return '<option'+(s===14?' selected':'')+'>'+s+'</option>';}).join('')+
+    '</select>'+
+    '<input type="color" value="#000000" class="win-input" style="width:28px;height:22px;padding:0;cursor:pointer" onchange="wordpadColor(this.value)">'+
+    '<button class="win-btn" onclick="wordpadSave()">💾 Save</button>'+
+    '</div>'+
+    '<div id="wordpad-area" contenteditable="true" style="flex:1;overflow:auto;font-size:14px;font-family:serif;padding:12px;background:#fff;outline:none;min-height:300px;border:inset 1px #888;">'+wordpadContent+'</div>',
+    null,'Rich Text');
+}
+function wordpadFormat(cmd){document.execCommand(cmd,false,null);}
+function wordpadSize(s){document.execCommand('fontSize',false,1);var x=document.querySelectorAll('[size="1"]');x.forEach(function(el){el.removeAttribute('size');el.style.fontSize=s+'px';});}
+function wordpadColor(c){document.execCommand('foreColor',false,c);}
+function wordpadSave(){
+  var a=document.getElementById('wordpad-area');if(!a)return;
+  var b=new Blob([a.innerHTML],{type:'text/html'});
+  var url=URL.createObjectURL(b);var l=document.createElement('a');l.href=url;l.download='document.html';l.click();URL.revokeObjectURL(url);
+}
+
+/* ====== JS PAINT ====== */
+function openPaint(){
+  createWindow('paint','JS Paint - Windows 98',800,600,
+    '<div class="paint-toolbar">'+
+    [['✏️','pencil'],['🖌️','brush'],['⬜','rect'],['⭕','ellipse'],['🗑️','fill'],['📐','line'],['🧽','eraser']]
+    .map(function(t){return '<div class="paint-tool-btn'+(t[1]==='pencil'?' active':'')+'" data-tool="'+t[1]+'" onclick="setPaintTool(\''+t[1]+'\',this)">'+t[0]+'</div>';}).join('')+
+    '<input type="color" id="paint-color" value="#000000" style="width:28px;height:28px;padding:0;cursor:pointer;border:2px solid #000" onchange="paintState.color=this.value">'+
+    '<select class="win-select" onchange="paintState.size=parseInt(this.value)"><option value="2">Thin</option><option value="4" selected>Normal</option><option value="8">Thick</option><option value="16">Thick 2</option></select>'+
+    '<button class="win-btn" onclick="clearPaint()">Clear</button>'+
+    '<button class="win-btn" onclick="savePaint()">Save PNG</button>'+
+    '</div>'+
+    '<div style="overflow:auto;flex:1;background:#808080;padding:4px;"><canvas id="paint-canvas" width="760" height="440"></canvas></div>',
+    null,'Ready');
+}
+function initPaint(){
+  setTimeout(function(){
+    var canvas=document.getElementById('paint-canvas');
+    if(!canvas)return;
+    var ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff';ctx.fillRect(0,0,canvas.width,canvas.height);
+    var rect,startX,startY,snapshot;
+    canvas.addEventListener('mousedown',function(e){
+      rect=canvas.getBoundingClientRect();
+      startX=e.clientX-rect.left;startY=e.clientY-rect.top;
+      paintState.drawing=true;
+      if(paintState.tool==='fill'){floodFill(ctx,Math.round(startX),Math.round(startY),paintState.color);return;}
+      snapshot=ctx.getImageData(0,0,canvas.width,canvas.height);
+      ctx.beginPath();ctx.moveTo(startX,startY);
+    });
+    canvas.addEventListener('mousemove',function(e){
+      if(!paintState.drawing)return;
+      rect=canvas.getBoundingClientRect();
+      var x=e.clientX-rect.left,y=e.clientY-rect.top;
+      if(paintState.tool==='pencil'||paintState.tool==='brush'){
+        ctx.lineWidth=paintState.size;ctx.strokeStyle=paintState.color;ctx.lineCap='round';
+        ctx.lineTo(x,y);ctx.stroke();
+      } else if(paintState.tool==='eraser'){
+        ctx.lineWidth=paintState.size*3;ctx.strokeStyle='#ffffff';ctx.lineCap='round';
+        ctx.lineTo(x,y);ctx.stroke();
+      } else if(paintState.tool==='rect'){
+        ctx.putImageData(snapshot,0,0);
+        ctx.strokeStyle=paintState.color;ctx.lineWidth=paintState.size;
+        ctx.strokeRect(startX,startY,x-startX,y-startY);
+      } else if(paintState.tool==='ellipse'){
+        ctx.putImageData(snapshot,0,0);
+        ctx.strokeStyle=paintState.color;ctx.lineWidth=paintState.size;
+        ctx.beginPath();ctx.ellipse(startX+(x-startX)/2,startY+(y-startY)/2,Math.abs(x-startX)/2,Math.abs(y-startY)/2,0,0,Math.PI*2);ctx.stroke();
+      } else if(paintState.tool==='line'){
+        ctx.putImageData(snapshot,0,0);
+        ctx.strokeStyle=paintState.color;ctx.lineWidth=paintState.size;
+        ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(x,y);ctx.stroke();
+      }
+    });
+    canvas.addEventListener('mouseup',function(){paintState.drawing=false;ctx.beginPath();});
+    canvas.addEventListener('mouseleave',function(){paintState.drawing=false;ctx.beginPath();});
+  },100);
+}
+function setPaintTool(t,el){
+  paintState.tool=t;
+  document.querySelectorAll('.paint-tool-btn').forEach(function(b){b.classList.remove('active');});
+  if(el)el.classList.add('active');
+}
+function clearPaint(){var c=document.getElementById('paint-canvas');if(!c)return;var ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);}
+function savePaint(){var c=document.getElementById('paint-canvas');if(!c)return;var l=document.createElement('a');l.download='painting.png';l.href=c.toDataURL();l.click();}
+function floodFill(ctx,x,y,fillColor){
+  var imageData=ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
+  var data=imageData.data;
+  var w=ctx.canvas.width,h=ctx.canvas.height;
+  var idx=(y*w+x)*4;
+  var tr=data[idx],tg=data[idx+1],tb=data[idx+2],ta=data[idx+3];
+  var fc=hexToRgb(fillColor);
+  if(tr===fc.r&&tg===fc.g&&tb===fc.b)return;
+  var stack=[[x,y]];
+  while(stack.length){
+    var p=stack.pop();var px=p[0],py=p[1];
+    if(px<0||py<0||px>=w||py>=h)continue;
+    var i=(py*w+px)*4;
+    if(data[i]!==tr||data[i+1]!==tg||data[i+2]!==tb||data[i+3]!==ta)continue;
+    data[i]=fc.r;data[i+1]=fc.g;data[i+2]=fc.b;data[i+3]=255;
+    stack.push([px+1,py],[px-1,py],[px,py+1],[px,py-1]);
+  }
+  ctx.putImageData(imageData,0,0);
+}
+function hexToRgb(hex){var r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);return r?{r:parseInt(r[1],16),g:parseInt(r[2],16),b:parseInt(r[3],16)}:{r:0,g:0,b:0};}
+
+/* ====== TERMINAL ====== */
+var termHistory=[],termHistIdx=-1,termCwd='C:/Desktop',termEnv={PATH:'/bin',HOME:'C:/Users/User',USER:'User'};
+function openTerminal(){
+  createWindow('terminal','Pseudo-Bash Terminal',660,440,
+    '<div id="terminal-output">Windows 94 Pseudo-Bash [Version 94.0]\n(c) 1994 Windows94 Corporation. All rights reserved.\nType "help" for available commands.\n</div>'+
+    '<div id="terminal-input-row"><span id="terminal-prompt">User@Win94:'+termCwd+'$ </span><input id="terminal-input" type="text" autocomplete="off" spellcheck="false"></div>',
+    null,null);
+}
+function initTerminal(){
+  setTimeout(function(){
+    var inp=document.getElementById('terminal-input');
+    if(!inp)return;
+    inp.focus();
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Enter'){
+        var cmd=inp.value.trim();
+        appendTerm(document.getElementById('terminal-prompt').textContent+cmd);
+        if(cmd)termHistory.unshift(cmd);termHistIdx=-1;
+        processCmd(cmd);inp.value='';
+      } else if(e.key==='ArrowUp'){
+        termHistIdx=Math.min(termHistIdx+1,termHistory.length-1);
+        inp.value=termHistory[termHistIdx]||'';e.preventDefault();
+      } else if(e.key==='ArrowDown'){
+        termHistIdx=Math.max(termHistIdx-1,-1);
+        inp.value=termHistIdx>=0?termHistory[termHistIdx]:'';e.preventDefault();
+      } else if(e.key==='Tab'){
+        e.preventDefault();
+        var parts=inp.value.split(' ');var last=parts[parts.length-1];
+        var cmds=['ls','dir','cd','pwd','echo','cat','mkdir','touch','rm','clear','help','date','whoami','uname','cal','env','export','history','ps','ping','curl','wget'];
+        var matches=cmds.filter(function(c){return c.startsWith(last);});
+        if(matches.length===1){parts[parts.length-1]=matches[0];inp.value=parts.join(' ');}
+        else if(matches.length>1)appendTerm(matches.join('  '));
+      }
+    });
+  },100);
+}
+function appendTerm(text){
+  var out=document.getElementById('terminal-output');
+  if(!out)return;
+  out.textContent+=text+'\n';
+  out.scrollTop=out.scrollHeight;
+}
+function updatePrompt(){
+  var p=document.getElementById('terminal-prompt');
+  if(p)p.textContent='User@Win94:'+termCwd+'$ ';
+}
+function processCmd(cmd){
+  if(!cmd){appendTerm('');return;}
+  var parts=cmd.match(/(?:[^\s"]+|"[^"]*")+/g)||[];
+  var c=parts[0].toLowerCase();
+  var args=parts.slice(1).map(function(a){return a.replace(/^"|"$/g,'');});
+  if(c==='clear'||c==='cls'){var o=document.getElementById('terminal-output');if(o)o.textContent='';}
+  else if(c==='help')appendTerm('Commands: ls, dir, cd, pwd, echo, cat, mkdir, touch, rm, clear, date, whoami, uname, env, history, ps, ping, curl, wget, cal, export, grep, head, tail, wc, chmod, chown, man, exit');
+  else if(c==='ls'||c==='dir'){
+    var node=fsNavigate(termCwd);
+    if(node&&typeof node==='object')appendTerm(Object.keys(node).join('  ')||'(empty)');
+    else appendTerm('ls: cannot access: Not a directory');
+  }
+  else if(c==='pwd')appendTerm(termCwd);
+  else if(c==='cd'){
+    if(!args[0]||args[0]==='~'){termCwd='C:/Desktop';updatePrompt();}
+    else if(args[0]==='..'){var p=termCwd.split('/');if(p.length>1){p.pop();termCwd=p.join('/');}updatePrompt();}
+    else{
+      var np=termCwd+'/'+args[0];
+      var node=fsNavigate(np);
+      if(node&&typeof node==='object'){termCwd=np;updatePrompt();}
+      else appendTerm('cd: '+args[0]+': No such file or directory');
+    }
+  }
+  else if(c==='echo')appendTerm(args.join(' ').replace(/\$(\w+)/g,function(m,k){return termEnv[k]||'';}));
+  else if(c==='cat'){
+    var node=fsNavigate(termCwd+'/'+args[0]);
+    if(typeof node==='string')appendTerm(node);
+    else appendTerm('cat: '+args[0]+': No such file or directory');
+  }
+  else if(c==='mkdir'){
+    var node=fsNavigate(termCwd);
+    if(node&&typeof node==='object'){node[args[0]]={};appendTerm('');}
+    else appendTerm('mkdir: cannot create');
+  }
+  else if(c==='touch'){
+    var node=fsNavigate(termCwd);
+    if(node&&typeof node==='object'){node[args[0]]='';appendTerm('');}
+    else appendTerm('touch: cannot create');
+  }
+  else if(c==='rm'){
+    var node=fsNavigate(termCwd);
+    if(node&&args[0]&&node[args[0]]!==undefined){delete node[args[0]];appendTerm('');}
+    else appendTerm('rm: '+args[0]+': No such file');
+  }
+  else if(c==='date')appendTerm(new Date().toString());
+  else if(c==='whoami')appendTerm(termEnv.USER);
+  else if(c==='uname')appendTerm('Windows 94 x86_64 1994');
+  else if(c==='env')appendTerm(Object.entries(termEnv).map(function(e){return e[0]+'='+e[1];}).join('\n'));
+  else if(c==='export'){var kv=args[0].split('=');if(kv.length===2)termEnv[kv[0]]=kv[1];appendTerm('');}
+  else if(c==='history')appendTerm(termHistory.slice().reverse().map(function(h,i){return (i+1)+'  '+h;}).join('\n'));
+  else if(c==='ps')appendTerm('PID  CMD\n 1   bash\n 2   win94os\n 3   explorer');
+  else if(c==='ping')appendTerm('PING '+args[0]+': 64 bytes: icmp_seq=0 ttl=64 time=0.042 ms\n64 bytes: icmp_seq=1 ttl=64 time=0.039 ms');
+  else if(c==='curl'||c==='wget')appendTerm('Network access not available in sandbox.');
+  else if(c==='cal')appendTerm(buildCalStr());
+  else if(c==='grep'){if(args.length<2)appendTerm('Usage: grep <pattern> <file>');else{var n=fsNavigate(termCwd+'/'+args[1]);if(typeof n==='string'){var lines=n.split('\n').filter(function(l){return l.includes(args[0]);});appendTerm(lines.join('\n')||'(no matches)');}else appendTerm('grep: '+args[1]+': No such file');}}
+  else if(c==='head'){var n=fsNavigate(termCwd+'/'+args[0]);if(typeof n==='string')appendTerm(n.split('\n').slice(0,10).join('\n'));else appendTerm('head: '+args[0]+': No such file');}
+  else if(c==='tail'){var n=fsNavigate(termCwd+'/'+args[0]);if(typeof n==='string')appendTerm(n.split('\n').slice(-10).join('\n'));else appendTerm('tail: '+args[0]+': No such file');}
+  else if(c==='wc'){var n=fsNavigate(termCwd+'/'+args[0]);if(typeof n==='string'){var ls=n.split('\n');appendTerm(ls.length+' '+n.split(/\s+/).filter(Boolean).length+' '+n.length+' '+args[0]);}else appendTerm('wc: '+args[0]+': No such file');}
+  else if(c==='chmod'||c==='chown')appendTerm('Changed permissions/owner: '+args.join(' '));
+  else if(c==='man')appendTerm('Manual page for '+args[0]+': Not available in this version.');
+  else if(c==='exit')appendTerm('logout');
+  else appendTerm(parts[0]+': command not found');
+}
+function buildCalStr(){
+  var d=new Date();var m=d.getMonth();var y=d.getFullYear();
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var header=months[m]+' '+y;var days='Su Mo Tu We Th Fr Sa\n';
+  var first=new Date(y,m,1).getDay();var last=new Date(y,m+1,0).getDate();
+  var row='   '.repeat(first);var col=first;
+  for(var i=1;i<=last;i++){row+=(i<10?' ':'')+i+' ';col++;if(col%7===0){days+=row.trimEnd()+'\n';row='';}}
+  if(row.trim())days+=row.trimEnd()+'\n';
+  return header+'\n'+days;
+}
+function fsNavigate(path){
+  var parts=path.replace(/\\/g,'/').split('/').filter(Boolean);
+  var node=virtualFS;
+  for(var i=0;i<parts.length;i++){
+    if(node&&typeof node==='object'&&parts[i] in node)node=node[parts[i]];
+    else return null;
+  }
+  return node;
+}
+
+/* ====== FILE EXPLORER ====== */
+function openFileExplorer(){
+  createWindow('fileexplorer','File Explorer',700,500,
+    '<div style="display:flex;height:100%;">'+
+    '<div class="file-tree" id="fe-tree"></div>'+
+    '<div class="file-list" id="fe-list"></div>'+
+    '</div>',
+    '<span class="menu-item" onclick="feBack()">⬅ Back</span><span class="menu-item" id="fe-path">C:</span>',
+    'Ready');
+}
+var fePath='C:';
+function initFileExplorer(){
+  setTimeout(function(){renderFileTree();renderFileList(fePath);},100);
+}
+function renderFileTree(){
+  var tree=document.getElementById('fe-tree');if(!tree)return;
+  var html='';
+  Object.keys(virtualFS).forEach(function(drive){
+    html+='<div class="file-tree-item" onclick="feNavTo(\''+drive+'\')" ><span>💾</span>'+drive+'</div>';
+    var node=virtualFS[drive];
+    Object.keys(node).forEach(function(dir){
+      if(typeof node[dir]==='object')
+        html+='<div class="file-tree-item" style="padding-left:16px" onclick="feNavTo(\''+drive+'/'+dir+'\')"><span>📁</span>'+dir+'</div>';
+    });
+  });
+  tree.innerHTML=html;
+}
+function renderFileList(path){
+  fePath=path;
+  var pathEl=document.getElementById('fe-path');if(pathEl)pathEl.textContent=path;
+  var node=fsNavigate(path);
+  var list=document.getElementById('fe-list');if(!list)return;
+  if(!node||typeof node!=='object'){list.innerHTML='<span style="color:#c00">Path not found</span>';return;}
+  var html='';
+  Object.keys(node).forEach(function(name){
+    var isDir=typeof node[name]==='object';
+    html+='<div class="file-icon" ondblclick="feOpen(\''+name+'\')" onclick="feSelect(this,\''+name+'\')"><span class="fi">'+(isDir?'📁':'📄')+'</span><span>'+name+'</span></div>';
+  });
+  list.innerHTML=html||'<span style="color:#888">(empty)</span>';
+}
+function feSelect(el){document.querySelectorAll('.file-icon').forEach(function(e){e.classList.remove('selected');});el.classList.add('selected');}
+function feOpen(name){
+  var node=fsNavigate(fePath+'/'+name);
+  if(typeof node==='object'){feNavTo(fePath+'/'+name);}
+  else if(typeof node==='string'){
+    notepadContent=node;openNotepad();
+    setTimeout(function(){var a=document.getElementById('notepad-area');if(a)a.value=node;},200);
+  }
+}
+function feNavTo(path){renderFileList(path);renderFileTree();}
+function feBack(){var p=fePath.split('/');if(p.length>1){p.pop();feNavTo(p.join('/'));}else feNavTo('C:');}
+
+/* ====== IPTV ====== */
+function openIPTV(){
+  createWindow('iptv','IPTV Playlist',500,400,
+    '<div style="display:flex;flex-direction:column;height:100%;">'+
+    '<div style="padding:4px;display:flex;gap:4px;"><input class="win-input" id="iptv-url-input" placeholder="Add stream URL..." style="flex:1"><button class="win-btn" onclick="iptvAdd()">Add</button><button class="win-btn" onclick="iptvLoadM3U()">Load M3U</button></div>'+
+    '<ul class="iptv-list" id="iptv-list"></ul>'+
+    '</div>',
+    null,'Select a channel');
+}
+function initIPTV(){
+  setTimeout(function(){renderIPTVList();},100);
+}
+function renderIPTVList(){
+  var list=document.getElementById('iptv-list');if(!list)return;
+  list.innerHTML=iptvChannels.map(function(ch,i){
+    return '<li class="iptv-item" onclick="iptvPlay('+i+')">📺 '+ch.name+'</li>';
+  }).join('');
+}
+function iptvPlay(i){
+  var ch=iptvChannels[i];
+  openMediaPlayer(ch.url,ch.name);
+}
+function iptvAdd(){
+  var inp=document.getElementById('iptv-url-input');if(!inp||!inp.value.trim())return;
+  var name=prompt('Channel name:','New Channel');
+  iptvChannels.push({name:name||inp.value,url:inp.value.trim()});
+  inp.value='';renderIPTVList();
+}
+function iptvLoadM3U(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.m3u,.m3u8';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var r=new FileReader();r.onload=function(ev){
+      var lines=ev.target.result.split('\n');
+      for(var i=0;i<lines.length-1;i++){
+        if(lines[i].startsWith('#EXTINF:')){
+          var name=lines[i].split(',').slice(1).join(',').trim();
+          var url=lines[i+1].trim();
+          if(url&&!url.startsWith('#'))iptvChannels.push({name:name||url,url:url});
+        }
+      }
+      renderIPTVList();
+    };r.readAsText(f);
+  };inp.click();
+}
+
+/* ====== MEDIA PLAYER ====== */
+function openMediaPlayer(url,title){
+  createWindow('mediaplayer','Media Player'+(title?' - '+title:''),560,380,
+    '<div id="media-player" style="display:flex;flex-direction:column;height:100%;">'+
+    '<video id="media-video" controls style="width:100%;flex:1;background:#000;">'+(url?'<source src="'+url+'">':'')+'</video>'+
+    '<div style="padding:4px;display:flex;gap:4px;align-items:center;">'+
+    '<input class="win-input" id="media-url" placeholder="Enter media URL..." style="flex:1" value="'+(url||'')+'">'+
+    '<button class="win-btn" onclick="mediaLoad()">▶ Play</button>'+
+    '<button class="win-btn" onclick="mediaFile()">📂 Open File</button>'+
+    '</div>'+
+    '<div style="padding:4px;display:flex;align-items:center;gap:8px;">'+
+    '<span style="font-size:11px">Vol:</span>'+
+    '<input type="range" class="win-slider" min="0" max="1" step="0.05" value="1" style="width:80px" onchange="mediaVol(this.value)">'+
+    '<span style="font-size:11px">Speed:</span>'+
+    '<select class="win-select" onchange="mediaSpeed(this.value)"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="1.5">1.5x</option><option value="2">2x</option></select>'+
+    '</div></div>',
+    null,'Stopped');
+}
+function mediaLoad(){
+  var url=document.getElementById('media-url');
+  var v=document.getElementById('media-video');
+  if(!url||!v)return;
+  v.src=url.value;v.play();
+}
+function mediaFile(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='video/*,audio/*';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var url=URL.createObjectURL(f);
+    var v=document.getElementById('media-video');if(v){v.src=url;v.play();}
+  };inp.click();
+}
+function mediaVol(v){var el=document.getElementById('media-video');if(el)el.volume=parseFloat(v);}
+function mediaSpeed(v){var el=document.getElementById('media-video');if(el)el.playbackRate=parseFloat(v);}
+
+/* ====== SHADER EDITOR ====== */
+var defaultShader=`precision mediump float;
+uniform float u_time;
+uniform vec2 u_resolution;
+void main(){
+  vec2 uv=gl_FragCoord.xy/u_resolution;
+  vec3 col=0.5+0.5*cos(u_time+uv.xyx+vec3(0,2,4));
+  gl_FragColor=vec4(col,1.0);
+}`;
+function openShader(){
+  createWindow('shader','Shader Editor & Player',700,520,
+    '<div style="display:flex;flex-direction:column;height:100%;">'+
+    '<canvas id="shader-canvas" width="660" height="280"></canvas>'+
+    '<textarea id="shader-code">'+defaultShader+'</textarea>'+
+    '<div style="padding:4px;display:flex;gap:4px;">'+
+    '<button class="win-btn" onclick="runShader()">▶ Run</button>'+
+    '<button class="win-btn" onclick="stopShader()">■ Stop</button>'+
+    '<button class="win-btn" onclick="document.getElementById(\'shader-code\').value=defaultShader;runShader()">Reset</button>'+
+    '</div></div>',
+    null,'Ready');
+}
+function initShader(){setTimeout(runShader,200);}
+function runShader(){
+  var canvas=document.getElementById('shader-canvas');
+  var code=document.getElementById('shader-code');
+  if(!canvas||!code)return;
+  stopShader();
+  var gl=canvas.getContext('webgl');if(!gl){alert('WebGL not supported');return;}
+  shaderGL=gl;
+  var vs=gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(vs,'attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0,1);}');
+  gl.compileShader(vs);
+  var fs=gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs,code.value);
+  gl.compileShader(fs);
+  if(!gl.getShaderParameter(fs,gl.COMPILE_STATUS)){
+    var err=gl.getShaderInfoLog(fs);
+    var s=document.getElementById('status-shader');if(s)s.textContent='Error: '+err;
+    return;
+  }
+  shaderProgram=gl.createProgram();
+  gl.attachShader(shaderProgram,vs);gl.attachShader(shaderProgram,fs);gl.linkProgram(shaderProgram);gl.useProgram(shaderProgram);
+  var buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+  var loc=gl.getAttribLocation(shaderProgram,'a_pos');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  var t0=performance.now();
+  var resLoc=gl.getUniformLocation(shaderProgram,'u_resolution');
+  var timeLoc=gl.getUniformLocation(shaderProgram,'u_time');
+  function frame(){
+    shaderAnim=requestAnimationFrame(frame);
+    gl.viewport(0,0,canvas.width,canvas.height);
+    gl.useProgram(shaderProgram);
+    gl.uniform2f(resLoc,canvas.width,canvas.height);
+    gl.uniform1f(timeLoc,(performance.now()-t0)/1000);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  }
+  frame();
+  var s=document.getElementById('status-shader');if(s)s.textContent='Running';
+}
+function stopShader(){if(shaderAnim){cancelAnimationFrame(shaderAnim);shaderAnim=null;}var s=document.getElementById('status-shader');if(s)s.textContent='Stopped';}
+
+/* ====== JSON EDITOR ====== */
+function openJsonEditor(){
+  createWindow('jsoneditor','JSON Editor',580,500,
+    '<div style="display:flex;flex-direction:column;height:100%;">'+
+    '<textarea id="json-input" spellcheck="false">'+jsonContent+'</textarea>'+
+    '<div style="padding:4px;display:flex;gap:4px;">'+
+    '<button class="win-btn" onclick="jsonValidate()">✔ Validate</button>'+
+    '<button class="win-btn" onclick="jsonFormat()">✨ Format</button>'+
+    '<button class="win-btn" onclick="jsonMinify()">⬛ Minify</button>'+
+    '<button class="win-btn" onclick="jsonSave()">💾 Save</button>'+
+    '<button class="win-btn" onclick="jsonOpen()">📂 Open</button>'+
+    '</div></div>',
+    null,'Ready');
+}
+function jsonGet(){return document.getElementById('json-input');}
+function jsonValidate(){var el=jsonGet();if(!el)return;try{JSON.parse(el.value);var s=document.getElementById('status-jsoneditor');if(s)s.textContent='✔ Valid JSON';}catch(e){var s=document.getElementById('status-jsoneditor');if(s)s.textContent='✘ '+e.message;}}
+function jsonFormat(){var el=jsonGet();if(!el)return;try{el.value=JSON.stringify(JSON.parse(el.value),null,2);jsonContent=el.value;}catch(e){alert('Invalid JSON: '+e.message);}}
+function jsonMinify(){var el=jsonGet();if(!el)return;try{el.value=JSON.stringify(JSON.parse(el.value));jsonContent=el.value;}catch(e){alert('Invalid JSON: '+e.message);}}
+function jsonSave(){var el=jsonGet();if(!el)return;var b=new Blob([el.value],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='data.json';a.click();}
+function jsonOpen(){var inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){var el=jsonGet();if(el){el.value=ev.target.result;jsonContent=ev.target.result;}};r.readAsText(f);};inp.click();}
+
+/* ====== JS CONSOLE ====== */
+function openJsConsole(){
+  createWindow('jsconsole','JS Console',620,480,
+    '<div id="jsconsole-output"></div>'+
+    '<div style="display:flex;gap:4px;padding:4px;border-top:1px solid #888;">'+
+    '<span style="font-family:monospace;font-size:13px;color:#000080">></span>'+
+    '<input class="win-input" id="jsconsole-input" style="flex:1;font-family:monospace;" placeholder="Type JavaScript..." autocomplete="off">'+
+    '<button class="win-btn" onclick="jsconsoleRun()">Run</button>'+
+    '<button class="win-btn" onclick="jsconsoleClear()">Clear</button>'+
+    '</div>',
+    null,'Ready');
+  setTimeout(function(){
+    var inp=document.getElementById('jsconsole-input');
+    if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter')jsconsoleRun();});
+    var oldLog=console.log,oldErr=console.error,oldWarn=console.warn,oldInfo=console.info;
+    console.log=function(){jsconsoleAppend([].slice.call(arguments).join(' '),'log');oldLog.apply(console,arguments);};
+    console.error=function(){jsconsoleAppend([].slice.call(arguments).join(' '),'error');oldErr.apply(console,arguments);};
+    console.warn=function(){jsconsoleAppend([].slice.call(arguments).join(' '),'warn');oldWarn.apply(console,arguments);};
+    console.info=function(){jsconsoleAppend([].slice.call(arguments).join(' '),'info');oldInfo.apply(console,arguments);};
+  },100);
+}
+function jsconsoleAppend(text,type){
+  var out=document.getElementById('jsconsole-output');if(!out)return;
+  var d=document.createElement('div');d.className='jsconsole-'+(type||'log');d.textContent=text;out.appendChild(d);out.scrollTop=out.scrollHeight;
+}
+function jsconsoleRun(){
+  var inp=document.getElementById('jsconsole-input');if(!inp)return;
+  var code=inp.value.trim();if(!code)return;
+  jsconsoleAppend('> '+code,'info');
+  inp.value='';
+  try{var result=eval(code);if(result!==undefined)jsconsoleAppend(String(result),'log');}
+  catch(e){jsconsoleAppend(e.toString(),'error');}
+}
+function jsconsoleClear(){var out=document.getElementById('jsconsole-output');if(out)out.innerHTML='';}
+
+/* ====== BYTEBEAT ====== */
+function openBytebeat(){
+  createWindow('bytebeat','Bytebeat JS',560,360,
+    '<div style="padding:8px;display:flex;flex-direction:column;gap:8px;height:100%;">'+
+    '<div style="font-size:12px;color:#555">Enter a bytebeat formula using <b>t</b> (time). Examples: t*(t>>9|t>>13) | (t*(t>>5|t>>8))>>(t>>16) </div>'+
+    '<textarea id="bytebeat-code" rows="3" class="win-input" style="font-family:monospace;font-size:14px;resize:vertical;">((t>>1)^(t>>1)-(t>>14)|t>>8)*t</textarea>'+
+    '<div style="display:flex;gap:4px;align-items:center;">'+
+    '<button class="win-btn" onclick="startBytebeat()">▶ Play</button>'+
+    '<button class="win-btn" onclick="stopBytebeat()">■ Stop</button>'+
+    '<span style="font-size:12px">Rate:</span>'+
+    '<select class="win-select" id="bytebeat-rate"><option value="8000">8000</option><option value="11025">11025</option><option value="22050" selected>22050</option><option value="44100">44100</option></select>'+
+    '</div>'+
+    '<canvas id="bytebeat-vis" width="520" height="80" style="background:#000;border:inset 1px #888;"></canvas>'+
+    '</div>',
+    null,'Stopped');
+}
+function initBytebeat(){}
+function startBytebeat(){
+  stopBytebeat();
+  var code=document.getElementById('bytebeat-code');
+  var rateEl=document.getElementById('bytebeat-rate');
+  if(!code)return;
+  var rate=parseInt(rateEl?rateEl.value:22050);
+  try{
+    byteAudioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:rate});
+    var fn=new Function('t','return ('+code.value+')&255;');
+    var bufSize=4096;
+    byteNode=byteAudioCtx.createScriptProcessor(bufSize,0,1);
+    byteNode.onaudioprocess=function(e){
+      var out=e.outputBuffer.getChannelData(0);
+      var vis=document.getElementById('bytebeat-vis');
+      var ctx2=vis?vis.getContext('2d'):null;
+      if(ctx2){ctx2.fillStyle='#000';ctx2.fillRect(0,0,vis.width,vis.height);}
+      for(var i=0;i<bufSize;i++){
+        var v=(fn(byteTime)&255)/128-1;
+        out[i]=v;
+        byteTime++;
+        if(ctx2&&i%8===0){
+          var x=(i/bufSize)*vis.width;
+          var y=(1-((v+1)/2))*vis.height;
+          ctx2.fillStyle='#00ff00';ctx2.fillRect(x,y,2,2);
+        }
+      }
+    };
+    byteNode.connect(byteAudioCtx.destination);
+    var s=document.getElementById('status-bytebeat');if(s)s.textContent='Playing';
+  }catch(e){alert('Error: '+e.message);}
+}
+function stopBytebeat(){
+  if(byteNode){try{byteNode.disconnect();}catch(e){}byteNode=null;}
+  if(byteAudioCtx){try{byteAudioCtx.close();}catch(e){}byteAudioCtx=null;}
+  byteTime=0;
+  var s=document.getElementById('status-bytebeat');if(s)s.textContent='Stopped';
+}
+
+/* ====== STICKY NOTE ====== */
+var stickyCount=0;
+function openStickyNote(){
+  stickyCount++;
+  var id='sticky'+stickyCount;
+  createWindow(id,'Sticky Note '+stickyCount,220,200,
+    '<textarea class="sticky-note-content" placeholder="Write your note here...">'+stickyContent+'</textarea>',
+    null,null);
+  var w=document.getElementById('win-'+id);
+  if(w)w.style.background='#ffff88';
+  var tb=document.getElementById('titlebar-'+id);
+  if(tb){tb.style.background='#e8c800';tb.style.color='#000';}
+}
+
+/* ====== 2048 ====== */
+function open2048(){
+  createWindow('game2048','2048 Game',420,480,
+    '<div style="padding:8px;text-align:center;">'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'+
+    '<span style="font-size:20px;font-weight:bold">2048</span>'+
+    '<span id="score-2048" style="font-size:14px">Score: 0</span>'+
+    '<button class="win-btn" onclick="init2048()">New Game</button>'+
+    '</div>'+
+    '<div class="game-2048" id="grid-2048"></div>'+
+    '<div style="margin-top:8px;font-size:12px">Use arrow keys to play</div>'+
+    '</div>',
+    null,null);
+}
+function init2048(){
+  game2048State={grid:Array(4).fill(null).map(function(){return Array(4).fill(0);}),score:0};
+  addTile2048();addTile2048();render2048();
+}
+function addTile2048(){
+  var g=game2048State.grid;
+  var empty=[];
+  for(var r=0;r<4;r++)for(var c=0;c<4;c++)if(g[r][c]===0)empty.push([r,c]);
+  if(!empty.length)return;
+  var pos=empty[Math.floor(Math.random()*empty.length)];
+  g[pos[0]][pos[1]]=Math.random()<0.9?2:4;
+}
+function render2048(){
+  var grid=document.getElementById('grid-2048');
+  var score=document.getElementById('score-2048');
+  if(!grid)return;
+  if(score)score.textContent='Score: '+game2048State.score;
+  var colors={0:'#cdc1b4',2:'#eee4da',4:'#ede0c8',8:'#f2b179',16:'#f59563',32:'#f67c5f',64:'#f65e3b',128:'#edcf72',256:'#edcc61',512:'#edc850',1024:'#edc53f',2048:'#edc22e'};
+  grid.innerHTML=game2048State.grid.map(function(row){
+    return row.map(function(v){
+      var bg=colors[v]||'#3c3a32';var tc=v>4?'#f9f6f2':'#776e65';
+      return '<div class="tile-2048" style="background:'+bg+';color:'+tc+';">'+(v||'')+'</div>';
+    }).join('');
+  }).join('');
+}
+document.addEventListener('keydown',function(e){
+  if(!game2048State)return;
+  var moved=false;
+  var g=game2048State.grid;
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
+    e.preventDefault();
+    moved=move2048(e.key.replace('Arrow','').toLowerCase());
+    if(moved){addTile2048();render2048();}
+  }
+});
+function move2048(dir){
+  var g=game2048State.grid;var moved=false;
+  function slide(row){
+    var r=row.filter(function(x){return x!==0;});
+    for(var i=0;i<r.length-1;i++){if(r[i]===r[i+1]){r[i]*=2;game2048State.score+=r[i];r.splice(i+1,1);moved=true;}}
+    while(r.length<4)r.push(0);
+    return r;
+  }
+  if(dir==='left'){for(var r=0;r<4;r++){var newRow=slide(g[r]);if(newRow.join()!==g[r].join()){g[r]=newRow;moved=true;}}}
+  else if(dir==='right'){for(var r=0;r<4;r++){var newRow=slide(g[r].slice().reverse()).reverse();if(newRow.join()!==g[r].join()){g[r]=newRow;moved=true;}}}
+  else if(dir==='up'){
+    for(var c=0;c<4;c++){var col=g.map(function(row){return row[c];});var newCol=slide(col);newCol.forEach(function(v,r){if(v!==g[r][c]){g[r][c]=v;moved=true;}});}
+  }
+  else if(dir==='down'){
+    for(var c=0;c<4;c++){var col=g.map(function(row){return row[c];}).reverse();var newCol=slide(col).reverse();newCol.forEach(function(v,r){if(v!==g[r][c]){g[r][c]=v;moved=true;}});}
+  }
+  return moved;
+}
+
+/* ====== SETTINGS ====== */
+function openSettings(){
+  createWindow('settings','Settings',500,480,
+    '<div style="padding:12px;">'+
+    '<div class="settings-section">'+
+    '<h3>🎨 Themes</h3>'+
+    '<button class="win-btn theme-btn" onclick="setTheme(\'win98\')">Windows 98</button>'+
+    '<button class="win-btn theme-btn" onclick="setTheme(\'win7\')">Windows 7</button>'+
+    '<button class="win-btn theme-btn" onclick="setTheme(\'win10\')">Windows 10</button>'+
+    '<button class="win-btn theme-btn" onclick="setTheme(\'\')">Default (Win94)</button>'+
+    '</div>'+
+    '<div class="settings-section">'+
+    '<h3>🖥️ Desktop</h3>'+
+    '<label style="font-size:12px">Background Color: <input type="color" value="#008080" onchange="document.body.style.setProperty(\'--win-bg\',this.value)"></label><br><br>'+
+    '<label style="font-size:12px">Taskbar Color: <input type="color" value="#c0c0c0" onchange="document.body.style.setProperty(\'--taskbar\',this.value)"></label>'+
+    '</div>'+
+    '<div class="settings-section">'+
+    '<h3>💾 Disk Size</h3>'+
+    '<div class="disk-info" id="disk-info-display"></div>'+
+    '<input type="range" class="win-slider" id="disk-slider" min="1" max="2000" value="10" oninput="updateDiskSize(this.value)">'+
+    '<div style="display:flex;justify-content:space-between;font-size:11px;margin-top:2px;"><span>1 GB</span><span>2 TB</span></div>'+
+    '<div id="disk-progress-wrap" style="margin-top:6px;"><div class="win-progress"><div class="win-progress-fill" id="disk-progress-fill" style="width:0.5%"></div></div></div>'+
+    '</div>'+
+    '<div class="settings-section">'+
+    '<h3>🔤 Font Size</h3>'+
+    '<input type="range" class="win-slider" min="10" max="20" value="13" oninput="document.body.style.fontSize=this.value+\'px\'">'+
+    '</div>'+
+    '<div class="settings-section">'+
+    '<h3>ℹ️ About</h3>'+
+    '<div style="font-size:12px;">Windows 94 OS v94.0<br>Based on HTML+CSS+JS<br>All apps run locally in your browser.<br>&copy; 1994-2024 Windows 94 Corp.</div>'+
+    '</div></div>',
+    null,'Ready');
+  setTimeout(function(){updateDiskSize(10);},100);
+}
+function setTheme(t){
+  document.body.className=t?'theme-'+t:'';
+}
+function updateDiskSize(gb){
+  var n=parseFloat(gb);
+  diskSize=n*1024*1024*1024;
+  var label=n>=1024?(n/1024).toFixed(1)+' TB':n+' GB';
+  var el=document.getElementById('disk-info-display');
+  if(el)el.textContent='Disk Size: '+label+' ('+formatBytes(diskSize)+')';
+  var fill=document.getElementById('disk-progress-fill');
+  if(fill)fill.style.width=Math.min(100,(n/2000)*100)+'%';
+}
+function formatBytes(b){
+  if(b>=1e12)return (b/1e12).toFixed(2)+' TB';
+  if(b>=1e9)return (b/1e9).toFixed(2)+' GB';
+  if(b>=1e6)return (b/1e6).toFixed(2)+' MB';
+  return b+' B';
+}
+
+/* ====== WIN94 HUB ====== */
+function openWin94Hub(){
+  createWindow('win94hub','Windows94 Hub',700,540,
+    '<div style="padding:8px;overflow-y:auto;height:100%;">'+
+    '<div style="font-size:16px;font-weight:bold;margin-bottom:8px;">🏠 Windows94 Hub — Web Applications</div>'+
+    '<div class="hub-grid">'+
+    hubCard('💻','VSCode Dev','editor','https://vscode.dev')+
+    hubCard('🐱','GitHub1S','link','https://github1s.com')+
+    hubCard('🐢','TurboWarp','link','https://turboscratch.mit.edu')+
+    hubCard('🎤','Crappy FFT Vocoder','link','https://d3nschot.github.io/CrappyFFTVocoder/')+
+    hubCard('📦','WebRAR','link','https://webrar.netlify.app')+
+    hubCard('🗜️','Web7-Zip','link','https://7-zip.js.org')+
+    '</div>'+
+    '<div style="font-size:15px;font-weight:bold;margin:12px 0 8px;">🧮 Notation Generators</div>'+
+    '<div class="hub-grid">'+
+    hubCard('🐦','Bird\'s Array Notation','birds_array',null)+
+    hubCard('🔢','Bashicu Matrix System','bashicu',null)+
+    hubCard('📐','Taranovsky\'s Ordinal Notation','taranovsky',null)+
+    hubCard('⚙️','Operator Notation','operator_notation',null)+
+    '</div>'+
+    '<div style="font-size:15px;font-weight:bold;margin:12px 0 8px;">🎨 Themes</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+    '<button class="win-btn" onclick="setTheme(\'win10\')">Windows 10</button>'+
+    '<button class="win-btn" onclick="setTheme(\'win98\')">Windows 98</button>'+
+    '<button class="win-btn" onclick="setTheme(\'win7\')">Windows 7</button>'+
+    '<button class="win-btn" onclick="setTheme(\'\')">Win94 Default</button>'+
+    '</div></div>',
+    null,'Ready');
+}
+function hubCard(icon,name,action,url){
+  var onclick=url?'hubOpenLink(\''+url+'\')':'hubOpenTool(\''+action+'\')';
+  return '<div class="hub-card" onclick="'+onclick+'"><div class="hub-icon">'+icon+'</div><div>'+name+'</div></div>';
+}
+function hubOpenLink(url){window.open(url,'_blank');}
+function hubOpenTool(tool){
+  if(tool==='birds_array')openBirdsArray();
+  else if(tool==='bashicu')openBashicu();
+  else if(tool==='taranovsky')openTaranovsky();
+  else if(tool==='operator_notation')openOperatorNotation();
+}
+
+/* ====== BIRDS ARRAY NOTATION ====== */
+function openBirdsArray(){
+  createWindow('birdsarray','Bird\'s Array Notation Generator',560,440,
+    '<div style="padding:8px;display:flex;flex-direction:column;gap:8px;height:100%;">'+
+    '<div style="font-size:12px">Enter array notation: a[b,c,...] where elements are positive integers.</div>'+
+    '<div style="display:flex;gap:4px;"><input class="win-input" id="ban-input" value="2[2,2]" style="flex:1"><button class="win-btn" onclick="banCompute()">Compute</button></div>'+
+    '<div style="font-size:12px;font-weight:bold">Result:</div>'+
+    '<div id="ban-output" style="background:#fff;border:inset 1px #888;padding:8px;flex:1;overflow:auto;font-family:monospace;font-size:13px;word-break:break-all;white-space:pre-wrap;"></div>'+
+    '<div style="font-size:11px;color:#555">Note: Very large values are approximated as power towers.</div>'+
+    '</div>',
+    null,'Ready');
+}
+function banCompute(){
+  var inp=document.getElementById('ban-input');
+  var out=document.getElementById('ban-output');
+  if(!inp||!out)return;
+  var s=inp.value.trim();
+  var m=s.match(/^(\d+)\[([^\]]+)\]$/);
+  if(!m){out.textContent='Invalid input. Format: n[a,b,c,...]';return;}
+  var base=parseInt(m[1]);
+  var arr=m[2].split(',').map(function(x){return parseInt(x.trim());});
+  out.textContent=banEval(base,arr);
+}
+function banEval(base,arr){
+  if(arr.length===0)return String(base);
+  if(arr.every(function(x){return x===0;}))return String(base);
+  if(arr.length===1){
+    var n=arr[0];
+    if(n===0)return String(base);
+    if(n===1)return String(base);
+    var r=base;for(var i=1;i<n;i++)r*=base;
+    if(r>1e15)return base+'^'+n+' ≈ 10^'+Math.round(n*Math.log10(base));
+    return String(r);
+  }
+  if(arr[arr.length-1]===0){return banEval(base,arr.slice(0,-1));}
+  if(arr[arr.length-1]===1){
+    var inner=arr.slice(0,-1);inner[inner.length-1]--;
+    return base+'^'+banEval(base,inner)+' (approx)';
+  }
+  return base+'['+arr.join(',')+'] → ω^ω level ordinal (too large to compute directly)';
+}
+
+/* ====== BASHICU MATRIX ====== */
+function openBashicu(){
+  createWindow('bashicu','Bashicu Matrix System Generator',580,460,
+    '<div style="padding:8px;display:flex;flex-direction:column;gap:8px;height:100%;">'+
+    '<div style="font-size:12px">Bashicu Matrix: Enter matrix rows as comma-separated numbers, rows separated by semicolons.<br>Example: 0,1;0,1,2 with n=3</div>'+
+    '<div style="display:flex;gap:4px;flex-wrap:wrap;">'+
+    '<input class="win-input" id="bms-matrix" value="(0,0)(1,1)(2,1)" style="flex:1" placeholder="Matrix like (0,0)(1,1)">'+
+    '<input class="win-input" id="bms-n" value="3" style="width:60px" placeholder="n">'+
+    '<button class="win-btn" onclick="bmsCompute()">Expand</button>'+
+    '</div>'+
+    '<div id="bms-output" style="background:#fff;border:inset 1px #888;padding:8px;flex:1;overflow:auto;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-all;"></div>'+
+    '</div>',
+    null,'Ready');
+}
+function bmsCompute(){
+  var mInput=document.getElementById('bms-matrix');
+  var nInput=document.getElementById('bms-n');
+  var out=document.getElementById('bms-output');
+  if(!mInput||!out)return;
+  var n=parseInt(nInput?nInput.value:3)||3;
+  var s=mInput.value.trim();
+  var matches=s.match(/\(([^)]+)\)/g);
+  if(!matches){out.textContent='Invalid format. Use (a,b)(c,d)...';return;}
+  var matrix=matches.map(function(m){return m.replace(/[()]/g,'').split(',').map(Number);});
+  var steps=['Initial: '+bmsStr(matrix)];
+  var current=matrix;
+  for(var step=0;step<Math.min(n,8);step++){
+    var result=bmsExpand(current,n);
+    if(!result){steps.push('Terminal: '+bmsStr(current));break;}
+    steps.push('Step '+(step+1)+': '+bmsStr(result));
+    current=result;
+    if(result.length===0){steps.push('Reached empty sequence.');break;}
+  }
+  steps.push('\nSize grows toward ψ(Ω^Ω) level ordinals for complex matrices.');
+  out.textContent=steps.join('\n');
+}
+function bmsStr(m){return m.map(function(row){return '('+row.join(',')+')'}).join('');}
+function bmsExpand(matrix,n){
+  if(!matrix||matrix.length===0)return null;
+  var last=matrix[matrix.length-1];
+  if(last[0]===0&&(last.length===1||last.every(function(x){return x===0;}))){return matrix.slice(0,-1);}
+  var parent=findBMSParent(matrix);
+  if(parent===-1)return matrix.slice(0,-1);
+  var ancestor=matrix.slice(0,parent+1);
+  var result=matrix.slice(0,-1);
+  for(var i=0;i<n;i++)result=result.concat(ancestor.map(function(row){return row.slice();}));
+  return result;
+}
+function findBMSParent(matrix){
+  var last=matrix[matrix.length-1];
+  for(var i=matrix.length-2;i>=0;i--){
+    var row=matrix[i];
+    if(row.some(function(v,j){return j<last.length&&v<last[j];}))return i;
+  }
+  return -1;
+}
+
+/* ====== TARANOVSKY'S ORDINAL NOTATION ====== */
+function openTaranovsky(){
+  createWindow('taranovsky','Taranovsky\'s Ordinal Notation Generator',600,480,
+    '<div style="padding:8px;display:flex;flex-direction:column;gap:8px;height:100%;">'+
+    '<div style="font-size:12px">Taranovsky C(a,b) notation. Enter expression using C(a,b), Ω, and 0.<br>Example: C(Ω,0), C(C(Ω,0),0), C(Ω*2,0)</div>'+
+    '<div style="display:flex;gap:4px;"><input class="win-input" id="tar-input" value="C(C(Ω,0),0)" style="flex:1"><button class="win-btn" onclick="tarCompute()">Analyze</button></div>'+
+    '<div style="font-weight:bold;font-size:12px;margin-top:4px">Analysis & Fundamental Sequence:</div>'+
+    '<div id="tar-output" style="background:#fff;border:inset 1px #888;padding:8px;flex:1;overflow:auto;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-all;"></div>'+
+    '</div>',
+    null,'Ready');
+}
+function tarCompute(){
+  var inp=document.getElementById('tar-input');
+  var out=document.getElementById('tar-output');
+  if(!inp||!out)return;
+  var expr=inp.value.trim();
+  var result='Expression: '+expr+'\n\n';
+  result+=tarAnalyze(expr);
+  out.textContent=result;
+}
+function tarAnalyze(expr){
+  var known={
+    '0':'Zero ordinal — the base of the system.',
+    'Ω':'First uncountable ordinal (ω₁). Limit ordinal.',
+    'C(Ω,0)':'= ψ(Ω) = ε₀ (epsilon-naught). First fixed point of α↦ω^α. Proof-theoretic ordinal of PA.',
+    'C(C(Ω,0),0)':'= ψ(ε₀). Ordinal beyond ε₀, approx ε_{ε₀}.',
+    'C(Ω,C(Ω,0))':'= ψ(Ω+ε₀). Above ε₀ in the Taranovsky system.',
+    'C(Ω*2,0)':'= ψ(Ω*2). Feferman–Schütte ordinal Γ₀. Proof-theoretic ordinal of ATR₀.',
+    'C(Ω^2,0)':'= ψ(Ω²). Ackermann ordinal. Proof-theoretic ordinal of Π₁¹-CA₀.',
+    'C(Ω^Ω,0)':'= ψ(Ω^Ω). Large Veblen ordinal.',
+    'C(C(Ω^2,0),0)':'= ψ(ψ(Ω²)). Beyond the Ackermann ordinal.'
+  };
+  if(known[expr])return 'Known ordinal:\n'+known[expr]+'\n\nFundamental sequence (first few terms):\n'+tarFundamental(expr);
+  var depth=tarDepth(expr);
+  return 'Parsed depth: '+depth+'\nThis is a valid-looking C-notation term.\n\nIn Taranovsky\'s system:\n- C(a,b) represents a collapsing function applied to ordinals a,b\n- The system reaches up to the proof-theoretic ordinal of Π¹₁-CA₀ and beyond\n- Ordinal strength depends on nesting depth\n\nFundamental sequence approximation:\n'+tarFundamental(expr);
+}
+function tarDepth(s){var d=0,max=0;for(var i=0;i<s.length;i++){if(s[i]==='(')d++;else if(s[i]===')'){if(d>max)max=d;d--;}}return max;}
+function tarFundamental(expr){
+  var seqs={
+    '0':'0 (zero, no sequence)',
+    'C(Ω,0)':'ε₀[n] = ω^ω^...^ω (n times) for finite n',
+    'C(C(Ω,0),0)':'ε_{ε₀}[n]: sequence ascending through ε-numbers',
+    'C(Ω*2,0)':'Γ₀[n]: Veblen function φ_φ_..._0(0) (n times)'
+  };
+  return seqs[expr]||'Approximation: ascending chain of smaller C-notation terms indexed by n∈ω.';
+}
+
+/* ====== OPERATOR NOTATION ====== */
+function openOperatorNotation(){
+  createWindow('operator_notation','Operator Notation Generator',600,480,
+    '<div style="padding:8px;display:flex;flex-direction:column;gap:8px;height:100%;">'+
+    '<div style="font-size:12px">Operator Notation / Knuth Arrow / Hyperoperations<br>Operators: ^ (power), ^^ (tetration), ^^^ (pentation), {n} (hyperop n)</div>'+
+    '<div style="display:flex;gap:4px;flex-wrap:wrap;">'+
+    '<input class="win-input" id="op-a" value="2" style="width:60px" placeholder="a">'+
+    '<select class="win-select" id="op-op">'+
+    ['↑ (power)','↑↑ (tetration)','↑↑↑ (pentation)','↑↑↑↑ (hexation)'].map(function(o,i){return '<option value="'+(i+1)+'">'+o+'</option>';}).join('')+
+    '</select>'+
+    '<input class="win-input" id="op-b" value="3" style="width:60px" placeholder="b">'+
+    '<button class="win-btn" onclick="opCompute()">Compute</button>'+
+    '</div>'+
+    '<div style="font-weight:bold;font-size:12px">Result & Expansion:</div>'+
+    '<div id="op-output" style="background:#fff;border:inset 1px #888;padding:8px;flex:1;overflow:auto;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-all;"></div>'+
+    '</div>',
+    null,'Ready');
+}
+function opCompute(){
+  var a=parseInt(document.getElementById('op-a').value)||2;
+  var b=parseInt(document.getElementById('op-b').value)||3;
+  var op=parseInt(document.getElementById('op-op').value)||1;
+  var out=document.getElementById('op-output');
+  if(!out)return;
+  var arrows='↑'.repeat(op);
+  var result='a '+arrows+' b = '+a+' '+arrows+' '+b+'\n\n';
+  if(op===1){
+    var v=Math.pow(a,b);
+    result+='= a^b = '+a+'^'+b+' = '+(v>1e15?'~10^'+Math.round(b*Math.log10(a)):v);
+    result+='\n\nExpansion: '+a+'×'+a+'×...×'+a+' ('+b+' times)';
+  } else if(op===2){
+    result+='Tetration: a^^b = a^(a^(a^...)) b times\n';
+    result+=a+'^^'+b+' = ';
+    if(a===2&&b<=4){var tower=a;result+=a;for(var i=1;i<b;i++){tower=Math.pow(a,tower);result+='^('+a;}result+=')'.repeat(b-1)+'\n≈ 2^^'+b+' = ';
+    if(b===1)result+='2';else if(b===2)result+='4';else if(b===3)result+='16';else if(b===4)result+='65536';}
+    else result+=a+'^('+a+'^('+a+'^...)) '+b+' levels ≈ 10↑↑'+(b-1+Math.log10(Math.log10(a)));
+    result+='\n\nThis is a power tower of height '+b;
+  } else if(op===3){
+    result+='Pentation: a^^^b = a^^(a^^(a^^...)) b times\n';
+    result+=a+'^^^'+b+'\n';
+    result+='This is a tower of towers.\n';
+    result+=a+'^^^2 = '+a+'^^'+a+' (tower of '+a+'s, height '+a+')\n';
+    result+=a+'^^^3 = '+a+'^^('+a+'^^'+a+') (tower of towers)\n';
+    result+='For '+a+'=2, b=3: 2^^^3 ≈ 2^^65536 = power tower of height 65536';
+  } else {
+    result+='Hexation: a^^^^b\n';
+    result+='This grows beyond pentation.\n';
+    result+='a^^^^1 = a\na^^^^2 = a^^^a\na^^^^3 = a^^^(a^^^a)\n';
+    result+='For '+a+'=3, b=3: 3^^^^3 = Graham\'s-level territory';
+  }
+  out.textContent=result;
+}
+
+/* ====== WEB APP MAKER ====== */
+function openWebAppMaker(){
+  createWindow('webappmaker','Web App Maker — AI Powered',750,560,
+    '<div style="display:flex;flex-direction:column;height:100%;gap:4px;padding:4px;">'+
+    '<div style="font-size:12px;font-weight:bold">Describe the web app you want to create:</div>'+
+    '<textarea id="webapp-prompt" class="win-input" rows="3" placeholder="e.g. Create a to-do list app with dark theme"></textarea>'+
+    '<div style="display:flex;gap:4px;">'+
+    '<button class="win-btn" onclick="webAppGenerate()">✨ Generate</button>'+
+    '<button class="win-btn" onclick="webAppClear()">🗑 Clear</button>'+
+    '<button class="win-btn" onclick="webAppSave()">💾 Save HTML</button>'+
+    '<span id="webapp-status" style="font-size:12px;align-self:center;"></span>'+
+    '</div>'+
+    '<iframe id="webapp-iframe" sandbox="allow-scripts allow-same-origin"></iframe>'+
+    '</div>',
+    null,'Ready');
+}
+function webAppGenerate(){
+  var prompt=document.getElementById('webapp-prompt');
+  var status=document.getElementById('webapp-status');
+  var iframe=document.getElementById('webapp-iframe');
+  if(!prompt||!iframe)return;
+  var userPrompt=prompt.value.trim();
+  if(!userPrompt){if(status)status.textContent='Please enter a description.';return;}
+  if(status)status.textContent='⏳ Generating...';
+  var systemPrompt='You are a web developer. Generate a complete, self-contained HTML page (with embedded CSS and JS) based on the user description. Output ONLY valid HTML code. No markdown, no backticks, no explanations. The page must work standalone.';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,system:systemPrompt,messages:[{role:'user',content:userPrompt}]})
+  }).then(function(r){return r.json();}).then(function(data){
+    var html=data.content&&data.content[0]&&data.content[0].text;
+    if(!html){if(status)status.textContent='Error: No response.';return;}
+    html=html.replace(/^```html?\s*/i,'').replace(/```\s*$/,'');
+    iframe.srcdoc=html;
+    if(status)status.textContent='✔ Done!';
+  }).catch(function(e){if(status)status.textContent='Error: '+e.message;});
+}
+function webAppClear(){var i=document.getElementById('webapp-iframe');if(i)i.srcdoc='';}
+function webAppSave(){var i=document.getElementById('webapp-iframe');if(!i||!i.srcdoc)return;var b=new Blob([i.srcdoc],{type:'text/html'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='webapp.html';a.click();}
+
+/* ====== CODE APP MAKER ====== */
+function openCodeMaker(){
+  createWindow('codemaker','Code App Maker',780,560,
+    '<div style="display:flex;flex-direction:column;height:100%;gap:4px;padding:4px;">'+
+    '<div style="font-size:12px;font-weight:bold">Describe what the code should do (AI will write it):</div>'+
+    '<textarea class="win-input" id="code-prompt" rows="2" placeholder="e.g. A sorting visualizer in JavaScript"></textarea>'+
+    '<div style="display:flex;gap:4px;">'+
+    '<button class="win-btn" onclick="codeGenerate()">✨ AI Generate</button>'+
+    '<button class="win-btn" onclick="codeRun()">▶ Run</button>'+
+    '<button class="win-btn" onclick="codeSave()">💾 Save</button>'+
+    '<button class="win-btn" onclick="codeLoad()">📂 Load</button>'+
+    '<span id="code-status" style="font-size:12px;align-self:center"></span>'+
+    '</div>'+
+    '<textarea id="code-area" spellcheck="false">'+codeContent+'</textarea>'+
+    '<div style="font-size:11px;font-weight:bold">Output / Preview:</div>'+
+    '<iframe id="code-preview" sandbox="allow-scripts"></iframe>'+
+    '</div>',
+    null,'Ready');
+}
+function codeGenerate(){
+  var prompt=document.getElementById('code-prompt');
+  var status=document.getElementById('code-status');
+  var area=document.getElementById('code-area');
+  if(!prompt||!area)return;
+  var userPrompt=prompt.value.trim();
+  if(!userPrompt){if(status)status.textContent='Enter a description.';return;}
+  if(status)status.textContent='⏳ Generating...';
+  fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:3000,system:'Write only JavaScript code (no HTML wrapper, no markdown). The code will be run in a browser using eval(). Only output the JS code itself.',messages:[{role:'user',content:userPrompt}]})
+  }).then(function(r){return r.json();}).then(function(data){
+    var code=data.content&&data.content[0]&&data.content[0].text;
+    if(!code){if(status)status.textContent='Error';return;}
+    code=code.replace(/^```javascript?\s*/i,'').replace(/```\s*$/,'').replace(/^```\s*/,'');
+    area.value=code;codeContent=code;
+    if(status)status.textContent='✔ Done! Click Run.';
+  }).catch(function(e){if(status)status.textContent='Error: '+e.message;});
+}
+function codeRun(){
+  var area=document.getElementById('code-area');
+  var preview=document.getElementById('code-preview');
+  if(!area||!preview)return;
+  var html='<!DOCTYPE html><html><body><script>'+area.value+'<\/script></body></html>';
+  preview.srcdoc=html;
+}
+function codeSave(){var a=document.getElementById('code-area');if(!a)return;var b=new Blob([a.value],{type:'text/javascript'});var l=document.createElement('a');l.href=URL.createObjectURL(b);l.download='code.js';l.click();}
+function codeLoad(){var inp=document.createElement('input');inp.type='file';inp.accept='.js,.ts,.html,.py,.txt';inp.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){var a=document.getElementById('code-area');if(a)a.value=ev.target.result;};r.readAsText(f);};inp.click();}
+
+/* ====== DESKTOP ICONS ====== */
+var desktopIcons=[
+  {id:'webappmaker',icon:'🌐',label:'Web App Maker',x:10,y:10},
+  {id:'codemaker',icon:'💻',label:'Code Maker',x:10,y:90},
+  {id:'win94hub',icon:'🏠',label:'Win94 Hub',x:10,y:170},
+  {id:'fileexplorer',icon:'📁',label:'My Computer',x:10,y:250},
+  {id:'notepad',icon:'📝',label:'Notepad+++',x:10,y:330},
+  {id:'paint',icon:'🎨',label:'Paint',x:10,y:410},
+  {id:'game2048',icon:'🎮',label:'2048',x:10,y:490},
+  {id:'terminal',icon:'🖥️',label:'Terminal',x:90,y:10},
+  {id:'calc',icon:'🔢',label:'Calculator',x:90,y:90},
+  {id:'settings',icon:'⚙️',label:'Settings',x:90,y:170},
+  {id:'bytebeat',icon:'🎵',label:'Bytebeat',x:90,y:250},
+  {id:'shader',icon:'🔆',label:'Shader',x:90,y:330},
+];
+function renderDesktop(){
+  var desktop=document.getElementById('desktop');
+  desktopIcons.forEach(function(ic){
+    var div=document.createElement('div');
+    div.className='desktop-icon';
+    div.style.left=ic.x+'px';div.style.top=ic.y+'px';
+    div.innerHTML='<div class="icon-img">'+ic.icon+'</div><span>'+ic.label+'</span>';
+    div.ondblclick=function(){openApp(ic.id);};
+    div.onclick=function(e){
+      document.querySelectorAll('.desktop-icon').forEach(function(d){d.classList.remove('selected');});
+      div.classList.add('selected');e.stopPropagation();
+    };
+    desktop.appendChild(div);
+  });
+  document.getElementById('desktop').addEventListener('click',function(){
+    document.querySelectorAll('.desktop-icon').forEach(function(d){d.classList.remove('selected');});
+  });
+}
+
+/* ====== GITHUB1S ====== */
+function openGithub1S(){
+  createWindow('github1s','GitHub1S',900,600,
+    '<iframe src="https://github1s.com" style="width:100%;height:100%;border:none;"></iframe>',
+    null,'GitHub1S');
+}
+
+renderDesktop();
+</script>
+</body>
+</html>

@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+--bg:#000;--bg2:#0a0a0a;--bg3:#111;--bg4:#1a1a1a;--bg5:#222;
+--border:#2a2a2a;--border2:#333;
+--text:#fff;--text2:#aaa;--text3:#666;
+--accent:#e05a2b;--accent2:#c04a1b;
+--blue:#2b7fe0;--green:#2be05a;
+--panel:#0d0d0d;--panel2:#141414;
+--slider:#333;--slider-thumb:#e05a2b;
+--menu-h:28px;--toolbar-h:40px;--panel-w:260px;--timeline-h:220px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;font-size:12px;}
+#app{display:flex;flex-direction:column;height:100vh;width:100vw;}
+
+/* MENU BAR */
+#menubar{display:flex;align-items:center;height:var(--menu-h);background:var(--bg2);border-bottom:1px solid var(--border);padding:0 8px;gap:2px;z-index:1000;flex-shrink:0;}
+.menu-item{position:relative;padding:0 10px;height:100%;display:flex;align-items:center;cursor:pointer;color:var(--text2);font-size:11px;font-weight:500;letter-spacing:.3px;white-space:nowrap;user-select:none;}
+.menu-item:hover{background:var(--bg4);color:var(--text);}
+.menu-item.active{background:var(--bg4);color:var(--text);}
+.dropdown{display:none;position:absolute;top:100%;left:0;min-width:200px;background:var(--bg3);border:1px solid var(--border2);z-index:2000;box-shadow:0 8px 32px rgba(0,0,0,.8);}
+.dropdown.open{display:block;}
+.dropdown-item{padding:6px 16px;cursor:pointer;color:var(--text2);display:flex;justify-content:space-between;align-items:center;white-space:nowrap;}
+.dropdown-item:hover{background:var(--bg5);color:var(--text);}
+.dropdown-item.disabled{color:var(--text3);cursor:default;}
+.dropdown-item .shortcut{color:var(--text3);font-size:10px;margin-left:24px;}
+.dropdown-sep{height:1px;background:var(--border);margin:3px 0;}
+.dropdown-sub{position:relative;}
+.dropdown-sub>.sub-menu{display:none;position:absolute;left:100%;top:0;min-width:160px;background:var(--bg3);border:1px solid var(--border2);z-index:2001;box-shadow:0 8px 32px rgba(0,0,0,.8);}
+.dropdown-sub:hover>.sub-menu{display:block;}
+.dropdown-sub>.dropdown-item::after{content:'▶';font-size:8px;margin-left:auto;padding-left:12px;}
+.logo{font-weight:700;font-size:12px;color:var(--accent);margin-right:12px;letter-spacing:1px;}
+
+/* TOOLBAR */
+#toolbar{display:flex;align-items:center;height:var(--toolbar-h);background:var(--bg2);border-bottom:1px solid var(--border);padding:0 8px;gap:4px;flex-shrink:0;}
+.tool-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;cursor:pointer;color:var(--text2);border-radius:3px;font-size:13px;}
+.tool-btn:hover{background:var(--bg4);border-color:var(--border2);color:var(--text);}
+.tool-btn.active{background:var(--bg5);border-color:var(--accent);color:var(--accent);}
+.tool-sep{width:1px;height:20px;background:var(--border);margin:0 4px;}
+.toolbar-group{display:flex;align-items:center;gap:2px;}
+.toolbar-label{color:var(--text3);font-size:10px;margin:0 4px;}
+
+/* MAIN AREA */
+#main{display:flex;flex:1;overflow:hidden;}
+#left-panel{width:var(--panel-w);background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#right-panel{width:var(--panel-w);background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;}
+
+/* PANELS */
+.panel-header{padding:6px 10px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;font-weight:600;color:var(--text2);letter-spacing:.8px;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;cursor:pointer;flex-shrink:0;}
+.panel-header:hover{background:var(--bg4);}
+.panel-header .toggle{color:var(--text3);}
+.panel-body{overflow-y:auto;flex:1;}
+.panel-body::-webkit-scrollbar{width:4px;}
+.panel-body::-webkit-scrollbar-track{background:transparent;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* CANVAS AREA */
+#canvas-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:#050505;position:relative;overflow:hidden;}
+#gl-canvas{display:block;max-width:100%;max-height:100%;border:1px solid var(--border);}
+.canvas-overlay{position:absolute;pointer-events:none;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;}
+.canvas-info{position:absolute;bottom:8px;right:8px;font-size:10px;color:var(--text3);}
+.canvas-info span{margin-left:12px;}
+
+/* TIMELINE */
+#timeline{height:var(--timeline-h);background:var(--panel);border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;}
+.timeline-header{height:32px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:8px;flex-shrink:0;}
+.timeline-controls{display:flex;align-items:center;gap:4px;}
+.tl-btn{width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:var(--bg5);border:1px solid var(--border2);cursor:pointer;color:var(--text2);border-radius:2px;font-size:11px;}
+.tl-btn:hover{background:var(--bg4);color:var(--text);}
+.tl-btn.play{background:var(--accent);border-color:var(--accent2);color:#fff;}
+.tl-btn.play:hover{background:var(--accent2);}
+.time-display{font-size:11px;color:var(--text2);font-variant-numeric:tabular-nums;min-width:80px;}
+.timeline-body{display:flex;flex:1;overflow:hidden;}
+.track-list{width:160px;border-right:1px solid var(--border);background:var(--bg2);overflow-y:auto;flex-shrink:0;}
+.track-list::-webkit-scrollbar{width:4px;}
+.track-list::-webkit-scrollbar-thumb{background:var(--border2);}
+.track-item{height:36px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);gap:6px;cursor:pointer;}
+.track-item:hover{background:var(--bg4);}
+.track-item.selected{background:var(--bg5);}
+.track-icon{font-size:12px;width:16px;text-align:center;}
+.track-name{font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.track-actions{display:flex;gap:2px;opacity:0;}
+.track-item:hover .track-actions{opacity:1;}
+.track-act-btn{width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3);cursor:pointer;}
+.track-act-btn:hover{color:var(--text);}
+.timeline-tracks{flex:1;overflow:auto;position:relative;}
+.timeline-tracks::-webkit-scrollbar{width:4px;height:4px;}
+.timeline-tracks::-webkit-scrollbar-thumb{background:var(--border2);}
+.track-lane{height:36px;border-bottom:1px solid var(--border);position:relative;}
+.track-ruler{height:20px;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;display:flex;align-items:flex-end;padding-bottom:3px;}
+.ruler-tick{position:absolute;bottom:0;font-size:9px;color:var(--text3);}
+.ruler-tick::before{content:'';position:absolute;bottom:0;left:0;width:1px;height:8px;background:var(--border2);}
+.clip{position:absolute;height:28px;top:4px;border-radius:3px;cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 6px;}
+.clip.video{background:linear-gradient(135deg,#1a3a6a,#2b5aa8);}
+.clip.audio{background:linear-gradient(135deg,#1a4a2a,#2b8a4a);}
+.clip.image{background:linear-gradient(135deg,#4a2a1a,#a85a2b);}
+.clip-label{font-size:10px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--accent);z-index:20;pointer-events:none;}
+.playhead::before{content:'▼';position:absolute;top:-2px;left:-4px;font-size:8px;color:var(--accent);}
+
+/* EFFECT CONTROLS */
+.effect-row{padding:6px 10px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
+.effect-row-header{display:flex;align-items:center;justify-content:space-between;}
+.effect-name{font-size:11px;font-weight:600;color:var(--text);}
+.effect-category{font-size:9px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;}
+.effect-remove{font-size:10px;color:var(--text3);cursor:pointer;padding:2px;}
+.effect-remove:hover{color:#e05a5a;}
+.param-row{display:flex;align-items:center;gap:8px;padding:2px 0;}
+.param-label{font-size:10px;color:var(--text3);min-width:80px;flex-shrink:0;}
+.param-value{font-size:10px;color:var(--text2);min-width:36px;text-align:right;}
+input[type=range]{flex:1;height:3px;-webkit-appearance:none;background:var(--slider);border-radius:2px;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--slider-thumb);cursor:pointer;}
+input[type=range]::-webkit-slider-thumb:hover{background:#ff7a4a;}
+input[type=color]{width:28px;height:18px;border:1px solid var(--border2);background:transparent;cursor:pointer;border-radius:2px;padding:0;}
+select{background:var(--bg4);border:1px solid var(--border2);color:var(--text2);padding:2px 4px;font-size:10px;font-family:'Open Sans',sans-serif;cursor:pointer;border-radius:2px;}
+select:focus{outline:none;border-color:var(--accent);}
+input[type=number]{background:var(--bg4);border:1px solid var(--border2);color:var(--text2);padding:2px 4px;font-size:10px;width:56px;font-family:'Open Sans',sans-serif;border-radius:2px;}
+input[type=number]:focus{outline:none;border-color:var(--accent);}
+input[type=text]{background:var(--bg4);border:1px solid var(--border2);color:var(--text2);padding:3px 6px;font-size:10px;width:100%;font-family:'Open Sans',sans-serif;border-radius:2px;}
+input[type=text]:focus{outline:none;border-color:var(--accent);}
+input[type=checkbox]{accent-color:var(--accent);}
+
+/* LAYERS */
+.layer-item{display:flex;align-items:center;padding:5px 10px;border-bottom:1px solid var(--border);cursor:pointer;gap:6px;}
+.layer-item:hover{background:var(--bg4);}
+.layer-item.selected{background:var(--bg5);border-left:2px solid var(--accent);}
+.layer-thumb{width:32px;height:20px;background:var(--bg5);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.layer-thumb canvas{width:100%;height:100%;}
+.layer-info{flex:1;overflow:hidden;}
+.layer-title{font-size:10px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.layer-type{font-size:9px;color:var(--text3);}
+.layer-vis{font-size:12px;color:var(--text3);cursor:pointer;padding:2px;}
+.layer-vis:hover{color:var(--text);}
+.layer-lock{font-size:10px;color:var(--text3);cursor:pointer;padding:2px;}
+
+/* BLEND MODES */
+.blend-select{width:100%;}
+
+/* KEYFRAME */
+.kf-row{display:flex;align-items:center;padding:4px 10px;gap:8px;border-bottom:1px solid var(--border);}
+.kf-prop{font-size:10px;color:var(--text2);flex:1;}
+.kf-btn{font-size:9px;padding:2px 6px;background:var(--bg5);border:1px solid var(--border2);color:var(--text3);cursor:pointer;border-radius:2px;}
+.kf-btn:hover{background:var(--bg4);color:var(--text);}
+.kf-btn.active{background:var(--accent);border-color:var(--accent2);color:#fff;}
+.kf-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);cursor:pointer;}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab{padding:6px 12px;font-size:10px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;}
+.tab:hover{color:var(--text2);}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.tab-content{display:none;flex:1;overflow:hidden;flex-direction:column;}
+.tab-content.active{display:flex;}
+
+/* ADD BUTTONS */
+.add-btn{width:100%;padding:6px;background:var(--bg4);border:1px dashed var(--border2);color:var(--text3);cursor:pointer;font-size:10px;font-family:'Open Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:4px;margin:6px 0;}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* PROPERTIES */
+.prop-section{padding:8px 10px;border-bottom:1px solid var(--border);}
+.prop-section-title{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.prop-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.prop-label{font-size:10px;color:var(--text3);min-width:72px;flex-shrink:0;}
+.prop-inputs{display:flex;gap:4px;flex:1;}
+.prop-inputs input[type=number]{flex:1;min-width:0;}
+.prop-xy{display:flex;gap:4px;}
+.prop-xy input{flex:1;min-width:0;}
+.prop-xy label{font-size:9px;color:var(--text3);margin-right:2px;}
+.xy-pair{display:flex;align-items:center;gap:2px;}
+
+/* PRESET */
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:8px;}
+.preset-item{background:var(--bg4);border:1px solid var(--border2);padding:8px 6px;cursor:pointer;text-align:center;border-radius:3px;}
+.preset-item:hover{border-color:var(--accent);background:var(--bg5);}
+.preset-name{font-size:9px;color:var(--text2);}
+
+/* STATUS BAR */
+#statusbar{height:20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:16px;flex-shrink:0;}
+.status-item{font-size:10px;color:var(--text3);}
+.status-item span{color:var(--text2);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:5000;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg3);border:1px solid var(--border2);min-width:320px;max-width:560px;width:100%;}
+.modal-header{padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:12px;font-weight:600;color:var(--text);}
+.modal-close{font-size:14px;color:var(--text3);cursor:pointer;background:none;border:none;}
+.modal-close:hover{color:var(--text);}
+.modal-body{padding:16px;}
+.modal-footer{padding:10px 14px;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;}
+.btn{padding:5px 14px;font-size:11px;font-family:'Open Sans',sans-serif;cursor:pointer;border-radius:2px;}
+.btn-primary{background:var(--accent);border:1px solid var(--accent2);color:#fff;}
+.btn-primary:hover{background:var(--accent2);}
+.btn-secondary{background:var(--bg5);border:1px solid var(--border2);color:var(--text2);}
+.btn-secondary:hover{background:var(--bg4);color:var(--text);}
+.form-row{margin-bottom:10px;}
+.form-label{font-size:10px;color:var(--text3);margin-bottom:4px;display:block;}
+.form-select{width:100%;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);padding:5px 8px;font-size:11px;font-family:'Open Sans',sans-serif;cursor:pointer;}
+.form-select:focus{outline:none;border-color:var(--accent);}
+.form-input{width:100%;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);padding:5px 8px;font-size:11px;font-family:'Open Sans',sans-serif;}
+.form-input:focus{outline:none;border-color:var(--accent);}
+.drop-zone{border:2px dashed var(--border2);padding:24px;text-align:center;cursor:pointer;color:var(--text3);font-size:11px;}
+.drop-zone:hover{border-color:var(--accent);color:var(--accent);}
+.drop-zone .drop-icon{font-size:28px;margin-bottom:8px;}
+
+/* PROGRESS */
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s;}
+
+/* NOTIFICATION */
+#notification{position:fixed;bottom:32px;right:16px;background:var(--bg3);border:1px solid var(--border2);padding:8px 14px;font-size:11px;color:var(--text);z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.6);}
+#notification.show{display:block;}
+
+/* EFFECTS PANEL */
+.effect-category-header{padding:5px 10px;background:var(--bg4);font-size:9px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);}
+.effect-list-item{padding:5px 14px;cursor:pointer;font-size:11px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.03);}
+.effect-list-item:hover{background:var(--bg4);color:var(--text);}
+.effect-add-icon{font-size:12px;color:var(--text3);opacity:0;}
+.effect-list-item:hover .effect-add-icon{opacity:1;color:var(--accent);}
+
+/* PLUGIN */
+.plugin-item{padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.plugin-icon{width:28px;height:28px;background:var(--bg5);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.plugin-info{flex:1;}
+.plugin-name{font-size:11px;color:var(--text);font-weight:500;}
+.plugin-version{font-size:9px;color:var(--text3);}
+.plugin-status{font-size:9px;padding:2px 6px;border-radius:10px;background:rgba(43,224,90,.15);color:var(--green);}
+
+/* TRANSITIONS */
+.panel-body,.dropdown,.modal{transition:none;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useReducer}=React;
+
+// ─────────────────── DATA ─────────────────────
+const VIDEO_EFFECTS={
+  Distort:['Shake','Puppet Pin','Move Along Path','Polar Coordinates','Wave','ZigZag','Shear','Ripple','Swirl','Kaleido','Pinch and Bulge','Warp Perspective','Displacement Map','Stretch Segment','Split'],
+  Color:['Color Curves','LUT','Hue/Saturation','Duotone','Tritone','Quadtone','Invert','Contrast','Color Balance','White Balance','RGB Split','Channel Exposure','Channel Blend','Gradient Map','4-Point Color Gradient'],
+  Light:['Light Sweep','Light Rays','Exposure','Convolve Kernel'],
+  Blur:['Gaussian Blur','Box Blur','Motion Blur','Linear Blur','Radial Blur','Unsharp Mask','Sharpen'],
+  Tile:['Motion Tile','Repeat Tile','Mirror'],
+  '3D':['VR360 Transform','Shatter','Cube','Sphere','Cylinder','Tunnel','3D Rotate'],
+  Stylize:['Edge Detect','Optical Flow','Optics Compensation','Lens Correction'],
+  Generate:['Text','Checkerboard','Linear Gradient','Radial Gradient'],
+};
+
+const AUDIO_EFFECTS={
+  Modulation:['Flanger','Phaser'],
+  Pitch:['Pitch Shift','Time Stretch'],
+  Dynamics:['Delay','Reverb'],
+  Plugin:['Load VST Plug-in'],
+};
+
+const BLEND_MODES=['Normal','Multiply','Screen','Overlay','Darken','Lighten','Color Dodge','Color Burn','Hard Light','Soft Light','Difference','Exclusion','Hue','Saturation','Color','Luminosity','Add','Subtract','Divide'];
+
+const EFFECT_PARAMS={
+  'Shake':[{n:'Intensity',t:'range',min:0,max:100,v:20},{n:'Frequency',t:'range',min:0,max:60,v:10},{n:'Smoothness',t:'range',min:0,max:100,v:50}],
+  'Puppet Pin':[{n:'Mesh Expansion',t:'range',min:0,max:100,v:3},{n:'Density',t:'range',min:1,max:10,v:4}],
+  'Move Along Path':[{n:'Progress',t:'range',min:0,max:100,v:0},{n:'Speed',t:'range',min:0,max:200,v:100}],
+  'Color Curves':[{n:'Red',t:'range',min:-100,max:100,v:0},{n:'Green',t:'range',min:-100,max:100,v:0},{n:'Blue',t:'range',min:-100,max:100,v:0},{n:'Master',t:'range',min:-100,max:100,v:0}],
+  'LUT':[{n:'Intensity',t:'range',min:0,max:100,v:100},{n:'LUT File',t:'text',v:''}],
+  'Hue/Saturation':[{n:'Hue',t:'range',min:-180,max:180,v:0},{n:'Saturation',t:'range',min:-100,max:100,v:0},{n:'Lightness',t:'range',min:-100,max:100,v:0}],
+  'Duotone':[{n:'Shadows',t:'color',v:'#000000'},{n:'Highlights',t:'color',v:'#ffffff'},{n:'Blend',t:'range',min:0,max:100,v:100}],
+  'Tritone':[{n:'Shadows',t:'color',v:'#000000'},{n:'Midtones',t:'color',v:'#808080'},{n:'Highlights',t:'color',v:'#ffffff'}],
+  'Quadtone':[{n:'C1',t:'color',v:'#000000'},{n:'C2',t:'color',v:'#555555'},{n:'C3',t:'color',v:'#aaaaaa'},{n:'C4',t:'color',v:'#ffffff'}],
+  'Invert':[{n:'Amount',t:'range',min:0,max:100,v:100},{n:'Channel',t:'select',opts:['All','Red','Green','Blue'],v:'All'}],
+  'Contrast':[{n:'Contrast',t:'range',min:-100,max:100,v:0},{n:'Brightness',t:'range',min:-100,max:100,v:0}],
+  'Color Balance':[{n:'Cyan/Red',t:'range',min:-100,max:100,v:0},{n:'Magenta/Green',t:'range',min:-100,max:100,v:0},{n:'Yellow/Blue',t:'range',min:-100,max:100,v:0}],
+  'White Balance':[{n:'Temperature',t:'range',min:-100,max:100,v:0},{n:'Tint',t:'range',min:-100,max:100,v:0}],
+  'RGB Split':[{n:'Amount',t:'range',min:0,max:50,v:5},{n:'Angle',t:'range',min:0,max:360,v:0}],
+  'Light Sweep':[{n:'Angle',t:'range',min:0,max:360,v:45},{n:'Width',t:'range',min:0,max:200,v:40},{n:'Brightness',t:'range',min:0,max:200,v:100}],
+  'Light Rays':[{n:'Center X',t:'range',min:0,max:100,v:50},{n:'Center Y',t:'range',min:0,max:100,v:50},{n:'Intensity',t:'range',min:0,max:200,v:50},{n:'Length',t:'range',min:0,max:200,v:100}],
+  'Channel Exposure':[{n:'Red',t:'range',min:-5,max:5,v:0},{n:'Green',t:'range',min:-5,max:5,v:0},{n:'Blue',t:'range',min:-5,max:5,v:0}],
+  'Channel Blend':[{n:'RR',t:'range',min:0,max:200,v:100},{n:'GG',t:'range',min:0,max:200,v:100},{n:'BB',t:'range',min:0,max:200,v:100}],
+  'Convolve Kernel':[{n:'Scale',t:'range',min:1,max:20,v:1},{n:'Offset',t:'range',min:-100,max:100,v:0},{n:'Kernel Size',t:'select',opts:['3x3','5x5','7x7'],v:'3x3'}],
+  'Exposure':[{n:'Exposure',t:'range',min:-5,max:5,v:0},{n:'Gamma',t:'range',min:.1,max:3,v:1},{n:'Offset',t:'range',min:-1,max:1,v:0}],
+  'Unsharp Mask':[{n:'Amount',t:'range',min:0,max:200,v:100},{n:'Radius',t:'range',min:0,max:50,v:5},{n:'Threshold',t:'range',min:0,max:255,v:0}],
+  'Gradient Map':[{n:'Start',t:'color',v:'#000000'},{n:'End',t:'color',v:'#ffffff'},{n:'Smoothness',t:'range',min:0,max:100,v:100}],
+  'Polar Coordinates':[{n:'Interpolation',t:'range',min:0,max:100,v:100},{n:'Type',t:'select',opts:['Rect to Polar','Polar to Rect'],v:'Rect to Polar'}],
+  'Wave':[{n:'Amplitude',t:'range',min:0,max:100,v:10},{n:'Wavelength',t:'range',min:1,max:200,v:40},{n:'Speed',t:'range',min:0,max:100,v:10},{n:'Direction',t:'range',min:0,max:360,v:0}],
+  'ZigZag':[{n:'Amount',t:'range',min:0,max:100,v:10},{n:'Ridges',t:'range',min:1,max:20,v:5},{n:'Style',t:'select',opts:['Pond Ripples','Out From Center','Around Center'],v:'Pond Ripples'}],
+  'Shear':[{n:'Amount',t:'range',min:-100,max:100,v:0},{n:'Axis',t:'select',opts:['X','Y'],v:'X'}],
+  'Ripple':[{n:'Width',t:'range',min:0,max:200,v:50},{n:'Height',t:'range',min:0,max:200,v:50},{n:'Speed',t:'range',min:0,max:100,v:20}],
+  'Swirl':[{n:'Angle',t:'range',min:-360,max:360,v:90},{n:'Radius',t:'range',min:0,max:200,v:100},{n:'Center X',t:'range',min:0,max:100,v:50},{n:'Center Y',t:'range',min:0,max:100,v:50}],
+  'Kaleido':[{n:'Segments',t:'range',min:2,max:24,v:6},{n:'Mirror',t:'checkbox',v:true},{n:'Angle',t:'range',min:0,max:360,v:0}],
+  'Pinch and Bulge':[{n:'Amount',t:'range',min:-100,max:100,v:50},{n:'Radius',t:'range',min:0,max:200,v:100},{n:'Center X',t:'range',min:0,max:100,v:50},{n:'Center Y',t:'range',min:0,max:100,v:50}],
+  'Warp Perspective':[{n:'TL X',t:'range',min:-100,max:100,v:0},{n:'TL Y',t:'range',min:-100,max:100,v:0},{n:'BR X',t:'range',min:-100,max:100,v:0},{n:'BR Y',t:'range',min:-100,max:100,v:0}],
+  'Displacement Map':[{n:'X Scale',t:'range',min:0,max:200,v:50},{n:'Y Scale',t:'range',min:0,max:200,v:50},{n:'Use Alpha',t:'checkbox',v:false}],
+  'Optics Compensation':[{n:'FOV',t:'range',min:0,max:180,v:60},{n:'Reverse',t:'checkbox',v:false}],
+  'Lens Correction':[{n:'Distortion',t:'range',min:-100,max:100,v:0},{n:'Chromatic',t:'range',min:-100,max:100,v:0},{n:'Vignette',t:'range',min:-100,max:100,v:0}],
+  'Sharpen':[{n:'Amount',t:'range',min:0,max:200,v:50}],
+  'Gaussian Blur':[{n:'Radius',t:'range',min:0,max:100,v:10},{n:'Direction',t:'select',opts:['Both','Horizontal','Vertical'],v:'Both'}],
+  'Box Blur':[{n:'Radius',t:'range',min:0,max:100,v:5},{n:'Iterations',t:'range',min:1,max:10,v:3}],
+  'Motion Blur':[{n:'Angle',t:'range',min:0,max:360,v:0},{n:'Length',t:'range',min:0,max:200,v:20}],
+  'Linear Blur':[{n:'Length',t:'range',min:0,max:200,v:20},{n:'Angle',t:'range',min:0,max:360,v:0}],
+  'Radial Blur':[{n:'Amount',t:'range',min:0,max:100,v:20},{n:'Center X',t:'range',min:0,max:100,v:50},{n:'Center Y',t:'range',min:0,max:100,v:50}],
+  'Motion Tile':[{n:'Width',t:'range',min:0,max:200,v:100},{n:'Height',t:'range',min:0,max:200,v:100},{n:'Offset',t:'range',min:0,max:100,v:0}],
+  'Repeat Tile':[{n:'Cols',t:'range',min:1,max:20,v:3},{n:'Rows',t:'range',min:1,max:20,v:3}],
+  'Mirror':[{n:'Center',t:'range',min:0,max:100,v:50},{n:'Axis',t:'select',opts:['Horizontal','Vertical','Both'],v:'Horizontal'},{n:'Angle',t:'range',min:0,max:360,v:0}],
+  'VR360 Transform':[{n:'Yaw',t:'range',min:-180,max:180,v:0},{n:'Pitch',t:'range',min:-90,max:90,v:0},{n:'Roll',t:'range',min:-180,max:180,v:0},{n:'FOV',t:'range',min:10,max:180,v:90}],
+  'Shatter':[{n:'Force',t:'range',min:0,max:100,v:50},{n:'Pieces',t:'range',min:2,max:200,v:20},{n:'Duration',t:'range',min:1,max:100,v:30}],
+  'Cube':[{n:'Rotation X',t:'range',min:-180,max:180,v:20},{n:'Rotation Y',t:'range',min:-180,max:180,v:30},{n:'Perspective',t:'range',min:0,max:200,v:100}],
+  'Sphere':[{n:'Rotation X',t:'range',min:-180,max:180,v:0},{n:'Rotation Y',t:'range',min:-180,max:180,v:0},{n:'Wrap',t:'range',min:0,max:100,v:100}],
+  'Cylinder':[{n:'Rotation',t:'range',min:-360,max:360,v:0},{n:'Radius',t:'range',min:10,max:300,v:100},{n:'Perspective',t:'range',min:0,max:200,v:100}],
+  'Tunnel':[{n:'Speed',t:'range',min:0,max:100,v:20},{n:'FOV',t:'range',min:10,max:180,v:60}],
+  'Stretch Segment':[{n:'Start',t:'range',min:0,max:100,v:20},{n:'End',t:'range',min:0,max:100,v:80},{n:'Amount',t:'range',min:0,max:200,v:100}],
+  'Split':[{n:'Position',t:'range',min:0,max:100,v:50},{n:'Direction',t:'select',opts:['Horizontal','Vertical'],v:'Horizontal'},{n:'Gap',t:'range',min:0,max:50,v:0}],
+  'Optical Flow':[{n:'Quality',t:'select',opts:['Draft','Normal','High'],v:'Normal'}],
+  'Edge Detect':[{n:'Threshold',t:'range',min:0,max:100,v:20},{n:'Mode',t:'select',opts:['Luminance','Color'],v:'Luminance'}],
+  '3D Rotate':[{n:'X',t:'range',min:-180,max:180,v:0},{n:'Y',t:'range',min:-180,max:180,v:0},{n:'Z',t:'range',min:-180,max:180,v:0},{n:'Perspective',t:'range',min:0,max:200,v:100}],
+  'Text':[{n:'Content',t:'text',v:'Hello World'},{n:'Font Size',t:'range',min:8,max:200,v:48},{n:'Color',t:'color',v:'#ffffff'},{n:'Opacity',t:'range',min:0,max:100,v:100}],
+  'Checkerboard':[{n:'Width',t:'range',min:2,max:500,v:50},{n:'Height',t:'range',min:2,max:500,v:50},{n:'Color 1',t:'color',v:'#000000'},{n:'Color 2',t:'color',v:'#ffffff'}],
+  'Linear Gradient':[{n:'Start',t:'color',v:'#000000'},{n:'End',t:'color',v:'#ffffff'},{n:'Angle',t:'range',min:0,max:360,v:90}],
+  'Radial Gradient':[{n:'Inner',t:'color',v:'#ffffff'},{n:'Outer',t:'color',v:'#000000'},{n:'Radius',t:'range',min:0,max:200,v:100}],
+  '4-Point Color Gradient':[{n:'TL',t:'color',v:'#ff0000'},{n:'TR',t:'color',v:'#00ff00'},{n:'BL',t:'color',v:'#0000ff'},{n:'BR',t:'color',v:'#ffff00'}],
+  'Flanger':[{n:'Rate',t:'range',min:.01,max:10,v:0.5},{n:'Depth',t:'range',min:0,max:100,v:50},{n:'Feedback',t:'range',min:0,max:100,v:50},{n:'Mix',t:'range',min:0,max:100,v:50}],
+  'Phaser':[{n:'Rate',t:'range',min:.01,max:10,v:1},{n:'Depth',t:'range',min:0,max:100,v:50},{n:'Stages',t:'range',min:2,max:12,v:4},{n:'Mix',t:'range',min:0,max:100,v:50}],
+  'Pitch Shift':[{n:'Semitones',t:'range',min:-24,max:24,v:0},{n:'Cents',t:'range',min:-100,max:100,v:0},{n:'Formant',t:'checkbox',v:false}],
+  'Time Stretch':[{n:'Rate',t:'range',min:.25,max:4,v:1},{n:'Preserve Pitch',t:'checkbox',v:true},{n:'Quality',t:'select',opts:['Draft','Normal','High'],v:'Normal'}],
+  'Delay':[{n:'Time (ms)',t:'range',min:0,max:2000,v:250},{n:'Feedback',t:'range',min:0,max:99,v:40},{n:'Mix',t:'range',min:0,max:100,v:50},{n:'Sync',t:'checkbox',v:false}],
+  'Reverb':[{n:'Room Size',t:'range',min:0,max:100,v:50},{n:'Damping',t:'range',min:0,max:100,v:50},{n:'Pre-Delay (ms)',t:'range',min:0,max:200,v:20},{n:'Mix',t:'range',min:0,max:100,v:30}],
+  'Load VST Plug-in':[{n:'Plugin Path',t:'text',v:''},{n:'Preset',t:'text',v:''}],
+};
+
+const PRESETS=[
+  'Cinematic','Vintage','Neon','Warm Tone','Cool Tone','B&W Classic','Faded Film','Punch','Dream','Horror',
+  'Sunset','Forest','Urban','Portrait','Landscape','Action','Minimal','High Contrast','Moody','Pastel',
+];
+
+const FONTS=['Open Sans','Roboto','Montserrat','Lato','Oswald','Raleway','Playfair Display','Merriweather','Source Code Pro','Ubuntu'];
+
+const ASPECT_RATIOS=['16:9','9:16','4:3','3:4','1:1','2.35:1','21:9','Custom'];
+
+// ─────────────────── WEBGL ─────────────────────
+function initWebGL(canvas){
+  const gl=canvas.getContext('webgl')||canvas.getContext('experimental-webgl');
+  if(!gl)return null;
+  const vs=`attribute vec2 a_pos;attribute vec2 a_uv;varying vec2 v_uv;void main(){gl_Position=vec4(a_pos,0,1);v_uv=a_uv;}`;
+  const fs=`precision mediump float;uniform sampler2D u_tex;uniform float u_time;uniform vec2 u_res;
+  uniform float u_hue;uniform float u_sat;uniform float u_bright;
+  uniform float u_contrast;uniform float u_exposure;
+  uniform float u_blur_r;uniform float u_shake;
+  uniform float u_invert;
+  varying vec2 v_uv;
+  vec3 rgb2hsl(vec3 c){float mx=max(c.r,max(c.g,c.b));float mn=min(c.r,min(c.g,c.b));float h,s,l=(mx+mn)/2.0;if(mx==mn){h=s=0.0;}else{float d=mx-mn;s=l>0.5?d/(2.0-mx-mn):d/(mx+mn);if(mx==c.r)h=(c.g-c.b)/d+(c.g<c.b?6.0:0.0);else if(mx==c.g)h=(c.b-c.r)/d+2.0;else h=(c.r-c.g)/d+4.0;h/=6.0;}return vec3(h,s,l);}
+  float hue2rgb(float p,float q,float t){if(t<0.0)t+=1.0;if(t>1.0)t-=1.0;if(t<1.0/6.0)return p+(q-p)*6.0*t;if(t<0.5)return q;if(t<2.0/3.0)return p+(q-p)*(2.0/3.0-t)*6.0;return p;}
+  vec3 hsl2rgb(vec3 c){if(c.y==0.0)return vec3(c.z);float q=c.z<0.5?c.z*(1.0+c.y):c.z+c.y-c.z*c.y;float p=2.0*c.z-q;return vec3(hue2rgb(p,q,c.x+1.0/3.0),hue2rgb(p,q,c.x),hue2rgb(p,q,c.x-1.0/3.0));}
+  void main(){
+    vec2 uv=v_uv;
+    if(u_shake>0.0){uv.x+=sin(u_time*12.0+uv.y*8.0)*u_shake*0.01;uv.y+=cos(u_time*11.0+uv.x*8.0)*u_shake*0.008;}
+    vec4 col=texture2D(u_tex,uv);
+    vec3 rgb=col.rgb;
+    rgb=mix(rgb,vec3(1.0)-rgb,u_invert);
+    rgb=pow(max(rgb,vec3(0.0)),vec3(1.0/max(u_exposure,0.001)));
+    rgb=(rgb-0.5)*max(u_contrast,0.0)+0.5+u_bright;
+    vec3 hsl=rgb2hsl(rgb);
+    hsl.x=mod(hsl.x+u_hue/360.0,1.0);
+    hsl.y=clamp(hsl.y*(1.0+u_sat/100.0),0.0,1.0);
+    rgb=hsl2rgb(hsl);
+    gl_FragColor=vec4(clamp(rgb,0.0,1.0),col.a);
+  }`;
+  function mkShader(t,src){const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);return s;}
+  const prog=gl.createProgram();
+  gl.attachShader(prog,mkShader(gl.VERTEX_SHADER,vs));
+  gl.attachShader(prog,mkShader(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const verts=new Float32Array([-1,-1,0,0,1,-1,1,0,-1,1,0,1,1,1,1,1]);
+  const buf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,verts,gl.STATIC_DRAW);
+  const aPos=gl.getAttribLocation(prog,'a_pos');
+  const aUV=gl.getAttribLocation(prog,'a_uv');
+  gl.enableVertexAttribArray(aPos);gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,16,0);
+  gl.enableVertexAttribArray(aUV);gl.vertexAttribPointer(aUV,2,gl.FLOAT,false,16,8);
+  const tex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  return{gl,prog,tex};
+}
+
+function drawWebGL(glCtx,uniforms,time){
+  const{gl,prog}=glCtx;
+  const setU=(n,f,...v)=>{const loc=gl.getUniformLocation(prog,n);gl[f](loc,...v);};
+  setU('u_tex','uniform1i',0);
+  setU('u_time','uniform1f',time);
+  setU('u_hue','uniform1f',uniforms.hue||0);
+  setU('u_sat','uniform1f',uniforms.sat||0);
+  setU('u_bright','uniform1f',(uniforms.bright||0)/100);
+  setU('u_contrast','uniform1f',1+(uniforms.contrast||0)/100);
+  setU('u_exposure','uniform1f',Math.pow(2,(uniforms.exposure||0)));
+  setU('u_shake','uniform1f',uniforms.shake||0);
+  setU('u_invert','uniform1f',uniforms.invert||0);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+}
+
+// ─────────────────── HELPERS ─────────────────────
+let _notifTimer;
+function showNotif(msg){
+  const el=document.getElementById('notification');
+  if(el){el.textContent=msg;el.classList.add('show');clearTimeout(_notifTimer);_notifTimer=setTimeout(()=>el.classList.remove('show'),2200);}
+}
+
+function uid(){return Math.random().toString(36).slice(2,9);}
+
+// ─────────────────── STATE ─────────────────────
+const initState={
+  layers:[
+    {id:'l1',name:'Video Layer 1',type:'video',visible:true,locked:false,selected:true,blendMode:'Normal',opacity:100,x:0,y:0,scale:100,rotation:0,speed:1,duration:10,effects:[],keyframes:[]},
+    {id:'l2',name:'Image Layer 1',type:'image',visible:true,locked:false,selected:false,blendMode:'Normal',opacity:100,x:0,y:0,scale:100,rotation:0,speed:1,duration:10,effects:[],keyframes:[]},
+  ],
+  tracks:[
+    {id:'t1',name:'Video 1',type:'video',clips:[{id:'c1',start:0,end:6,label:'Clip 01'}]},
+    {id:'t2',name:'Audio 1',type:'audio',clips:[{id:'c2',start:0,end:8,label:'Audio 01'}]},
+    {id:'t3',name:'Video 2',type:'video',clips:[{id:'c3',start:2,end:9,label:'Clip 02'}]},
+  ],
+  activeEffects:[],
+  activeAudioEffects:[],
+  plugins:[
+    {id:'p1',name:'FilmGrain Pro',version:'2.1.0',active:true},
+    {id:'p2',name:'DeNoise AI',version:'1.4.2',active:true},
+  ],
+  selectedLayer:'l1',
+  playing:false,
+  currentTime:0,
+  duration:10,
+  undoStack:[],
+  redoStack:[],
+  clipboard:null,
+  aspectRatio:'16:9',
+  bgColor:'#000000',
+  leftTab:'layers',
+  rightTab:'effects',
+  medialibrary:[],
+  presets:PRESETS,
+  activeModal:null,
+  mediaURL:null,
+  mediaType:'image',
+  effectParams:{},
+};
+
+function reducer(state,action){
+  switch(action.type){
+    case 'SET':return{...state,...action.payload};
+    case 'SET_EFFECT_PARAM':{
+      const{eff,param,val}=action.payload;
+      return{...state,effectParams:{...state.effectParams,[eff]:{...(state.effectParams[eff]||{}),[param]:val}}};
+    }
+    case 'ADD_EFFECT':{
+      const exists=state.activeEffects.find(e=>e.name===action.payload.name);
+      if(exists)return state;
+      const defaults={};
+      (EFFECT_PARAMS[action.payload.name]||[]).forEach(p=>{defaults[p.n]=p.v;});
+      return{...state,activeEffects:[...state.activeEffects,{id:uid(),name:action.payload.name,category:action.payload.category,params:{...defaults}}]};
+    }
+    case 'ADD_AUDIO_EFFECT':{
+      const exists=state.activeAudioEffects.find(e=>e.name===action.payload.name);
+      if(exists)return state;
+      const defaults={};
+      (EFFECT_PARAMS[action.payload.name]||[]).forEach(p=>{defaults[p.n]=p.v;});
+      return{...state,activeAudioEffects:[...state.activeAudioEffects,{id:uid(),name:action.payload.name,category:action.payload.category,params:{...defaults}}]};
+    }
+    case 'REMOVE_EFFECT':return{...state,activeEffects:state.activeEffects.filter(e=>e.id!==action.payload)};
+    case 'REMOVE_AUDIO_EFFECT':return{...state,activeAudioEffects:state.activeAudioEffects.filter(e=>e.id!==action.payload)};
+    case 'UPDATE_EFFECT_PARAM':{
+      const{id,param,val}=action.payload;
+      return{...state,activeEffects:state.activeEffects.map(e=>e.id===id?{...e,params:{...e.params,[param]:val}}:e)};
+    }
+    case 'UPDATE_AUDIO_PARAM':{
+      const{id,param,val}=action.payload;
+      return{...state,activeAudioEffects:state.activeAudioEffects.map(e=>e.id===id?{...e,params:{...e.params,[param]:val}}:e)};
+    }
+    case 'SET_LAYER_PROP':{
+      const{id,prop,val}=action.payload;
+      return{...state,layers:state.layers.map(l=>l.id===id?{...l,[prop]:val}:l)};
+    }
+    case 'ADD_LAYER':{
+      const nl={id:uid(),name:action.payload.name||'New Layer',type:action.payload.type||'video',visible:true,locked:false,selected:false,blendMode:'Normal',opacity:100,x:0,y:0,scale:100,rotation:0,speed:1,duration:10,effects:[],keyframes:[]};
+      return{...state,layers:[nl,...state.layers]};
+    }
+    case 'REMOVE_LAYER':return{...state,layers:state.layers.filter(l=>l.id!==action.payload)};
+    case 'ADD_TRACK':{
+      const nt={id:uid(),name:action.payload.name||'New Track',type:action.payload.type||'video',clips:[]};
+      return{...state,tracks:[...state.tracks,nt]};
+    }
+    case 'UNDO':return state;
+    case 'REDO':return state;
+    default:return state;
+  }
+}
+
+// ─────────────────── SLIDER COMPONENT ─────────────────────
+function Slider({label,min,max,value,step,onChange,width}){
+  return(
+    <div className="param-row">
+      <span className="param-label">{label}</span>
+      <input type="range" min={min} max={max} step={step||((max-min)/200)} value={value}
+        onChange={e=>onChange(parseFloat(e.target.value))} style={width?{width}:{}}/>
+      <span className="param-value">{typeof value==='number'?value.toFixed(1):value}</span>
+    </div>
+  );
+}
+
+// ─────────────────── COLOR CONTROL ─────────────────────
+function ColorControl({label,value,onChange}){
+  return(
+    <div className="param-row">
+      <span className="param-label">{label}</span>
+      <input type="color" value={value} onChange={e=>onChange(e.target.value)}/>
+      <span className="param-value" style={{fontSize:9,color:'var(--text3)'}}>{value}</span>
+    </div>
+  );
+}
+
+// ─────────────────── EFFECT ROW ─────────────────────
+function EffectRowComp({effect,onRemove,onParam,isAudio}){
+  const [open,setOpen]=useState(true);
+  const params=EFFECT_PARAMS[effect.name]||[];
+  return(
+    <div className="effect-row">
+      <div className="effect-row-header">
+        <div style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}} onClick={()=>setOpen(!open)}>
+          <span style={{fontSize:10,color:'var(--text3)'}}>{open?'▾':'▸'}</span>
+          <span className="effect-name">{effect.name}</span>
+          <span className="effect-category">{effect.category}</span>
+        </div>
+        <span className="effect-remove" onClick={()=>onRemove(effect.id)}>✕</span>
+      </div>
+      {open && params.map(p=>{
+        const val=effect.params[p.n]??p.v;
+        if(p.t==='range')return <Slider key={p.n} label={p.n} min={p.min} max={p.max} value={val} onChange={v=>onParam(effect.id,p.n,v)}/>;
+        if(p.t==='color')return <ColorControl key={p.n} label={p.n} value={val} onChange={v=>onParam(effect.id,p.n,v)}/>;
+        if(p.t==='checkbox')return(
+          <div key={p.n} className="param-row">
+            <span className="param-label">{p.n}</span>
+            <input type="checkbox" checked={val} onChange={e=>onParam(effect.id,p.n,e.target.checked)}/>
+          </div>
+        );
+        if(p.t==='select')return(
+          <div key={p.n} className="param-row">
+            <span className="param-label">{p.n}</span>
+            <select value={val} onChange={e=>onParam(effect.id,p.n,e.target.value)}>
+              {(p.opts||[]).map(o=><option key={o} value={o}>{o}</option>)}
+            </select>
+          </div>
+        );
+        if(p.t==='text')return(
+          <div key={p.n} className="param-row" style={{flexDirection:'column',alignItems:'flex-start'}}>
+            <span className="param-label">{p.n}</span>
+            <input type="text" value={val} onChange={e=>onParam(effect.id,p.n,e.target.value)} style={{marginTop:3}}/>
+          </div>
+        );
+        return null;
+      })}
+    </div>
+  );
+}
+
+// ─────────────────── KEYFRAMES ─────────────────────
+function KeyframesPanel({layer,dispatch}){
+  const props=['Position X','Position Y','Scale','Rotation','Opacity','Speed'];
+  return(
+    <div className="panel-body">
+      {props.map(p=>(
+        <div key={p} className="kf-row">
+          <button className="kf-btn" title="Add keyframe">◇</button>
+          <span className="kf-prop">{p}</span>
+          <button className="kf-btn">◀</button>
+          <button className="kf-btn">▶</button>
+        </div>
+      ))}
+      <div style={{padding:'8px 10px'}}>
+        <div style={{fontSize:10,color:'var(--text3)',marginBottom:6}}>Easing</div>
+        <select style={{width:'100%'}}>
+          <option>Linear</option><option>Ease In</option><option>Ease Out</option>
+          <option>Ease In Out</option><option>Bezier</option>
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── PROPERTIES PANEL ─────────────────────
+function PropertiesPanel({layer,dispatch,state}){
+  if(!layer)return <div style={{padding:12,color:'var(--text3)',fontSize:11}}>No layer selected</div>;
+  const set=(prop,val)=>dispatch({type:'SET_LAYER_PROP',payload:{id:layer.id,prop,val}});
+  return(
+    <div className="panel-body">
+      <div className="prop-section">
+        <div className="prop-section-title">Transform</div>
+        <div className="prop-row">
+          <span className="prop-label">Position</span>
+          <div className="prop-xy">
+            <div className="xy-pair"><label>X</label><input type="number" value={layer.x} onChange={e=>set('x',+e.target.value)}/></div>
+            <div className="xy-pair"><label>Y</label><input type="number" value={layer.y} onChange={e=>set('y',+e.target.value)}/></div>
+          </div>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Scale</span>
+          <input type="number" value={layer.scale} min={0} max={1000} onChange={e=>set('scale',+e.target.value)}/>
+          <span style={{fontSize:10,color:'var(--text3)'}}>%</span>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Rotation</span>
+          <input type="number" value={layer.rotation} min={-360} max={360} onChange={e=>set('rotation',+e.target.value)}/>
+          <span style={{fontSize:10,color:'var(--text3)'}}>°</span>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Opacity</span>
+          <input type="range" min={0} max={100} value={layer.opacity} onChange={e=>set('opacity',+e.target.value)} style={{flex:1}}/>
+          <span style={{fontSize:10,color:'var(--text2)',minWidth:28}}>{layer.opacity}%</span>
+        </div>
+      </div>
+      <div className="prop-section">
+        <div className="prop-section-title">Timing</div>
+        <div className="prop-row">
+          <span className="prop-label">Speed</span>
+          <input type="number" value={layer.speed} min={0.1} max={10} step={0.1} onChange={e=>set('speed',+e.target.value)}/>
+          <span style={{fontSize:10,color:'var(--text3)'}}>×</span>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Duration</span>
+          <input type="number" value={layer.duration} min={0} max={3600} onChange={e=>set('duration',+e.target.value)}/>
+          <span style={{fontSize:10,color:'var(--text3)'}}>s</span>
+        </div>
+      </div>
+      <div className="prop-section">
+        <div className="prop-section-title">Appearance</div>
+        <div className="prop-row">
+          <span className="prop-label">Blend Mode</span>
+          <select value={layer.blendMode} onChange={e=>set('blendMode',e.target.value)} style={{flex:1}}>
+            {BLEND_MODES.map(m=><option key={m}>{m}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="prop-section">
+        <div className="prop-section-title">Source</div>
+        <div style={{display:'flex',gap:6}}>
+          <button className="btn btn-secondary" style={{fontSize:10,padding:'4px 8px'}} onClick={()=>dispatch({type:'SET',payload:{activeModal:'upload'}})}>Replace Media</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── EFFECTS LIST ─────────────────────
+function EffectsListPanel({dispatch,type}){
+  const cat=type==='audio'?AUDIO_EFFECTS:VIDEO_EFFECTS;
+  return(
+    <div className="panel-body">
+      {Object.entries(cat).map(([category,effects])=>(
+        <div key={category}>
+          <div className="effect-category-header">{category}</div>
+          {effects.map(eff=>(
+            <div key={eff} className="effect-list-item"
+              onClick={()=>{dispatch({type:type==='audio'?'ADD_AUDIO_EFFECT':'ADD_EFFECT',payload:{name:eff,category}});showNotif(`Added: ${eff}`);}}>
+              {eff}
+              <span className="effect-add-icon">+</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────── LAYERS PANEL ─────────────────────
+function LayersPanel({state,dispatch}){
+  return(
+    <div className="panel-body">
+      <div style={{padding:'6px 10px',display:'flex',gap:6}}>
+        <button className="add-btn" style={{flex:1,margin:0}} onClick={()=>dispatch({type:'ADD_LAYER',payload:{name:'Video Layer',type:'video'}})}>+ Video</button>
+        <button className="add-btn" style={{flex:1,margin:0}} onClick={()=>dispatch({type:'ADD_LAYER',payload:{name:'Audio Layer',type:'audio'}})}>+ Audio</button>
+        <button className="add-btn" style={{flex:1,margin:0}} onClick={()=>dispatch({type:'ADD_LAYER',payload:{name:'Image Layer',type:'image'}})}>+ Image</button>
+      </div>
+      {state.layers.map(layer=>(
+        <div key={layer.id} className={`layer-item${layer.id===state.selectedLayer?' selected':''}`}
+          onClick={()=>dispatch({type:'SET',payload:{selectedLayer:layer.id}})}>
+          <div className="layer-thumb"><canvas width="32" height="20"/></div>
+          <div className="layer-info">
+            <div className="layer-title">{layer.name}</div>
+            <div className="layer-type">{layer.type} • {layer.blendMode}</div>
+          </div>
+          <span className="layer-vis" onClick={e=>{e.stopPropagation();dispatch({type:'SET_LAYER_PROP',payload:{id:layer.id,prop:'visible',val:!layer.visible}});}}>
+            {layer.visible?'👁':'🚫'}
+          </span>
+          <span className="layer-lock" onClick={e=>{e.stopPropagation();dispatch({type:'SET_LAYER_PROP',payload:{id:layer.id,prop:'locked',val:!layer.locked}});}}>
+            {layer.locked?'🔒':'🔓'}
+          </span>
+          <span className="layer-vis" onClick={e=>{e.stopPropagation();dispatch({type:'REMOVE_LAYER',payload:layer.id});}}>✕</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────── PRESETS PANEL ─────────────────────
+function PresetsPanel({state}){
+  const [applied,setApplied]=useState(null);
+  return(
+    <div className="panel-body">
+      <div style={{padding:'6px 10px',marginBottom:0}}>
+        <input type="text" placeholder="Search presets..." style={{width:'100%'}}/>
+      </div>
+      <div className="preset-grid">
+        {state.presets.map(p=>(
+          <div key={p} className={`preset-item${applied===p?' active':''}`} style={applied===p?{borderColor:'var(--accent)'}:{}}
+            onClick={()=>{setApplied(p);showNotif(`Preset applied: ${p}`);}}>
+            <div style={{width:'100%',height:32,background:`hsl(${Math.abs(p.charCodeAt(0)*7)%360},40%,20%)`,borderRadius:2,marginBottom:4}}/>
+            <div className="preset-name">{p}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{padding:'0 8px 8px'}}>
+        <button className="add-btn">+ Save Current as Preset</button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── ASPECT RATIO & BG ─────────────────────
+function AspectBGPanel({state,dispatch}){
+  return(
+    <div className="panel-body">
+      <div className="prop-section">
+        <div className="prop-section-title">Canvas</div>
+        <div className="prop-row">
+          <span className="prop-label">Aspect Ratio</span>
+          <select value={state.aspectRatio} onChange={e=>dispatch({type:'SET',payload:{aspectRatio:e.target.value}})} style={{flex:1}}>
+            {ASPECT_RATIOS.map(r=><option key={r}>{r}</option>)}
+          </select>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Background</span>
+          <input type="color" value={state.bgColor} onChange={e=>dispatch({type:'SET',payload:{bgColor:e.target.value}})}/>
+          <span style={{fontSize:10,color:'var(--text3)',marginLeft:4}}>{state.bgColor}</span>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Width</span>
+          <input type="number" defaultValue={1920}/>
+          <span style={{fontSize:10,color:'var(--text3)'}}>px</span>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Height</span>
+          <input type="number" defaultValue={1080}/>
+          <span style={{fontSize:10,color:'var(--text3)'}}>px</span>
+        </div>
+        <div className="prop-row">
+          <span className="prop-label">Frame Rate</span>
+          <select>
+            <option>24 fps</option><option>25 fps</option><option>30 fps</option>
+            <option>50 fps</option><option>60 fps</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── FONTS PANEL ─────────────────────
+function FontsPanel(){
+  const [selected,setSelected]=useState('Open Sans');
+  const [size,setSize]=useState(48);
+  return(
+    <div className="panel-body">
+      <div className="prop-section">
+        <div className="prop-section-title">Font</div>
+        {FONTS.map(f=>(
+          <div key={f} style={{padding:'5px 10px',cursor:'pointer',background:selected===f?'var(--bg5)':'transparent',
+            borderLeft:selected===f?'2px solid var(--accent)':'2px solid transparent',
+            fontFamily:f,fontSize:12,color:selected===f?'var(--text)':'var(--text2)'}}
+            onClick={()=>setSelected(f)}>{f}</div>
+        ))}
+        <div style={{padding:'8px 10px'}}>
+          <div className="prop-row">
+            <span className="prop-label">Size</span>
+            <input type="number" value={size} onChange={e=>setSize(+e.target.value)}/>
+            <span style={{fontSize:10,color:'var(--text3)'}}>px</span>
+          </div>
+          <div className="prop-row">
+            <span className="prop-label">Style</span>
+            <select>
+              <option>Regular</option><option>Bold</option><option>Italic</option><option>Bold Italic</option><option>Light</option>
+            </select>
+          </div>
+          <div className="prop-row">
+            <span className="prop-label">Align</span>
+            <div style={{display:'flex',gap:4}}>
+              {['⇤','⇥','↔'].map(a=><button key={a} className="tl-btn">{a}</button>)}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── PLUGINS PANEL ─────────────────────
+function PluginsPanel({state,dispatch}){
+  return(
+    <div className="panel-body">
+      <div style={{padding:'6px 10px',display:'flex',gap:6}}>
+        <button className="add-btn" style={{flex:1,margin:0}} onClick={()=>dispatch({type:'SET',payload:{activeModal:'pluginCreate'}})}>Create OpenFX</button>
+        <button className="add-btn" style={{flex:1,margin:0}} onClick={()=>dispatch({type:'SET',payload:{activeModal:'pluginLoad'}})}>Load OpenFX</button>
+      </div>
+      {state.plugins.map(p=>(
+        <div key={p.id} className="plugin-item">
+          <div className="plugin-icon">🔌</div>
+          <div className="plugin-info">
+            <div className="plugin-name">{p.name}</div>
+            <div className="plugin-version">v{p.version}</div>
+          </div>
+          <span className="plugin-status">{p.active?'Active':'Inactive'}</span>
+        </div>
+      ))}
+      <div className="plugin-item">
+        <div className="plugin-icon">🎛️</div>
+        <div className="plugin-info">
+          <div className="plugin-name">Master FX Suite</div>
+          <div className="plugin-version">v3.0.1</div>
+        </div>
+        <span className="plugin-status">Active</span>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── MODALS ─────────────────────
+function UploadModal({onClose,dispatch}){
+  const fileRef=useRef();
+  function handleFile(file){
+    if(!file)return;
+    const url=URL.createObjectURL(file);
+    const type=file.type.startsWith('video')?'video':'image';
+    dispatch({type:'SET',payload:{mediaURL:url,mediaType:type}});
+    dispatch({type:'ADD_LAYER',payload:{name:file.name,type}});
+    showNotif(`Loaded: ${file.name}`);
+    onClose();
+  }
+  return(
+    <div className="modal">
+      <div className="modal-header">
+        <span className="modal-title">Upload Media</span>
+        <button className="modal-close" onClick={onClose}>✕</button>
+      </div>
+      <div className="modal-body">
+        <div className="drop-zone" onClick={()=>fileRef.current.click()}
+          onDragOver={e=>e.preventDefault()}
+          onDrop={e=>{e.preventDefault();handleFile(e.dataTransfer.files[0]);}}>
+          <div className="drop-icon">📂</div>
+          <div>Click or drag image / video here</div>
+          <div style={{fontSize:10,color:'var(--text3)',marginTop:4}}>PNG, JPG, JPEG, MP4, MOV, WEBM</div>
+        </div>
+        <input ref={fileRef} type="file" accept="image/*,video/*" style={{display:'none'}} onChange={e=>handleFile(e.target.files[0])}/>
+      </div>
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+function ExportModal({onClose}){
+  const [fmt,setFmt]=useState('PNG');
+  const [quality,setQuality]=useState(90);
+  const [progress,setProgress]=useState(0);
+  const [exporting,setExporting]=useState(false);
+  function doExport(){
+    setExporting(true);setProgress(0);
+    const intv=setInterval(()=>{
+      setProgress(p=>{if(p>=100){clearInterval(intv);setExporting(false);showNotif(`Exported as ${fmt}`);onClose();return 100;}return p+8;});
+    },120);
+  }
+  const isVideo=['MP4','MOV'].includes(fmt);
+  return(
+    <div className="modal">
+      <div className="modal-header">
+        <span className="modal-title">Export</span>
+        <button className="modal-close" onClick={onClose}>✕</button>
+      </div>
+      <div className="modal-body">
+        <div className="form-row">
+          <label className="form-label">Format</label>
+          <select className="form-select" value={fmt} onChange={e=>setFmt(e.target.value)}>
+            <optgroup label="Image"><option>PNG</option><option>JPG</option><option>JPEG</option></optgroup>
+            <optgroup label="Video"><option>MP4</option><option>MOV</option></optgroup>
+          </select>
+        </div>
+        <div className="form-row">
+          <label className="form-label">Quality / Bitrate</label>
+          <input type="range" min={1} max={100} value={quality} onChange={e=>setQuality(+e.target.value)} style={{width:'100%'}}/>
+          <span style={{fontSize:10,color:'var(--text2)'}}>{quality}%</span>
+        </div>
+        {isVideo&&(
+          <div className="form-row">
+            <label className="form-label">Codec</label>
+            <select className="form-select">
+              <option>H.264</option><option>H.265</option><option>ProRes</option><option>VP9</option>
+            </select>
+          </div>
+        )}
+        <div className="form-row">
+          <label className="form-label">Resolution</label>
+          <select className="form-select">
+            <option>1920×1080</option><option>3840×2160</option><option>1280×720</option><option>Custom</option>
+          </select>
+        </div>
+        {exporting&&<div className="progress-bar"><div className="progress-fill" style={{width:`${progress}%`}}/></div>}
+      </div>
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={doExport}>{exporting?`Exporting ${progress}%...`:'Export'}</button>
+      </div>
+    </div>
+  );
+}
+
+function PluginModal({mode,onClose,dispatch}){
+  const [name,setName]=useState('');
+  const [code,setCode]=useState(mode==='create'?`// OpenFX Plugin Template\nvoid plugin_main(OFX::ImageEffect* effect) {\n  // Your code here\n}`:'');
+  return(
+    <div className="modal" style={{maxWidth:520}}>
+      <div className="modal-header">
+        <span className="modal-title">{mode==='create'?'Create OpenFX Plugin':mode==='load'?'Load OpenFX Plugin':'Save OpenFX Plugin'}</span>
+        <button className="modal-close" onClick={onClose}>✕</button>
+      </div>
+      <div className="modal-body">
+        {(mode==='create'||mode==='save')&&(
+          <div className="form-row">
+            <label className="form-label">Plugin Name</label>
+            <input className="form-input" value={name} onChange={e=>setName(e.target.value)} placeholder="My Plugin"/>
+          </div>
+        )}
+        {mode==='create'&&(
+          <div className="form-row">
+            <label className="form-label">Plugin Code (C++/OFX)</label>
+            <textarea value={code} onChange={e=>setCode(e.target.value)} style={{width:'100%',height:120,background:'var(--bg4)',border:'1px solid var(--border2)',color:'var(--text2)',padding:8,fontSize:10,fontFamily:'Source Code Pro,monospace',resize:'vertical'}}/>
+          </div>
+        )}
+        {mode==='load'&&(
+          <div className="drop-zone">
+            <div className="drop-icon">📦</div>
+            <div>Drop .ofx / .dll / .dylib plugin file</div>
+          </div>
+        )}
+      </div>
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+        <button className="btn btn-primary" onClick={()=>{showNotif(mode==='create'?`Plugin "${name||'Untitled'}" created`:mode==='load'?'Plugin loaded':'Plugin saved');onClose();}}>
+          {mode==='create'?'Create':mode==='load'?'Load':'Save'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── MARKER / POINT / BOOL ─────────────────────
+function MarkerPanel(){
+  const [markers,setMarkers]=useState([{id:'m1',time:2.5,label:'Scene Start',color:'#e05a2b'},{id:'m2',time:6.0,label:'Cut Point',color:'#2b7fe0'}]);
+  const [label,setLabel]=useState('');
+  const [color,setColor]=useState('#e05a2b');
+  return(
+    <div className="panel-body">
+      <div className="prop-section">
+        <div className="prop-section-title">Add Marker</div>
+        <div className="prop-row"><span className="prop-label">Label</span><input type="text" value={label} onChange={e=>setLabel(e.target.value)} placeholder="Marker name" style={{flex:1}}/></div>
+        <div className="prop-row"><span className="prop-label">Color</span><input type="color" value={color} onChange={e=>setColor(e.target.value)}/></div>
+        <button className="add-btn" onClick={()=>{setMarkers([...markers,{id:uid(),time:0,label:label||'Marker',color}]);setLabel('');}}>+ Add Marker</button>
+      </div>
+      {markers.map(m=>(
+        <div key={m.id} style={{display:'flex',alignItems:'center',padding:'5px 10px',borderBottom:'1px solid var(--border)',gap:8}}>
+          <div style={{width:8,height:8,borderRadius:'50%',background:m.color,flexShrink:0}}/>
+          <span style={{fontSize:11,color:'var(--text2)',flex:1}}>{m.label}</span>
+          <span style={{fontSize:10,color:'var(--text3)'}}>{m.time.toFixed(2)}s</span>
+          <span style={{cursor:'pointer',fontSize:10,color:'var(--text3)'}} onClick={()=>setMarkers(markers.filter(x=>x.id!==m.id))}>✕</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────── MENU BAR ─────────────────────
+function MenuBar({state,dispatch}){
+  const [open,setOpen]=useState(null);
+  const ref=useRef();
+  useEffect(()=>{
+    function handle(e){if(ref.current&&!ref.current.contains(e.target))setOpen(null);}
+    document.addEventListener('mousedown',handle);return()=>document.removeEventListener('mousedown',handle);
+  },[]);
+  const toggle=m=>setOpen(open===m?null:m);
+  const menuItem=(label,action,shortcut)=>(
+    <div className="dropdown-item" onClick={()=>{setOpen(null);action&&action();}}>
+      {label}{shortcut&&<span className="shortcut">{shortcut}</span>}
+    </div>
+  );
+  return(
+    <div id="menubar" ref={ref}>
+      <span className="logo">STUDIO</span>
+      {/* FILE */}
+      <div className={`menu-item${open==='file'?' active':''}`} onClick={()=>toggle('file')}>
+        File
+        <div className={`dropdown${open==='file'?' open':''}`}>
+          {menuItem('New Project',null,'Ctrl+N')}
+          {menuItem('Open Project...',null,'Ctrl+O')}
+          <div className="dropdown-sep"/>
+          {menuItem('Upload Image / Video',()=>dispatch({type:'SET',payload:{activeModal:'upload'}}),'Ctrl+I')}
+          <div className="dropdown-sep"/>
+          <div className="dropdown-sub">
+            <div className="dropdown-item">Export Image As</div>
+            <div className="sub-menu">
+              {['PNG','JPG','JPEG'].map(f=><div key={f} className="dropdown-item" onClick={()=>{setOpen(null);dispatch({type:'SET',payload:{activeModal:'export'}});}}>{f}</div>)}
+            </div>
+          </div>
+          <div className="dropdown-sub">
+            <div className="dropdown-item">Export Video As</div>
+            <div className="sub-menu">
+              {['MP4','MOV'].map(f=><div key={f} className="dropdown-item" onClick={()=>{setOpen(null);dispatch({type:'SET',payload:{activeModal:'export'}});}}>{f}</div>)}
+            </div>
+          </div>
+          <div className="dropdown-sep"/>
+          {menuItem('Save Project','Ctrl+S')}
+          {menuItem('Save Project As...','Ctrl+Shift+S')}
+          <div className="dropdown-sep"/>
+          {menuItem('Exit',null)}
+        </div>
+      </div>
+      {/* EDIT */}
+      <div className={`menu-item${open==='edit'?' active':''}`} onClick={()=>toggle('edit')}>
+        Edit
+        <div className={`dropdown${open==='edit'?' open':''}`}>
+          {menuItem('Undo',()=>{dispatch({type:'UNDO'});showNotif('Undo');},'Ctrl+Z')}
+          {menuItem('Redo',()=>{dispatch({type:'REDO'});showNotif('Redo');},'Ctrl+Y')}
+          <div className="dropdown-sep"/>
+          {menuItem('Copy',()=>{dispatch({type:'SET',payload:{clipboard:state.selectedLayer}});showNotif('Copied');},'Ctrl+C')}
+          {menuItem('Paste',()=>{showNotif('Pasted');},'Ctrl+V')}
+          <div className="dropdown-sep"/>
+          {menuItem('Select All',null,'Ctrl+A')}
+          {menuItem('Deselect All',null,'Ctrl+D')}
+          <div className="dropdown-sep"/>
+          {menuItem('Preferences...',null,'Ctrl+,')}
+        </div>
+      </div>
+      {/* VIDEO EFFECTS */}
+      <div className={`menu-item${open==='vfx'?' active':''}`} onClick={()=>toggle('vfx')}>
+        Video Effects
+        <div className={`dropdown${open==='vfx'?' open':''}`} style={{maxHeight:'70vh',overflowY:'auto'}}>
+          {Object.entries(VIDEO_EFFECTS).map(([cat,effs])=>(
+            <div key={cat} className="dropdown-sub">
+              <div className="dropdown-item">{cat}</div>
+              <div className="sub-menu">
+                {effs.map(eff=>(
+                  <div key={eff} className="dropdown-item" onClick={()=>{setOpen(null);dispatch({type:'ADD_EFFECT',payload:{name:eff,category:cat}});showNotif(`Added: ${eff}`);}}>
+                    {eff}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* AUDIO EFFECTS */}
+      <div className={`menu-item${open==='afx'?' active':''}`} onClick={()=>toggle('afx')}>
+        Audio Effects
+        <div className={`dropdown${open==='afx'?' open':''}`}>
+          {Object.entries(AUDIO_EFFECTS).map(([cat,effs])=>(
+            <div key={cat} className="dropdown-sub">
+              <div className="dropdown-item">{cat}</div>
+              <div className="sub-menu">
+                {effs.map(eff=>(
+                  <div key={eff} className="dropdown-item" onClick={()=>{setOpen(null);dispatch({type:'ADD_AUDIO_EFFECT',payload:{name:eff,category:cat}});showNotif(`Added: ${eff}`);}}>
+                    {eff}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* PLUGINS */}
+      <div className={`menu-item${open==='plugins'?' active':''}`} onClick={()=>toggle('plugins')}>
+        Plugins
+        <div className={`dropdown${open==='plugins'?' open':''}`}>
+          {menuItem('Create OpenFX Plugin',()=>dispatch({type:'SET',payload:{activeModal:'pluginCreate'}}))}
+          {menuItem('Save OpenFX Plugin',()=>dispatch({type:'SET',payload:{activeModal:'pluginSave'}}))}
+          {menuItem('Load OpenFX Plugin',()=>dispatch({type:'SET',payload:{activeModal:'pluginLoad'}}))}
+          <div className="dropdown-sep"/>
+          {menuItem('Plugin Manager',null)}
+        </div>
+      </div>
+      {/* VIEW */}
+      <div className={`menu-item${open==='view'?' active':''}`} onClick={()=>toggle('view')}>
+        View
+        <div className={`dropdown${open==='view'?' open':''}`}>
+          {menuItem('Fit to Screen',null,'F')}
+          {menuItem('100%',null,'1')}
+          {menuItem('50%',null,'2')}
+          <div className="dropdown-sep"/>
+          {menuItem('Show Grid',null,'G')}
+          {menuItem('Show Safe Zones',null)}
+          {menuItem('Show Rulers',null)}
+        </div>
+      </div>
+      {/* WINDOW */}
+      <div className={`menu-item${open==='window'?' active':''}`} onClick={()=>toggle('window')}>
+        Window
+        <div className={`dropdown${open==='window'?' open':''}`}>
+          {menuItem('Layers',null)}
+          {menuItem('Effects',null)}
+          {menuItem('Properties',null)}
+          {menuItem('Timeline',null)}
+          {menuItem('Preview',null)}
+          {menuItem('Plugins',null)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── TOOLBAR ─────────────────────
+function Toolbar({state,dispatch}){
+  const [activeTool,setActiveTool]=useState('select');
+  const tools=[
+    {id:'select',icon:'↖',title:'Select'},
+    {id:'move',icon:'✥',title:'Move'},
+    {id:'crop',icon:'⊡',title:'Crop'},
+    {id:'pen',icon:'✒',title:'Pen'},
+    {id:'text',icon:'T',title:'Text'},
+    {id:'shape',icon:'▭',title:'Shape'},
+    {id:'zoom',icon:'⊕',title:'Zoom'},
+    {id:'hand',icon:'✋',title:'Pan'},
+  ];
+  return(
+    <div id="toolbar">
+      <div className="toolbar-group">
+        {tools.map(t=>(
+          <button key={t.id} className={`tool-btn${activeTool===t.id?' active':''}`} title={t.title} onClick={()=>setActiveTool(t.id)}>{t.icon}</button>
+        ))}
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <button className="tool-btn" title="Undo" onClick={()=>showNotif('Undo')}>↩</button>
+        <button className="tool-btn" title="Redo" onClick={()=>showNotif('Redo')}>↪</button>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <span className="toolbar-label">Zoom:</span>
+        <select style={{background:'var(--bg4)',border:'1px solid var(--border2)',color:'var(--text2)',padding:'2px 4px',fontSize:10,fontFamily:'Open Sans,sans-serif'}}>
+          <option>25%</option><option>50%</option><option selected>100%</option><option>150%</option><option>200%</option>
+        </select>
+      </div>
+      <div className="tool-sep"/>
+      <div className="toolbar-group">
+        <button className="tool-btn" title="Add Track" onClick={()=>dispatch({type:'ADD_TRACK',payload:{name:'Video Track',type:'video'}})}>🎬</button>
+        <button className="tool-btn" title="Add Audio Track" onClick={()=>dispatch({type:'ADD_TRACK',payload:{name:'Audio Track',type:'audio'}})}>🎵</button>
+        <button className="tool-btn" title="Upload" onClick={()=>dispatch({type:'SET',payload:{activeModal:'upload'}})}>⬆</button>
+        <button className="tool-btn" title="Export" onClick={()=>dispatch({type:'SET',payload:{activeModal:'export'}})}>⬇</button>
+      </div>
+      <div style={{flex:1}}/>
+      <div className="toolbar-group">
+        <span style={{fontSize:10,color:'var(--text3)'}}>AR:</span>
+        <select value={state.aspectRatio} onChange={e=>dispatch({type:'SET',payload:{aspectRatio:e.target.value}})} style={{background:'var(--bg4)',border:'1px solid var(--border2)',color:'var(--text2)',padding:'2px 4px',fontSize:10,fontFamily:'Open Sans,sans-serif'}}>
+          {ASPECT_RATIOS.map(r=><option key={r}>{r}</option>)}
+        </select>
+        <input type="color" value={state.bgColor} onChange={e=>dispatch({type:'SET',payload:{bgColor:e.target.value}})} title="Background Color" style={{width:24,height:22,border:'1px solid var(--border2)',background:'transparent',cursor:'pointer',borderRadius:2,marginLeft:4}}/>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── TIMELINE ─────────────────────
+function Timeline({state,dispatch}){
+  const [playing,setPlaying]=useState(false);
+  const [time,setTime]=useState(0);
+  const [dur]=useState(10);
+  const pxPerSec=80;
+  const playRef=useRef();
+  useEffect(()=>{
+    if(playing){
+      playRef.current=setInterval(()=>{
+        setTime(t=>{if(t>=dur){setPlaying(false);return 0;}return+(t+0.033).toFixed(3);});
+      },33);
+    }else clearInterval(playRef.current);
+    return()=>clearInterval(playRef.current);
+  },[playing,dur]);
+  const fmtTime=t=>{const m=Math.floor(t/60);const s=Math.floor(t%60);const f=Math.floor((t%1)*30);return`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}:${String(f).padStart(2,'0')}`;};
+  const ticks=Array.from({length:Math.ceil(dur)+1},(_,i)=>i);
+  return(
+    <div id="timeline">
+      <div className="timeline-header">
+        <div className="timeline-controls">
+          <button className="tl-btn" title="Go to Start" onClick={()=>setTime(0)}>⏮</button>
+          <button className="tl-btn" title="Previous Frame" onClick={()=>setTime(t=>Math.max(0,+(t-1/30).toFixed(3)))}>◀</button>
+          <button className={`tl-btn play`} onClick={()=>setPlaying(!playing)}>{playing?'⏸':'▶'}</button>
+          <button className="tl-btn" title="Next Frame" onClick={()=>setTime(t=>Math.min(dur,+(t+1/30).toFixed(3)))}>▶</button>
+          <button className="tl-btn" title="Go to End" onClick={()=>setTime(dur)}>⏭</button>
+          <button className="tl-btn" title="Loop">🔁</button>
+        </div>
+        <span className="time-display">{fmtTime(time)} / {fmtTime(dur)}</span>
+        <div style={{flex:1}}/>
+        <div className="timeline-controls">
+          <button className="tl-btn" title="Add Video Track" onClick={()=>dispatch({type:'ADD_TRACK',payload:{name:'V'+(state.tracks.filter(t=>t.type==='video').length+1),type:'video'}})}>🎬+</button>
+          <button className="tl-btn" title="Add Audio Track" onClick={()=>dispatch({type:'ADD_TRACK',payload:{name:'A'+(state.tracks.filter(t=>t.type==='audio').length+1),type:'audio'}})}>🎵+</button>
+        </div>
+      </div>
+      <div className="timeline-body">
+        <div className="track-list">
+          <div style={{height:20,background:'var(--bg4)',borderBottom:'1px solid var(--border)'}}/>
+          {state.tracks.map(t=>(
+            <div key={t.id} className="track-item">
+              <span className="track-icon">{t.type==='video'?'🎬':t.type==='audio'?'🎵':'🖼'}</span>
+              <span className="track-name">{t.name}</span>
+              <div className="track-actions">
+                <span className="track-act-btn">👁</span>
+                <span className="track-act-btn">🔒</span>
+                <span className="track-act-btn" onClick={()=>dispatch({type:'SET',payload:{tracks:state.tracks.filter(x=>x.id!==t.id)}})}>✕</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="timeline-tracks" style={{position:'relative'}} onClick={e=>{
+          const rect=e.currentTarget.getBoundingClientRect();
+          const x=e.clientX-rect.left;
+          setTime(Math.max(0,Math.min(dur,x/pxPerSec)));
+        }}>
+          <div className="track-ruler" style={{width:Math.max(dur*pxPerSec+60,400)}}>
+            {ticks.map(i=>(
+              <div key={i} className="ruler-tick" style={{left:i*pxPerSec}}>
+                <span style={{position:'absolute',bottom:10,left:2,fontSize:9}}>{fmtTime(i)}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{position:'relative',width:Math.max(dur*pxPerSec+60,400)}}>
+            {state.tracks.map(t=>(
+              <div key={t.id} className="track-lane">
+                {t.clips.map(c=>(
+                  <div key={c.id} className={`clip ${t.type}`} style={{left:c.start*pxPerSec,width:(c.end-c.start)*pxPerSec}}>
+                    <span className="clip-label">{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+            <div className="playhead" style={{left:time*pxPerSec}}/>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── LEFT PANEL ─────────────────────
+function LeftPanel({state,dispatch}){
+  const tabs=[{id:'layers',label:'Layers'},{id:'presets',label:'Presets'},{id:'fonts',label:'Fonts'},{id:'markers',label:'Markers'},{id:'plugins',label:'Plugins'}];
+  return(
+    <div id="left-panel">
+      <div className="tab-bar">
+        {tabs.map(t=><div key={t.id} className={`tab${state.leftTab===t.id?' active':''}`} onClick={()=>dispatch({type:'SET',payload:{leftTab:t.id}})}>{t.label}</div>)}
+      </div>
+      {state.leftTab==='layers'&&<LayersPanel state={state} dispatch={dispatch}/>}
+      {state.leftTab==='presets'&&<PresetsPanel state={state}/>}
+      {state.leftTab==='fonts'&&<FontsPanel/>}
+      {state.leftTab==='markers'&&<MarkerPanel/>}
+      {state.leftTab==='plugins'&&<PluginsPanel state={state} dispatch={dispatch}/>}
+    </div>
+  );
+}
+
+// ─────────────────── RIGHT PANEL ─────────────────────
+function RightPanel({state,dispatch}){
+  const selLayer=state.layers.find(l=>l.id===state.selectedLayer);
+  const tabs=[{id:'effects',label:'Video FX'},{id:'audio',label:'Audio FX'},{id:'props',label:'Properties'},{id:'keyframes',label:'Keyframes'},{id:'canvas',label:'Canvas'}];
+  return(
+    <div id="right-panel">
+      <div className="tab-bar">
+        {tabs.map(t=><div key={t.id} className={`tab${state.rightTab===t.id?' active':''}`} onClick={()=>dispatch({type:'SET',payload:{rightTab:t.id}})}>{t.label}</div>)}
+      </div>
+      {state.rightTab==='effects'&&(
+        <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+          <div style={{borderBottom:'1px solid var(--border)',flex:1,overflowY:'auto'}}>
+            {state.activeEffects.length===0&&<div style={{padding:12,color:'var(--text3)',fontSize:11}}>No effects. Add from Video Effects menu.</div>}
+            {state.activeEffects.map(e=>(
+              <EffectRowComp key={e.id} effect={e}
+                onRemove={id=>dispatch({type:'REMOVE_EFFECT',payload:id})}
+                onParam={(id,param,val)=>dispatch({type:'UPDATE_EFFECT_PARAM',payload:{id,param,val}})}/>
+            ))}
+          </div>
+          <div style={{borderTop:'1px solid var(--border)',maxHeight:240,overflowY:'auto'}}>
+            <div className="panel-header">Add Video Effect</div>
+            <EffectsListPanel dispatch={dispatch} type="video"/>
+          </div>
+        </div>
+      )}
+      {state.rightTab==='audio'&&(
+        <div style={{display:'flex',flexDirection:'column',flex:1,overflow:'hidden'}}>
+          <div style={{borderBottom:'1px solid var(--border)',flex:1,overflowY:'auto'}}>
+            {state.activeAudioEffects.length===0&&<div style={{padding:12,color:'var(--text3)',fontSize:11}}>No audio effects. Add from Audio Effects menu.</div>}
+            {state.activeAudioEffects.map(e=>(
+              <EffectRowComp key={e.id} effect={e}
+                onRemove={id=>dispatch({type:'REMOVE_AUDIO_EFFECT',payload:id})}
+                onParam={(id,param,val)=>dispatch({type:'UPDATE_AUDIO_PARAM',payload:{id,param,val}})}
+                isAudio/>
+            ))}
+          </div>
+          <div style={{borderTop:'1px solid var(--border)',maxHeight:240,overflowY:'auto'}}>
+            <div className="panel-header">Add Audio Effect</div>
+            <EffectsListPanel dispatch={dispatch} type="audio"/>
+          </div>
+        </div>
+      )}
+      {state.rightTab==='props'&&<PropertiesPanel layer={selLayer} dispatch={dispatch} state={state}/>}
+      {state.rightTab==='keyframes'&&<KeyframesPanel layer={selLayer} dispatch={dispatch}/>}
+      {state.rightTab==='canvas'&&<AspectBGPanel state={state} dispatch={dispatch}/>}
+    </div>
+  );
+}
+
+// ─────────────────── CANVAS ─────────────────────
+function Canvas({state}){
+  const canvasRef=useRef();
+  const glRef=useRef(null);
+  const animRef=useRef();
+  const imgRef=useRef();
+  const timeRef=useRef(0);
+
+  useEffect(()=>{
+    const canvas=canvasRef.current;
+    if(!canvas)return;
+    canvas.width=854;canvas.height=480;
+    glRef.current=initWebGL(canvas);
+    const gl=glRef.current?.gl;
+    const tex=glRef.current?.tex;
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.src='data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="854" height="480"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0a0a1a"/><stop offset="50%" stop-color="#1a0a2a"/><stop offset="100%" stop-color="#0a1a0a"/></linearGradient></defs><rect width="854" height="480" fill="url(#g)"/><text x="427" y="220" font-family="sans-serif" font-size="28" fill="rgba(255,255,255,.15)" text-anchor="middle">STUDIO EDITOR</text><text x="427" y="260" font-family="sans-serif" font-size="14" fill="rgba(255,255,255,.08)" text-anchor="middle">Upload or select media to preview</text></svg>`);
+    imgRef.current=img;
+    img.onload=()=>{
+      if(gl&&tex){
+        gl.bindTexture(gl.TEXTURE_2D,tex);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+      }
+    };
+    function render(){
+      timeRef.current+=0.016;
+      if(glRef.current){
+        const{gl}=glRef.current;
+        gl.viewport(0,0,canvas.width,canvas.height);
+        const shakeEff=state.activeEffects.find(e=>e.name==='Shake');
+        const hsEff=state.activeEffects.find(e=>e.name==='Hue/Saturation');
+        const contEff=state.activeEffects.find(e=>e.name==='Contrast');
+        const expEff=state.activeEffects.find(e=>e.name==='Exposure');
+        const invEff=state.activeEffects.find(e=>e.name==='Invert');
+        drawWebGL(glRef.current,{
+          shake:shakeEff?shakeEff.params['Intensity']:0,
+          hue:hsEff?hsEff.params['Hue']:0,
+          sat:hsEff?hsEff.params['Saturation']:0,
+          bright:hsEff?hsEff.params['Lightness']:0,
+          contrast:contEff?contEff.params['Contrast']:0,
+          exposure:expEff?expEff.params['Exposure']:0,
+          invert:invEff?invEff.params['Amount']/100:0,
+        },timeRef.current);
+      }
+      animRef.current=requestAnimationFrame(render);
+    }
+    render();
+    return()=>cancelAnimationFrame(animRef.current);
+  },[]);
+
+  useEffect(()=>{
+    if(state.mediaURL&&glRef.current){
+      const img=new Image();
+      img.crossOrigin='anonymous';
+      img.src=state.mediaURL;
+      img.onload=()=>{
+        const{gl,tex}=glRef.current;
+        gl.bindTexture(gl.TEXTURE_2D,tex);
+        gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+      };
+    }
+  },[state.mediaURL]);
+
+  const [ar]=useState({w:16,h:9});
+
+  return(
+    <div id="canvas-wrap">
+      <canvas ref={canvasRef} id="gl-canvas"/>
+      <div className="canvas-info">
+        <span>1920×1080</span>
+        <span>{state.aspectRatio}</span>
+        <span>30fps</span>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────── APP ─────────────────────
+function App(){
+  const [state,dispatch]=useReducer(reducer,initState);
+
+  useEffect(()=>{
+    function onKey(e){
+      if(e.ctrlKey||e.metaKey){
+        if(e.key==='z'){e.preventDefault();dispatch({type:'UNDO'});showNotif('Undo');}
+        if(e.key==='y'){e.preventDefault();dispatch({type:'REDO'});showNotif('Redo');}
+        if(e.key==='c'){dispatch({type:'SET',payload:{clipboard:state.selectedLayer}});showNotif('Copied');}
+        if(e.key==='v'){showNotif('Pasted');}
+      }
+    }
+    document.addEventListener('keydown',onKey);return()=>document.removeEventListener('keydown',onKey);
+  },[state.selectedLayer]);
+
+  return(
+    <>
+      <div id="app">
+        <MenuBar state={state} dispatch={dispatch}/>
+        <Toolbar state={state} dispatch={dispatch}/>
+        <div id="main">
+          <LeftPanel state={state} dispatch={dispatch}/>
+          <div id="center">
+            <Canvas state={state}/>
+          </div>
+          <RightPanel state={state} dispatch={dispatch}/>
+        </div>
+        <Timeline state={state} dispatch={dispatch}/>
+        <div id="statusbar">
+          <span className="status-item">Layers: <span>{state.layers.length}</span></span>
+          <span className="status-item">Video FX: <span>{state.activeEffects.length}</span></span>
+          <span className="status-item">Audio FX: <span>{state.activeAudioEffects.length}</span></span>
+          <span className="status-item">Tracks: <span>{state.tracks.length}</span></span>
+          <span className="status-item">WebGL: <span style={{color:'var(--green)'}}>Active</span></span>
+        </div>
+      </div>
+
+      {/* MODALS */}
+      <div className={`modal-overlay${state.activeModal?' open':''}`} onClick={e=>{if(e.target===e.currentTarget)dispatch({type:'SET',payload:{activeModal:null}});}}>
+        {state.activeModal==='upload'&&<UploadModal onClose={()=>dispatch({type:'SET',payload:{activeModal:null}})} dispatch={dispatch}/>}
+        {state.activeModal==='export'&&<ExportModal onClose={()=>dispatch({type:'SET',payload:{activeModal:null}})}/>}
+        {state.activeModal==='pluginCreate'&&<PluginModal mode="create" onClose={()=>dispatch({type:'SET',payload:{activeModal:null}})} dispatch={dispatch}/>}
+        {state.activeModal==='pluginLoad'&&<PluginModal mode="load" onClose={()=>dispatch({type:'SET',payload:{activeModal:null}})} dispatch={dispatch}/>}
+        {state.activeModal==='pluginSave'&&<PluginModal mode="save" onClose={()=>dispatch({type:'SET',payload:{activeModal:null}})} dispatch={dispatch}/>}
+      </div>
+
+      <div id="notification"/>
+    </>
+  );
+}
+
+ReactDOM.render(<App/>,document.getElementById('app'));
+</script>
+</body>
+</html>

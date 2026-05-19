@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#000;--bg1:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;--bg5:#2a2a2a;
+--border:#2a2a2a;--border2:#333;--text:#fff;--text2:#aaa;--text3:#666;
+--accent:#e0b04a;--accent2:#c8962e;--red:#e05050;--green:#50e090;--blue:#4a90e0;
+--panel:200px;--timeline:180px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;font-size:12px}
+#app{display:flex;flex-direction:column;width:100%;height:100%}
+/* MENUBAR */
+#menubar{display:flex;align-items:center;height:28px;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 8px;gap:2px;z-index:1000;user-select:none}
+.menu-btn{position:relative;padding:3px 10px;cursor:pointer;border-radius:3px;font-size:12px;color:var(--text);white-space:nowrap}
+.menu-btn:hover,.menu-btn.open{background:var(--bg4)}
+.menu-dropdown{display:none;position:absolute;top:100%;left:0;background:var(--bg3);border:1px solid var(--border2);min-width:180px;z-index:9999;border-radius:3px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.8)}
+.menu-btn.open .menu-dropdown{display:block}
+.menu-item{padding:6px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:16px;color:var(--text)}
+.menu-item:hover{background:var(--bg5);color:var(--accent)}
+.menu-sep{height:1px;background:var(--border);margin:3px 0}
+.menu-sub{position:relative}
+.menu-sub-arrow{font-size:10px;color:var(--text3)}
+.menu-sub .menu-dropdown{display:none;top:0;left:100%;border-radius:3px}
+.menu-sub:hover .menu-dropdown{display:block}
+#logo{font-size:14px;font-weight:700;color:var(--accent);margin-right:8px;letter-spacing:1px}
+/* MAIN AREA */
+#main{display:flex;flex:1;overflow:hidden}
+/* LEFT PANEL */
+#left-panel{width:var(--panel);background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.panel-section{padding:8px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.tool-btn{padding:6px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;cursor:pointer;text-align:center;font-size:10px;color:var(--text2);transition:.15s}
+.tool-btn:hover,.tool-btn.active{background:var(--bg5);border-color:var(--accent);color:var(--accent)}
+/* CANVAS AREA */
+#canvas-area{flex:1;background:#050505;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#canvas-wrap{position:relative;box-shadow:0 0 40px rgba(0,0,0,.9)}
+#main-canvas{display:block;background:#1a1a1a}
+#canvas-overlay{position:absolute;top:0;left:0;pointer-events:none}
+.canvas-toolbar{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;background:rgba(10,10,10,.9);border:1px solid var(--border2);border-radius:4px;padding:4px}
+.ct-btn{padding:4px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;cursor:pointer;font-size:11px;color:var(--text2)}
+.ct-btn:hover,.ct-btn.active{background:var(--bg5);color:var(--accent);border-color:var(--accent)}
+.zoom-info{padding:4px 10px;font-size:11px;color:var(--text3);display:flex;align-items:center}
+/* RIGHT PANEL */
+#right-panel{width:220px;background:var(--bg1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.rpanel-tab{display:flex;border-bottom:1px solid var(--border)}
+.rtab-btn{flex:1;padding:6px;text-align:center;cursor:pointer;font-size:10px;color:var(--text3);border-bottom:2px solid transparent}
+.rtab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.rtab-content{flex:1;overflow-y:auto;padding:8px}
+.rtab-content::-webkit-scrollbar{width:3px}
+.rtab-content::-webkit-scrollbar-thumb{background:var(--border2)}
+/* PARAMS */
+.param-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.param-label{font-size:10px;color:var(--text2);width:80px;flex-shrink:0}
+.param-slider{flex:1;height:3px;appearance:none;background:var(--bg4);border-radius:2px;outline:none;cursor:pointer}
+.param-slider::-webkit-slider-thumb{appearance:none;width:10px;height:10px;border-radius:50%;background:var(--accent);cursor:pointer}
+.param-value{font-size:10px;color:var(--text);width:32px;text-align:right}
+.param-select{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:10px;padding:2px 4px;border-radius:2px;outline:none}
+.param-checkbox{cursor:pointer;accent-color:var(--accent)}
+/* EFFECT ITEM */
+.effect-item{background:var(--bg2);border:1px solid var(--border);border-radius:3px;margin-bottom:4px;overflow:hidden}
+.effect-header{display:flex;align-items:center;padding:6px 8px;cursor:pointer;gap:6px}
+.effect-name{flex:1;font-size:11px;color:var(--text)}
+.effect-toggle{width:20px;height:10px;background:var(--bg4);border-radius:5px;position:relative;cursor:pointer}
+.effect-toggle.on{background:var(--accent)}
+.effect-toggle::after{content:'';position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;background:#fff;transition:.2s}
+.effect-toggle.on::after{left:11px}
+.effect-body{display:none;padding:6px 8px;border-top:1px solid var(--border)}
+.effect-body.open{display:block}
+/* TIMELINE */
+#timeline-area{height:var(--timeline);background:var(--bg1);border-top:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.timeline-toolbar{display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.tl-btn{padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:2px;cursor:pointer;font-size:10px;color:var(--text2)}
+.tl-btn:hover{background:var(--bg5);color:var(--accent)}
+#tl-time{font-size:11px;color:var(--accent);font-weight:600;padding:0 8px;min-width:60px;text-align:center}
+#timeline-body{flex:1;display:flex;overflow:hidden}
+#track-labels{width:140px;background:var(--bg2);border-right:1px solid var(--border);overflow:y:auto}
+.track-label{height:32px;display:flex;align-items:center;padding:0 8px;border-bottom:1px solid var(--border);gap:6px;font-size:11px;color:var(--text2)}
+.track-label-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.track-vis{font-size:9px;color:var(--text3);cursor:pointer}
+#track-scroll{flex:1;overflow:auto;position:relative}
+#track-scroll::-webkit-scrollbar{height:4px;width:4px}
+#track-scroll::-webkit-scrollbar-thumb{background:var(--border2)}
+#tl-ruler{height:18px;background:var(--bg3);position:sticky;top:0;z-index:10;overflow:hidden}
+#tl-ruler canvas{display:block}
+.track-row{height:32px;border-bottom:1px solid var(--border);position:relative}
+.track-clip{position:absolute;top:4px;height:24px;border-radius:2px;background:var(--bg4);border:1px solid var(--border2);cursor:pointer;overflow:hidden;display:flex;align-items:center;padding:0 6px;font-size:10px;color:var(--text2);white-space:nowrap}
+.track-clip.video{background:#1a2535;border-color:#2a4060}
+.track-clip.audio{background:#1a2520;border-color:#2a5040}
+.track-clip.selected{border-color:var(--accent);color:var(--accent)}
+#tl-playhead{position:absolute;top:0;bottom:0;width:1px;background:var(--accent);z-index:20;pointer-events:none}
+/* LAYER PANEL */
+#layers-panel{width:160px;background:var(--bg1);border-left:1px solid var(--border);overflow-y:auto}
+.layer-item{display:flex;align-items:center;padding:5px 8px;border-bottom:1px solid var(--border);cursor:pointer;gap:6px;font-size:10px;color:var(--text2)}
+.layer-item:hover,.layer-item.active{background:var(--bg3);color:var(--text)}
+.layer-vis-btn{font-size:9px;cursor:pointer;color:var(--text3)}
+.layer-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* BLEND MODE */
+.blend-select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:10px;padding:3px;border-radius:2px;margin-bottom:4px}
+/* COLOR PICKER */
+.color-swatch{width:22px;height:22px;border-radius:3px;border:1px solid var(--border2);cursor:pointer;flex-shrink:0}
+/* INPUT */
+.num-input{width:48px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:10px;padding:2px 4px;border-radius:2px;outline:none;text-align:center}
+.num-input:focus{border-color:var(--accent)}
+/* STATUS BAR */
+#statusbar{height:20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:20px;font-size:10px;color:var(--text3)}
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:20px;min-width:320px;max-width:500px}
+.modal-title{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--accent)}
+.modal-btn{padding:6px 16px;border:none;border-radius:3px;cursor:pointer;font-size:12px;font-family:'Open Sans',sans-serif}
+.modal-btn.primary{background:var(--accent);color:#000}
+.modal-btn.secondary{background:var(--bg4);color:var(--text);border:1px solid var(--border2)}
+.modal-row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+/* SECTION */
+.section-title{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;padding:6px 0 4px;display:flex;align-items:center;gap:6px}
+.section-divider{flex:1;height:1px;background:var(--border)}
+/* KEYFRAME */
+.kf-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.kf-diamond{width:10px;height:10px;background:var(--accent);transform:rotate(45deg);cursor:pointer;flex-shrink:0}
+.kf-label{font-size:10px;color:var(--text2);flex:1}
+.kf-add{font-size:10px;color:var(--blue);cursor:pointer;padding:2px 6px;border:1px solid var(--blue);border-radius:2px}
+/* AUDIO FX */
+.audiofx-item{background:var(--bg2);border:1px solid var(--border);border-radius:3px;margin-bottom:4px;overflow:hidden}
+.audiofx-header{display:flex;align-items:center;padding:5px 8px;cursor:pointer;gap:6px}
+.audiofx-name{flex:1;font-size:11px;color:var(--text)}
+.audiofx-body{display:none;padding:6px 8px;border-top:1px solid var(--border)}
+.audiofx-body.open{display:block}
+/* PLUGIN PANEL */
+.plugin-item{padding:6px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:3px;margin-bottom:4px;cursor:pointer}
+.plugin-item:hover{border-color:var(--accent)}
+.plugin-name{font-size:11px;color:var(--text)}
+.plugin-type{font-size:9px;color:var(--text3)}
+/* MARKER */
+.marker-item{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border)}
+.marker-color{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+.marker-label{font-size:10px;color:var(--text2);flex:1}
+.marker-time{font-size:10px;color:var(--text3)}
+/* BOOL */
+.bool-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.bool-label{font-size:10px;color:var(--text2);flex:1}
+.toggle-sw{width:28px;height:14px;background:var(--bg4);border-radius:7px;position:relative;cursor:pointer;flex-shrink:0}
+.toggle-sw.on{background:var(--accent)}
+.toggle-sw::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;transition:.2s}
+.toggle-sw.on::after{left:16px}
+/* CUBE */
+#cube3d{width:100%;height:80px;display:flex;align-items:center;justify-content:center;perspective:200px}
+.cube{width:50px;height:50px;transform-style:preserve-3d;animation:rotateCube 4s linear infinite}
+.cube-face{position:absolute;width:50px;height:50px;border:1px solid var(--accent);background:rgba(224,176,74,.05);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--accent)}
+.cube-face.front{transform:translateZ(25px)}
+.cube-face.back{transform:translateZ(-25px) rotateY(180deg)}
+.cube-face.left{transform:translateX(-25px) rotateY(-90deg)}
+.cube-face.right{transform:translateX(25px) rotateY(90deg)}
+.cube-face.top{transform:translateY(-25px) rotateX(90deg)}
+.cube-face.bottom{transform:translateY(25px) rotateX(-90deg)}
+@keyframes rotateCube{to{transform:rotateX(360deg) rotateY(360deg)}}
+/* POINT */
+.point-display{width:100%;height:60px;background:var(--bg3);border:1px solid var(--border);border-radius:3px;position:relative;cursor:crosshair}
+.point-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--accent);transform:translate(-50%,-50%);pointer-events:none}
+/* DRAG RESIZE */
+.drag-handle{cursor:ns-resize;height:4px;background:transparent;border-top:1px solid var(--border2)}
+.drag-handle:hover{background:var(--accent)}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- MENUBAR -->
+  <div id="menubar">
+    <div id="logo">STUDIO</div>
+
+    <div class="menu-btn" id="mb-file">File
+      <div class="menu-dropdown">
+        <div class="menu-item" onclick="UI.uploadMedia('image')">Upload Image</div>
+        <div class="menu-item" onclick="UI.uploadMedia('video')">Upload Video</div>
+        <div class="menu-sep"></div>
+        <div class="menu-sub">
+          <div class="menu-item">Export Image <span class="menu-sub-arrow">›</span></div>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="UI.exportMedia('png')">Export as PNG</div>
+            <div class="menu-item" onclick="UI.exportMedia('jpg')">Export as JPG</div>
+            <div class="menu-item" onclick="UI.exportMedia('jpeg')">Export as JPEG</div>
+          </div>
+        </div>
+        <div class="menu-sub">
+          <div class="menu-item">Export Video <span class="menu-sub-arrow">›</span></div>
+          <div class="menu-dropdown">
+            <div class="menu-item" onclick="UI.exportMedia('mp4')">Export as MP4</div>
+            <div class="menu-item" onclick="UI.exportMedia('mov')">Export as MOV</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-btn" id="mb-edit">Edit
+      <div class="menu-dropdown">
+        <div class="menu-item" onclick="UI.undo()">Undo <span style="color:var(--text3)">Ctrl+Z</span></div>
+        <div class="menu-item" onclick="UI.redo()">Redo <span style="color:var(--text3)">Ctrl+Y</span></div>
+        <div class="menu-sep"></div>
+        <div class="menu-item" onclick="UI.copy()">Copy <span style="color:var(--text3)">Ctrl+C</span></div>
+        <div class="menu-item" onclick="UI.paste()">Paste <span style="color:var(--text3)">Ctrl+V</span></div>
+      </div>
+    </div>
+
+    <div class="menu-btn" id="mb-effects">Effects
+      <div class="menu-dropdown" style="max-height:400px;overflow-y:auto;min-width:200px">
+        <div class="menu-item" onclick="FX.addEffect('Arithmetic Color')">Arithmetic Color</div>
+        <div class="menu-item" onclick="FX.addEffect('Mirror')">Mirror</div>
+        <div class="menu-item" onclick="FX.addEffect('CC Kaleida')">CC Kaleida</div>
+        <div class="menu-item" onclick="FX.addEffect('CC Tiler')">CC Tiler</div>
+        <div class="menu-item" onclick="FX.addEffect('Halftone')">Halftone</div>
+        <div class="menu-item" onclick="FX.addEffect('Motion Tile')">Motion Tile</div>
+        <div class="menu-item" onclick="FX.addEffect('FlysEyeHex')">FlysEye Hex</div>
+        <div class="menu-item" onclick="FX.addEffect('FlysEyeRect')">FlysEye Rect</div>
+        <div class="menu-item" onclick="FX.addEffect('ZebrafyColor')">ZebrafyColor</div>
+        <div class="menu-item" onclick="FX.addEffect('Median')">Median</div>
+        <div class="menu-item" onclick="FX.addEffect('Shake Position')">Shake Position</div>
+        <div class="menu-item" onclick="FX.addEffect('Shake Rotation')">Shake Rotation</div>
+        <div class="menu-item" onclick="FX.addEffect('Shake Scale')">Shake Scale</div>
+        <div class="menu-item" onclick="FX.addEffect('Cube')">Cube</div>
+        <div class="menu-item" onclick="FX.addEffect('Sphere')">Sphere</div>
+        <div class="menu-item" onclick="FX.addEffect('Cylinder')">Cylinder</div>
+        <div class="menu-item" onclick="FX.addEffect('Oscillator')">Oscillator</div>
+        <div class="menu-item" onclick="FX.addEffect('PseudoColor')">PseudoColor</div>
+        <div class="menu-item" onclick="FX.addEffect('Light Sweep')">Light Sweep</div>
+        <div class="menu-item" onclick="FX.addEffect('Gradient Ramp')">Gradient Ramp</div>
+        <div class="menu-item" onclick="FX.addEffect('EFX RGB Split')">EFX RGB Split</div>
+        <div class="menu-item" onclick="FX.addEffect('Channel Exposure')">Channel Exposure</div>
+        <div class="menu-item" onclick="FX.addEffect('VR360 Transform')">VR360 Transform</div>
+        <div class="menu-item" onclick="FX.addEffect('Chromatic Aberration')">Chromatic Aberration</div>
+        <div class="menu-item" onclick="FX.addEffect('Channel Mixer')">Channel Mixer</div>
+        <div class="menu-item" onclick="FX.addEffect('CC Kernel')">CC Kernel</div>
+        <div class="menu-item" onclick="FX.addEffect('Wave Warp')">Wave Warp</div>
+        <div class="menu-item" onclick="FX.addEffect('CC Lens')">CC Lens</div>
+        <div class="menu-item" onclick="FX.addEffect('Optics Compensation')">Optics Compensation</div>
+        <div class="menu-item" onclick="FX.addEffect('Bloom')">Bloom</div>
+        <div class="menu-item" onclick="FX.addEffect('Shear')">Shear</div>
+        <div class="menu-item" onclick="FX.addEffect('Swirl')">Swirl</div>
+        <div class="menu-item" onclick="FX.addEffect('ZigZag')">ZigZag</div>
+        <div class="menu-item" onclick="FX.addEffect('Text')">Text</div>
+        <div class="menu-item" onclick="FX.addEffect('Checkerboard')">Checkerboard</div>
+        <div class="menu-item" onclick="FX.addEffect('Electric Glow')">Electric Glow</div>
+        <div class="menu-item" onclick="FX.addEffect('Tzatzki Lens')">Tzatzki Lens</div>
+        <div class="menu-item" onclick="FX.addEffect('Petzval Lens')">Petzval Lens</div>
+        <div class="menu-item" onclick="FX.addEffect('Ripple')">Ripple</div>
+        <div class="menu-item" onclick="FX.addEffect('Edge Detect')">Edge Detect</div>
+        <div class="menu-item" onclick="FX.addEffect('Colorama')">Colorama</div>
+        <div class="menu-item" onclick="FX.addEffect('Tint')">Tint</div>
+        <div class="menu-item" onclick="FX.addEffect('Color Balance')">Color Balance</div>
+        <div class="menu-item" onclick="FX.addEffect('White Balance')">White Balance</div>
+        <div class="menu-item" onclick="FX.addEffect('Displacement Map')">Displacement Map</div>
+        <div class="menu-item" onclick="FX.addEffect('Dual Pinch')">Dual Pinch</div>
+        <div class="menu-item" onclick="FX.addEffect('Flo Motion')">Flo Motion</div>
+        <div class="menu-item" onclick="FX.addEffect('Heatmap')">Heatmap</div>
+        <div class="menu-item" onclick="FX.addEffect('Tritone')">Tritone</div>
+        <div class="menu-item" onclick="FX.addEffect('Quadtone')">Quadtone</div>
+        <div class="menu-item" onclick="FX.addEffect('Shape Wipe')">Shape Wipe</div>
+        <div class="menu-item" onclick="FX.addEffect('Wipe')">Wipe</div>
+        <div class="menu-item" onclick="FX.addEffect('Radial Wipe')">Radial Wipe</div>
+        <div class="menu-item" onclick="FX.addEffect('Radial Gradient')">Radial Gradient</div>
+        <div class="menu-item" onclick="FX.addEffect('Hue/Saturation')">Hue/Saturation</div>
+        <div class="menu-item" onclick="FX.addEffect('Invert')">Invert</div>
+        <div class="menu-item" onclick="FX.addEffect('Color Temperature')">Color Temperature</div>
+        <div class="menu-item" onclick="FX.addEffect('Colorize')">Colorize</div>
+        <div class="menu-item" onclick="FX.addEffect('Optical Flow')">Optical Flow</div>
+      </div>
+    </div>
+
+    <div class="menu-btn" id="mb-audio">Audio FX
+      <div class="menu-dropdown">
+        <div class="menu-item" onclick="AFX.addAudioFX('Flanger')">Flanger</div>
+        <div class="menu-item" onclick="AFX.addAudioFX('Phaser')">Phaser</div>
+        <div class="menu-item" onclick="AFX.addAudioFX('Echo')">Echo</div>
+        <div class="menu-item" onclick="AFX.addAudioFX('Delay')">Delay</div>
+        <div class="menu-item" onclick="AFX.addAudioFX('Reverb')">Reverb</div>
+        <div class="menu-item" onclick="AFX.addAudioFX('Vocoder')">Vocoder</div>
+        <div class="menu-item" onclick="AFX.addAudioFX('Pitch Shift')">Pitch Shift</div>
+        <div class="menu-sep"></div>
+        <div class="menu-item" onclick="AFX.loadVST()">Load VST Plugin (C++)</div>
+      </div>
+    </div>
+
+    <div class="menu-btn" id="mb-plugins">Plugins
+      <div class="menu-dropdown">
+        <div class="menu-item" onclick="Plugins.create()">Create OpenFX Plugin (C++)</div>
+        <div class="menu-item" onclick="Plugins.save()">Save OpenFX Plugin (C++)</div>
+        <div class="menu-item" onclick="Plugins.load()">Load OpenFX Plugin (C++)</div>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+    <div style="font-size:10px;color:var(--text3)" id="status-info">Ready</div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- LEFT PANEL -->
+    <div id="left-panel">
+      <div class="panel-section">
+        <div class="panel-title">Tools</div>
+        <div class="tool-grid">
+          <div class="tool-btn active" id="tool-select" onclick="setTool('select',this)">Select</div>
+          <div class="tool-btn" id="tool-move" onclick="setTool('move',this)">Move</div>
+          <div class="tool-btn" id="tool-crop" onclick="setTool('crop',this)">Crop</div>
+          <div class="tool-btn" id="tool-text" onclick="setTool('text',this)">Text</div>
+          <div class="tool-btn" id="tool-pen" onclick="setTool('pen',this)">Pen</div>
+          <div class="tool-btn" id="tool-shape" onclick="setTool('shape',this)">Shape</div>
+          <div class="tool-btn" id="tool-point" onclick="UI.openPointTool()">Point</div>
+          <div class="tool-btn" id="tool-marker" onclick="UI.addMarker()">Marker</div>
+        </div>
+      </div>
+
+      <!-- CUBE 3D -->
+      <div class="panel-section">
+        <div class="panel-title">3D Preview</div>
+        <div id="cube3d">
+          <div class="cube" id="cube-el">
+            <div class="cube-face front">F</div>
+            <div class="cube-face back">B</div>
+            <div class="cube-face left">L</div>
+            <div class="cube-face right">R</div>
+            <div class="cube-face top">T</div>
+            <div class="cube-face bottom">Bo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOLEAN OPS -->
+      <div class="panel-section">
+        <div class="panel-title">Boolean</div>
+        <div class="tool-grid">
+          <div class="tool-btn" onclick="UI.boolOp('union')">Union</div>
+          <div class="tool-btn" onclick="UI.boolOp('subtract')">Subtract</div>
+          <div class="tool-btn" onclick="UI.boolOp('intersect')">Intersect</div>
+          <div class="tool-btn" onclick="UI.boolOp('exclude')">Exclude</div>
+        </div>
+      </div>
+
+      <!-- COLOR -->
+      <div class="panel-section">
+        <div class="panel-title">Color</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <div class="color-swatch" id="fg-color" style="background:#fff" onclick="UI.pickColor('fg')" title="Foreground"></div>
+          <div class="color-swatch" id="bg-color" style="background:#000;border-color:#444" onclick="UI.pickColor('bg')" title="Background"></div>
+          <input type="color" id="color-picker-input" style="display:none" onchange="UI.applyColor(this.value)">
+          <span style="font-size:9px;color:var(--text3)">FG / BG</span>
+        </div>
+        <input type="text" class="num-input" id="color-hex" value="#FFFFFF" style="width:100%;font-size:10px" onchange="UI.setColorHex(this.value)">
+      </div>
+
+      <!-- MARKERS -->
+      <div class="panel-section" style="flex:1;overflow-y:auto">
+        <div class="panel-title">Markers</div>
+        <div id="markers-list"></div>
+      </div>
+    </div>
+
+    <!-- CANVAS AREA -->
+    <div id="canvas-area">
+      <div class="canvas-toolbar">
+        <div class="ct-btn active" onclick="setViewMode('canvas',this)">Canvas</div>
+        <div class="ct-btn" onclick="setViewMode('split',this)">Split</div>
+        <div class="zoom-info" id="zoom-display">100%</div>
+        <div class="ct-btn" onclick="UI.zoomIn()">+</div>
+        <div class="ct-btn" onclick="UI.zoomOut()">−</div>
+        <div class="ct-btn" onclick="UI.zoomFit()">Fit</div>
+      </div>
+      <div id="canvas-wrap">
+        <canvas id="main-canvas" width="1920" height="1080"></canvas>
+        <canvas id="canvas-overlay" width="1920" height="1080"></canvas>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div id="right-panel">
+      <div class="rpanel-tab">
+        <div class="rtab-btn active" onclick="switchRTab('effects',this)">FX</div>
+        <div class="rtab-btn" onclick="switchRTab('audio',this)">Audio</div>
+        <div class="rtab-btn" onclick="switchRTab('props',this)">Props</div>
+        <div class="rtab-btn" onclick="switchRTab('layers',this)">Layers</div>
+        <div class="rtab-btn" onclick="switchRTab('plugins',this)">Plug</div>
+      </div>
+
+      <!-- EFFECTS TAB -->
+      <div class="rtab-content" id="tab-effects">
+        <div class="section-title">Applied Effects <div class="section-divider"></div></div>
+        <div id="effects-list"></div>
+      </div>
+
+      <!-- AUDIO FX TAB -->
+      <div class="rtab-content" id="tab-audio" style="display:none">
+        <div class="section-title">Audio FX <div class="section-divider"></div></div>
+        <div id="audiofx-list"></div>
+      </div>
+
+      <!-- PROPS TAB -->
+      <div class="rtab-content" id="tab-props" style="display:none">
+        <div class="section-title">Transform <div class="section-divider"></div></div>
+        <div class="param-row">
+          <span class="param-label">X</span>
+          <input class="num-input" type="number" id="prop-x" value="0" onchange="UI.setPropX(+this.value)">
+          <span class="param-label" style="width:auto">Y</span>
+          <input class="num-input" type="number" id="prop-y" value="0" onchange="UI.setPropY(+this.value)">
+        </div>
+        <div class="param-row">
+          <span class="param-label">Scale X</span>
+          <input class="param-slider" type="range" min="0" max="4" step="0.01" value="1" oninput="UI.setPropScaleX(+this.value);this.nextSibling.textContent=parseFloat(this.value).toFixed(2)">
+          <span class="param-value">1.00</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Scale Y</span>
+          <input class="param-slider" type="range" min="0" max="4" step="0.01" value="1" oninput="UI.setPropScaleY(+this.value);this.nextSibling.textContent=parseFloat(this.value).toFixed(2)">
+          <span class="param-value">1.00</span>
+        </div>
+        <div class="param-row">
+          <span class="param-label">Rotate</span>
+          <input class="param-slider" type="range" min="-180" max="180" step="0.5" value="0" oninput="UI.setPropRotate(+this.value);this.nextSibling.textContent=Math.round(this.value)+'°'">
+          <span class="param-value">0°</span>
+        </div>
+        <div class="section-title">Blend <div class="section-divider"></div></div>
+        <select class="blend-select" id="blend-mode" onchange="UI.setBlendMode(this.value)">
+          <option>Normal</option><option>Multiply</option><option>Screen</option>
+          <option>Overlay</option><option>Darken</option><option>Lighten</option>
+          <option>Color Dodge</option><option>Color Burn</option><option>Hard Light</option>
+          <option>Soft Light</option><option>Difference</option><option>Exclusion</option>
+          <option>Hue</option><option>Saturation</option><option>Color</option><option>Luminosity</option>
+        </select>
+        <div class="param-row">
+          <span class="param-label">Opacity</span>
+          <input class="param-slider" type="range" min="0" max="100" step="1" value="100" oninput="UI.setOpacity(+this.value);this.nextSibling.textContent=this.value+'%'">
+          <span class="param-value">100%</span>
+        </div>
+        <div class="section-title">Video Speed <div class="section-divider"></div></div>
+        <div class="param-row">
+          <span class="param-label">Speed</span>
+          <input class="param-slider" type="range" min="0.1" max="4" step="0.05" value="1" id="speed-slider" oninput="UI.setVideoSpeed(+this.value);this.nextSibling.textContent=parseFloat(this.value).toFixed(2)+'x'">
+          <span class="param-value">1.00x</span>
+        </div>
+        <div class="section-title">Replace Media <div class="section-divider"></div></div>
+        <div class="tool-btn" style="display:block;text-align:center;margin-bottom:4px" onclick="UI.replaceMedia()">Replace Media</div>
+        <div class="section-title">Keyframes <div class="section-divider"></div></div>
+        <div id="kf-list">
+          <div class="kf-row"><div class="kf-diamond"></div><span class="kf-label">Position</span><span class="kf-add" onclick="UI.addKeyframe('position')">+KF</span></div>
+          <div class="kf-row"><div class="kf-diamond"></div><span class="kf-label">Rotation</span><span class="kf-add" onclick="UI.addKeyframe('rotation')">+KF</span></div>
+          <div class="kf-row"><div class="kf-diamond"></div><span class="kf-label">Scale</span><span class="kf-add" onclick="UI.addKeyframe('scale')">+KF</span></div>
+          <div class="kf-row"><div class="kf-diamond"></div><span class="kf-label">Opacity</span><span class="kf-add" onclick="UI.addKeyframe('opacity')">+KF</span></div>
+        </div>
+        <div class="section-title">Font <div class="section-divider"></div></div>
+        <select class="blend-select" id="font-select" onchange="UI.setFont(this.value)">
+          <option>Open Sans</option><option>Arial</option><option>Georgia</option>
+          <option>Courier New</option><option>Impact</option><option>Verdana</option>
+          <option>Trebuchet MS</option><option>Palatino</option>
+        </select>
+        <div class="param-row">
+          <span class="param-label">Size</span>
+          <input class="param-slider" type="range" min="6" max="200" step="1" value="24" oninput="UI.setFontSize(+this.value);this.nextSibling.textContent=this.value+'px'">
+          <span class="param-value">24px</span>
+        </div>
+      </div>
+
+      <!-- LAYERS TAB -->
+      <div class="rtab-content" id="tab-layers" style="display:none;padding:0">
+        <div style="padding:6px 8px;border-bottom:1px solid var(--border);display:flex;gap:4px">
+          <div class="tool-btn" style="flex:1" onclick="UI.addLayer()">+ Layer</div>
+          <div class="tool-btn" style="flex:1" onclick="UI.deleteLayer()">− Layer</div>
+        </div>
+        <div id="layers-list"></div>
+      </div>
+
+      <!-- PLUGINS TAB -->
+      <div class="rtab-content" id="tab-plugins" style="display:none">
+        <div class="section-title">OpenFX Plugins <div class="section-divider"></div></div>
+        <div id="plugins-list"></div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">
+          <div class="tool-btn" style="display:block;text-align:center" onclick="Plugins.create()">Create Plugin</div>
+          <div class="tool-btn" style="display:block;text-align:center" onclick="Plugins.save()">Save Plugin</div>
+          <div class="tool-btn" style="display:block;text-align:center" onclick="Plugins.load()">Load Plugin</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div id="timeline-area">
+    <div class="timeline-toolbar">
+      <div class="tl-btn" onclick="TL.goStart()">⏮</div>
+      <div class="tl-btn" onclick="TL.stepBack()">◀</div>
+      <div class="tl-btn" id="play-btn" onclick="TL.togglePlay()">▶</div>
+      <div class="tl-btn" onclick="TL.stepForward()">▶</div>
+      <div class="tl-btn" onclick="TL.goEnd()">⏭</div>
+      <div id="tl-time">00:00:00</div>
+      <div style="flex:1"></div>
+      <div class="tl-btn" onclick="TL.addVideoTrack()">+ Video</div>
+      <div class="tl-btn" onclick="TL.addAudioTrack()">+ Audio</div>
+      <div class="tl-btn" onclick="TL.addTrack()">+ Track</div>
+      <div style="display:flex;align-items:center;gap:4px;margin-left:8px">
+        <span style="font-size:10px;color:var(--text3)">Zoom</span>
+        <input type="range" min="20" max="400" value="100" style="width:80px;height:3px;accent-color:var(--accent)" id="tl-zoom" oninput="TL.setZoom(+this.value)">
+      </div>
+    </div>
+    <div id="timeline-body">
+      <div id="track-labels" id="track-labels-col"></div>
+      <div id="track-scroll">
+        <div id="tl-ruler"><canvas id="ruler-canvas" height="18"></canvas></div>
+        <div id="track-rows" style="position:relative">
+          <div id="tl-playhead"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <span id="sb-tool">Tool: Select</span>
+    <span id="sb-pos">X: 0 Y: 0</span>
+    <span id="sb-size">1920 × 1080</span>
+    <span id="sb-layers">Layers: 1</span>
+    <span id="sb-fps">30 fps</span>
+    <div style="flex:1"></div>
+    <span id="sb-time">00:00:00:00</span>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal">
+    <div class="modal-title" id="modal-export-title">Export</div>
+    <div id="modal-export-body"></div>
+    <div class="modal-row">
+      <button class="modal-btn secondary" onclick="closeModal('modal-export')">Cancel</button>
+      <button class="modal-btn primary" onclick="UI.doExport()">Export</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-point">
+  <div class="modal">
+    <div class="modal-title">Point Tool</div>
+    <div class="point-display" id="point-display" onclick="UI.setPoint(event)">
+      <div class="point-dot" id="point-dot" style="left:50%;top:50%"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <div class="param-row" style="flex:1">
+        <span class="param-label">X</span>
+        <input class="num-input" type="number" id="point-x" value="0" style="flex:1" onchange="UI.updatePointFromInput()">
+      </div>
+      <div class="param-row" style="flex:1">
+        <span class="param-label">Y</span>
+        <input class="num-input" type="number" id="point-y" value="0" style="flex:1" onchange="UI.updatePointFromInput()">
+      </div>
+    </div>
+    <div class="modal-row">
+      <button class="modal-btn secondary" onclick="closeModal('modal-point')">Close</button>
+      <button class="modal-btn primary" onclick="UI.applyPoint()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-vst">
+  <div class="modal">
+    <div class="modal-title">Load VST Plugin (C++)</div>
+    <div style="color:var(--text2);font-size:12px;margin-bottom:12px">Select a compiled VST2/VST3 plugin (.dll / .vst / .vst3)</div>
+    <input type="file" id="vst-file-input" accept=".dll,.vst,.vst3" style="color:var(--text);font-size:11px">
+    <div class="modal-row">
+      <button class="modal-btn secondary" onclick="closeModal('modal-vst')">Cancel</button>
+      <button class="modal-btn primary" onclick="AFX.doLoadVST()">Load</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-openfx">
+  <div class="modal">
+    <div class="modal-title" id="openfx-modal-title">OpenFX Plugin</div>
+    <div id="openfx-modal-body"></div>
+    <div class="modal-row">
+      <button class="modal-btn secondary" onclick="closeModal('modal-openfx')">Cancel</button>
+      <button class="modal-btn primary" id="openfx-confirm-btn">OK</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="upload-input" accept="image/*,video/*" style="display:none" onchange="UI.handleUpload(event)">
+<input type="file" id="replace-input" accept="image/*,video/*" style="display:none" onchange="UI.handleReplace(event)">
+<input type="file" id="plugin-load-input" accept=".ofx,.dll" style="display:none" onchange="Plugins.handleLoad(event)">
+
+<script>
+// ─── STATE ─────────────────────────────────────────────
+var STATE = {
+  zoom: 0.3,
+  currentTool: 'select',
+  currentTab: 'effects',
+  selectedLayer: 0,
+  fgColor: '#ffffff',
+  bgColor: '#000000',
+  colorTarget: 'fg',
+  effects: [],
+  audioFX: [],
+  layers: [],
+  plugins: [],
+  markers: [],
+  keyframes: {},
+  history: [],
+  historyIdx: -1,
+  clipboard: null,
+  playing: false,
+  currentTime: 0,
+  duration: 30,
+  tlZoom: 100,
+  tracks: [],
+  props: {x:0,y:0,scaleX:1,scaleY:1,rotate:0,opacity:100,blendMode:'Normal',speed:1,font:'Open Sans',fontSize:24},
+  exportFormat: 'png',
+  pointX: 0.5, pointY: 0.5,
+  pendingExport: null
+};
+
+var canvas = document.getElementById('main-canvas');
+var ctx = canvas.getContext('2d');
+var overlay = document.getElementById('canvas-overlay');
+var octx = overlay.getContext('2d');
+
+// ─── EFFECT DEFINITIONS ────────────────────────────────
+var EFFECT_DEFS = {
+  'Arithmetic Color': [{n:'Red Mul',min:-2,max:2,step:.01,def:1},{n:'Green Mul',min:-2,max:2,step:.01,def:1},{n:'Blue Mul',min:-2,max:2,step:.01,def:1},{n:'Offset',min:-255,max:255,step:1,def:0}],
+  'Mirror': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Angle',min:0,max:360,step:1,def:0},{n:'Reflection',min:0,max:1,step:.01,def:1}],
+  'CC Kaleida': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Size',min:.1,max:5,step:.05,def:1},{n:'Mirroring',min:2,max:32,step:1,def:6},{n:'Rotation',min:0,max:360,step:1,def:0}],
+  'CC Tiler': [{n:'Scale',min:.1,max:5,step:.05,def:1},{n:'Offset X',min:-1,max:1,step:.01,def:0},{n:'Offset Y',min:-1,max:1,step:.01,def:0},{n:'Blend',min:0,max:1,step:.01,def:1}],
+  'Halftone': [{n:'Size',min:2,max:50,step:.5,def:10},{n:'Angle',min:0,max:90,step:1,def:45},{n:'Hardness',min:0,max:1,step:.01,def:.7},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Motion Tile': [{n:'Tile Width',min:.1,max:5,step:.05,def:1},{n:'Tile Height',min:.1,max:5,step:.05,def:1},{n:'Phase',min:0,max:360,step:1,def:0},{n:'Mirror Edges',min:0,max:1,step:1,def:0}],
+  'FlysEyeHex': [{n:'Size',min:2,max:200,step:1,def:30},{n:'Feather',min:0,max:1,step:.01,def:.1},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'FlysEyeRect': [{n:'Width',min:2,max:200,step:1,def:30},{n:'Height',min:2,max:200,step:1,def:30},{n:'Feather',min:0,max:1,step:.01,def:.1},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'ZebrafyColor': [{n:'Frequency',min:.5,max:20,step:.1,def:5},{n:'Angle',min:0,max:180,step:1,def:0},{n:'Blend',min:0,max:1,step:.01,def:1}],
+  'Median': [{n:'Radius',min:1,max:20,step:1,def:3},{n:'Iterations',min:1,max:5,step:1,def:1}],
+  'Shake Position': [{n:'Amount X',min:0,max:100,step:.5,def:10},{n:'Amount Y',min:0,max:100,step:.5,def:10},{n:'Speed',min:.1,max:30,step:.1,def:5},{n:'Random Seed',min:0,max:999,step:1,def:42}],
+  'Shake Rotation': [{n:'Amount',min:0,max:45,step:.1,def:3},{n:'Speed',min:.1,max:30,step:.1,def:5},{n:'Random Seed',min:0,max:999,step:1,def:42}],
+  'Shake Scale': [{n:'Amount',min:0,max:1,step:.01,def:.05},{n:'Speed',min:.1,max:30,step:.1,def:5},{n:'Random Seed',min:0,max:999,step:1,def:42}],
+  'Cube': [{n:'Rotation X',min:-180,max:180,step:1,def:0},{n:'Rotation Y',min:-180,max:180,step:1,def:0},{n:'Rotation Z',min:-180,max:180,step:1,def:0},{n:'FOV',min:20,max:120,step:1,def:60},{n:'Size',min:.1,max:2,step:.01,def:1}],
+  'Sphere': [{n:'Radius',min:.1,max:2,step:.01,def:1},{n:'Tilt',min:-180,max:180,step:1,def:0},{n:'Pan',min:-180,max:180,step:1,def:0},{n:'Render Quality',min:1,max:4,step:1,def:2}],
+  'Cylinder': [{n:'Radius',min:.1,max:3,step:.01,def:1},{n:'Rotation',min:-180,max:180,step:1,def:0},{n:'FOV',min:20,max:120,step:1,def:60},{n:'Tilt',min:-90,max:90,step:1,def:0}],
+  'Oscillator': [{n:'Frequency',min:.1,max:20,step:.1,def:1},{n:'Amplitude',min:0,max:1,step:.01,def:.5},{n:'Phase',min:0,max:360,step:1,def:0},{n:'Waveform',min:0,max:3,step:1,def:0}],
+  'PseudoColor': [{n:'Preset',min:0,max:7,step:1,def:0},{n:'Brightness',min:-1,max:1,step:.01,def:0},{n:'Contrast',min:.1,max:3,step:.05,def:1}],
+  'Light Sweep': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Width',min:0,max:.5,step:.01,def:.1},{n:'Angle',min:0,max:360,step:1,def:45},{n:'Intensity',min:0,max:2,step:.01,def:1},{n:'Color',min:0,max:1,step:.01,def:1}],
+  'Gradient Ramp': [{n:'Start X',min:0,max:1,step:.01,def:.5},{n:'Start Y',min:0,max:1,step:.01,def:0},{n:'End X',min:0,max:1,step:.01,def:.5},{n:'End Y',min:0,max:1,step:.01,def:1},{n:'Opacity',min:0,max:1,step:.01,def:1}],
+  'EFX RGB Split': [{n:'Red X',min:-50,max:50,step:.5,def:-5},{n:'Red Y',min:-50,max:50,step:.5,def:0},{n:'Blue X',min:-50,max:50,step:.5,def:5},{n:'Blue Y',min:-50,max:50,step:.5,def:0},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Channel Exposure': [{n:'Red',min:-3,max:3,step:.01,def:0},{n:'Green',min:-3,max:3,step:.01,def:0},{n:'Blue',min:-3,max:3,step:.01,def:0},{n:'Alpha',min:-3,max:3,step:.01,def:0}],
+  'VR360 Transform': [{n:'Pan',min:-180,max:180,step:1,def:0},{n:'Tilt',min:-90,max:90,step:1,def:0},{n:'Roll',min:-180,max:180,step:1,def:0},{n:'FOV',min:30,max:180,step:1,def:90}],
+  'Chromatic Aberration': [{n:'Red X',min:-20,max:20,step:.1,def:-3},{n:'Red Y',min:-20,max:20,step:.1,def:0},{n:'Blue X',min:-20,max:20,step:.1,def:3},{n:'Blue Y',min:-20,max:20,step:.1,def:0},{n:'Strength',min:0,max:1,step:.01,def:.5}],
+  'Channel Mixer': [{n:'RR',min:-2,max:2,step:.01,def:1},{n:'RG',min:-2,max:2,step:.01,def:0},{n:'RB',min:-2,max:2,step:.01,def:0},{n:'GR',min:-2,max:2,step:.01,def:0},{n:'GG',min:-2,max:2,step:.01,def:1},{n:'GB',min:-2,max:2,step:.01,def:0},{n:'BR',min:-2,max:2,step:.01,def:0},{n:'BG',min:-2,max:2,step:.01,def:0},{n:'BB',min:-2,max:2,step:.01,def:1}],
+  'CC Kernel': [{n:'K00',min:-5,max:5,step:.01,def:0},{n:'K01',min:-5,max:5,step:.01,def:-1},{n:'K02',min:-5,max:5,step:.01,def:0},{n:'K10',min:-5,max:5,step:.01,def:-1},{n:'K11',min:-5,max:5,step:.01,def:5},{n:'K12',min:-5,max:5,step:.01,def:-1},{n:'K20',min:-5,max:5,step:.01,def:0},{n:'K21',min:-5,max:5,step:.01,def:-1},{n:'K22',min:-5,max:5,step:.01,def:0}],
+  'Wave Warp': [{n:'Amplitude',min:0,max:100,step:.5,def:20},{n:'Frequency',min:.1,max:20,step:.1,def:3},{n:'Phase',min:0,max:360,step:1,def:0},{n:'Direction',min:0,max:360,step:1,def:0},{n:'Pinning',min:0,max:4,step:1,def:0}],
+  'CC Lens': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Size',min:.1,max:5,step:.05,def:1},{n:'Convergence',min:-2,max:2,step:.01,def:1}],
+  'Optics Compensation': [{n:'FOV',min:1,max:180,step:.5,def:60},{n:'Reverse',min:0,max:1,step:1,def:0},{n:'Optimal Pixels',min:0,max:1,step:1,def:1}],
+  'Bloom': [{n:'Threshold',min:0,max:1,step:.01,def:.5},{n:'Radius',min:1,max:50,step:.5,def:10},{n:'Intensity',min:0,max:3,step:.01,def:1},{n:'Tint R',min:0,max:1,step:.01,def:1},{n:'Tint G',min:0,max:1,step:.01,def:.9},{n:'Tint B',min:0,max:1,step:.01,def:.8}],
+  'Shear': [{n:'Shear X',min:-2,max:2,step:.01,def:0},{n:'Shear Y',min:-2,max:2,step:.01,def:0},{n:'Anchor X',min:0,max:1,step:.01,def:.5},{n:'Anchor Y',min:0,max:1,step:.01,def:.5}],
+  'Swirl': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Angle',min:-720,max:720,step:1,def:90},{n:'Radius',min:.01,max:2,step:.01,def:.5}],
+  'ZigZag': [{n:'Amount',min:0,max:100,step:.5,def:20},{n:'Ridges',min:1,max:50,step:1,def:10},{n:'Style',min:0,max:2,step:1,def:0}],
+  'Text': [{n:'Font Size',min:8,max:200,step:1,def:48},{n:'X',min:0,max:1,step:.01,def:.5},{n:'Y',min:0,max:1,step:.01,def:.5},{n:'Opacity',min:0,max:1,step:.01,def:1}],
+  'Checkerboard': [{n:'Width',min:4,max:200,step:1,def:32},{n:'Height',min:4,max:200,step:1,def:32},{n:'Color A R',min:0,max:1,step:.01,def:1},{n:'Color B R',min:0,max:1,step:.01,def:0},{n:'Angle',min:0,max:360,step:1,def:0}],
+  'Electric Glow': [{n:'Threshold',min:0,max:1,step:.01,def:.4},{n:'Radius',min:1,max:40,step:.5,def:8},{n:'Intensity',min:0,max:5,step:.05,def:2},{n:'Color Shift',min:0,max:1,step:.01,def:.5},{n:'Speed',min:0,max:10,step:.1,def:2}],
+  'Tzatzki Lens': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Radius',min:.05,max:1,step:.01,def:.4},{n:'Distortion',min:-5,max:5,step:.05,def:1.5},{n:'Chromatic',min:0,max:1,step:.01,def:.3}],
+  'Petzval Lens': [{n:'Swirl',min:0,max:5,step:.05,def:.5},{n:'Vignette',min:0,max:2,step:.01,def:.5},{n:'Blur Edge',min:0,max:1,step:.01,def:.3},{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max,1,step:.01,def:.5}],
+  'Ripple': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Amplitude',min:0,max:100,step:.5,def:20},{n:'Frequency',min:.1,max:20,step:.1,def:5},{n:'Phase',min:0,max:360,step:1,def:0}],
+  'Edge Detect': [{n:'Threshold',min:0,max:1,step:.01,def:.2},{n:'Radius',min:1,max:10,step:.5,def:2},{n:'Invert',min:0,max:1,step:1,def:0},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Colorama': [{n:'Phase',min:0,max:360,step:1,def:0},{n:'Cycles',min:1,max:10,step:1,def:1},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Tint': [{n:'Map Black R',min:0,max:1,step:.01,def:0},{n:'Map Black G',min:0,max:1,step:.01,def:0},{n:'Map Black B',min:0,max:1,step:.01,def:0},{n:'Map White R',min:0,max:1,step:.01,def:1},{n:'Map White G',min:0,max:1,step:.01,def:1},{n:'Map White B',min:0,max,1,step:.01,def:1},{n:'Amount',min:0,max:1,step:.01,def:1}],
+  'Color Balance': [{n:'Shadow C/M',min:-1,max:1,step:.01,def:0},{n:'Shadow M/G',min:-1,max:1,step:.01,def:0},{n:'Shadow Y/B',min:-1,max:1,step:.01,def:0},{n:'Midtone C/M',min:-1,max:1,step:.01,def:0},{n:'Highlight',min:-1,max:1,step:.01,def:0}],
+  'White Balance': [{n:'Temperature',min:2000,max:10000,step:50,def:6500},{n:'Tint',min:-100,max:100,step:1,def:0},{n:'Strength',min:0,max:1,step:.01,def:1}],
+  'Displacement Map': [{n:'Horizontal',min:0,max:1,step:.01,def:.5},{n:'Vertical',min:0,max:1,step:.01,def:.5},{n:'H Scale',min:0,max:500,step:1,def:50},{n:'V Scale',min:0,max:500,step:1,def:50}],
+  'Dual Pinch': [{n:'Point 1 X',min:0,max:1,step:.01,def:.3},{n:'Point 1 Y',min:0,max:1,step:.01,def:.5},{n:'Point 2 X',min:0,max:1,step:.01,def:.7},{n:'Point 2 Y',min:0,max:1,step:.01,def:.5},{n:'Strength',min:-2,max:2,step:.05,def:1}],
+  'Flo Motion': [{n:'Point 1 X',min:0,max:1,step:.01,def:.3},{n:'Point 1 Y',min:0,max,1,step:.01,def:.5},{n:'Point 2 X',min:0,max:1,step:.01,def:.7},{n:'Point 2 Y',min:0,max:1,step:.01,def:.5},{n:'Flow Amount',min:0,max:5,step:.05,def:1}],
+  'Heatmap': [{n:'Min Temp',min:0,max:1,step:.01,def:0},{n:'Max Temp',min:0,max:1,step:.01,def:1},{n:'Palette',min:0,max:3,step:1,def:0},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Tritone': [{n:'Shadows R',min:0,max:1,step:.01,def:0},{n:'Shadows G',min:0,max:1,step:.01,def:0},{n:'Shadows B',min:0,max:1,step:.01,def:.5},{n:'Midtones R',min:0,max:1,step:.01,def:.5},{n:'Midtones G',min:0,max:1,step:.01,def:.5},{n:'Highlights',min:0,max:1,step:.01,def:1}],
+  'Quadtone': [{n:'Shadow',min:0,max:1,step:.01,def:0},{n:'Q1',min:0,max:1,step:.01,def:.33},{n:'Q2',min:0,max:1,step:.01,def:.66},{n:'Highlight',min:0,max:1,step:.01,def:1}],
+  'Shape Wipe': [{n:'Completion',min:0,max:1,step:.01,def:.5},{n:'Shape',min:0,max:4,step:1,def:0},{n:'Feather',min:0,max:1,step:.01,def:.1}],
+  'Wipe': [{n:'Completion',min:0,max:1,step:.01,def:.5},{n:'Angle',min:0,max:360,step:1,def:0},{n:'Feather',min:0,max:1,step:.01,def:.05}],
+  'Radial Wipe': [{n:'Completion',min:0,max:1,step:.01,def:.5},{n:'Start Angle',min:0,max:360,step:1,def:0},{n:'Wipe',min:0,max:2,step:1,def:0},{n:'Feather',min:0,max:1,step:.01,def:.05}],
+  'Radial Gradient': [{n:'Center X',min:0,max:1,step:.01,def:.5},{n:'Center Y',min:0,max:1,step:.01,def:.5},{n:'Radius',min:0,max:2,step:.01,def:.7},{n:'Opacity',min:0,max:1,step:.01,def:1},{n:'Shape',min:0,max:1,step:1,def:0}],
+  'Hue/Saturation': [{n:'Channel',min:0,max:6,step:1,def:0},{n:'Hue Shift',min:-180,max:180,step:1,def:0},{n:'Saturation',min:-100,max:100,step:1,def:0},{n:'Lightness',min:-100,max:100,step:1,def:0}],
+  'Invert': [{n:'Red',min:0,max:1,step:1,def:1},{n:'Green',min:0,max:1,step:1,def:1},{n:'Blue',min:0,max:1,step:1,def:1},{n:'Alpha',min:0,max:1,step:1,def:0}],
+  'Color Temperature': [{n:'Temperature',min:1000,max:12000,step:50,def:6500},{n:'Luminance',min:-1,max:1,step:.01,def:0},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Colorize': [{n:'Hue',min:0,max:360,step:1,def:200},{n:'Saturation',min:0,max:1,step:.01,def:.8},{n:'Lightness',min:0,max:1,step:.01,def:.5},{n:'Blend',min:0,max:1,step:.01,def:1}],
+  'Optical Flow': [{n:'Amount',min:0,max:1,step:.01,def:.5},{n:'Iterations',min:1,max:8,step:1,def:4},{n:'Smooth',min:0,max:1,step:.01,def:.5},{n:'Method',min:0,max:2,step:1,def:0}]
+};
+
+// Fix typo in Petzval Lens
+if(EFFECT_DEFS['Petzval Lens']){
+  EFFECT_DEFS['Petzval Lens'][3] = {n:'Center X',min:0,max:1,step:.01,def:.5};
+  EFFECT_DEFS['Petzval Lens'][4] = {n:'Center Y',min:0,max:1,step:.01,def:.5};
+}
+if(EFFECT_DEFS['Tint']){
+  EFFECT_DEFS['Tint'][5] = {n:'Map White B',min:0,max:1,step:.01,def:1};
+}
+if(EFFECT_DEFS['Flo Motion']){
+  EFFECT_DEFS['Flo Motion'][1] = {n:'Point 1 Y',min:0,max:1,step:.01,def:.5};
+}
+
+var AUDIOFX_DEFS = {
+  'Flanger': [{n:'Rate',min:.01,max:10,step:.01,def:.5},{n:'Depth',min:0,max:1,step:.01,def:.5},{n:'Feedback',min:0,max:.99,step:.01,def:.3},{n:'Mix',min:0,max:1,step:.01,def:.5},{n:'Delay ms',min:1,max:20,step:.1,def:5}],
+  'Phaser': [{n:'Rate',min:.01,max:10,step:.01,def:.5},{n:'Depth',min:0,max:1,step:.01,def:.5},{n:'Stages',min:2,max:12,step:2,def:6},{n:'Feedback',min:0,max:.99,step:.01,def:.3},{n:'Mix',min:0,max:1,step:.01,def:.5}],
+  'Echo': [{n:'Delay ms',min:10,max:2000,step:1,def:250},{n:'Feedback',min:0,max:.99,step:.01,def:.5},{n:'Mix',min:0,max:1,step:.01,def:.5},{n:'Filter',min:200,max:8000,step:50,def:4000}],
+  'Delay': [{n:'Delay ms',min:10,max:2000,step:1,def:500},{n:'Feedback',min:0,max:.99,step:.01,def:.4},{n:'Mix',min:0,max:1,step:.01,def:.5},{n:'Sync',min:0,max:1,step:1,def:0}],
+  'Reverb': [{n:'Room Size',min:0,max:1,step:.01,def:.7},{n:'Damping',min:0,max:1,step:.01,def:.4},{n:'Pre-Delay',min:0,max:100,step:1,def:20},{n:'Width',min:0,max:1,step:.01,def:.9},{n:'Mix',min:0,max:1,step:.01,def:.4}],
+  'Vocoder': [{n:'Bands',min:4,max:32,step:1,def:16},{n:'Formant Shift',min:-12,max:12,step:.5,def:0},{n:'Attack ms',min:1,max:200,step:1,def:10},{n:'Release ms',min:10,max:500,step:5,def:100},{n:'Mix',min:0,max:1,step:.01,def:1}],
+  'Pitch Shift': [{n:'Semitones',min:-24,max:24,step:.5,def:0},{n:'Cents',min:-100,max:100,step:1,def:0},{n:'Quality',min:1,max:4,step:1,def:2},{n:'Formant Preserve',min:0,max:1,step:1,def:0},{n:'Mix',min:0,max:1,step:.01,def:1}]
+};
+
+// ─── AUDIO ENGINE ──────────────────────────────────────
+var AudioEngine = (function(){
+  var actx = null;
+  var nodes = {};
+  function getCtx(){
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    return actx;
+  }
+  function buildFlanger(params){
+    var ac = getCtx();
+    var input = ac.createGain();
+    var delay = ac.createDelay(.05);
+    var lfo = ac.createOscillator();
+    var lfoGain = ac.createGain();
+    var feedback = ac.createGain();
+    var mix = ac.createGain();
+    var dryGain = ac.createGain();
+    delay.delayTime.value = (params[4]||5)/1000;
+    lfo.frequency.value = params[0]||.5;
+    lfoGain.gain.value = (params[1]||.5)*.002;
+    feedback.gain.value = params[2]||.3;
+    mix.gain.value = params[3]||.5;
+    dryGain.gain.value = 1-(params[3]||.5);
+    lfo.connect(lfoGain);
+    lfoGain.connect(delay.delayTime);
+    input.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(mix);
+    input.connect(dryGain);
+    lfo.start();
+    return {input,output:mix,dryOutput:dryGain};
+  }
+  function buildReverb(params){
+    var ac = getCtx();
+    var input = ac.createGain();
+    var conv = ac.createConvolver();
+    var mix = ac.createGain();
+    var dry = ac.createGain();
+    var rate = ac.sampleRate;
+    var len = Math.round(rate*(params[0]||.7)*3+.5);
+    var buf = ac.createBuffer(2,len,rate);
+    for(var c=0;c<2;c++){var d=buf.getChannelData(c);for(var i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-(i/len),(params[1]||.4)*10)}
+    conv.buffer = buf;
+    mix.gain.value = params[4]||.4;
+    dry.gain.value = 1-(params[4]||.4);
+    input.connect(conv);
+    conv.connect(mix);
+    input.connect(dry);
+    return {input,output:mix,dryOutput:dry};
+  }
+  function buildDelay(params){
+    var ac = getCtx();
+    var input = ac.createGain();
+    var delay = ac.createDelay(2.5);
+    var fb = ac.createGain();
+    var mix = ac.createGain();
+    var dry = ac.createGain();
+    delay.delayTime.value = (params[0]||500)/1000;
+    fb.gain.value = params[1]||.4;
+    mix.gain.value = params[2]||.5;
+    dry.gain.value = 1-(params[2]||.5);
+    input.connect(delay);
+    delay.connect(fb);
+    fb.connect(delay);
+    delay.connect(mix);
+    input.connect(dry);
+    return {input,output:mix,dryOutput:dry};
+  }
+  return {getCtx,buildFlanger,buildReverb,buildDelay};
+})();
+
+// ─── EFFECTS SYSTEM ────────────────────────────────────
+var FX = (function(){
+  function addEffect(name){
+    var defs = EFFECT_DEFS[name] || [];
+    var params = defs.map(function(d){return d.def});
+    STATE.effects.push({name:name,enabled:true,params:params});
+    renderEffects();
+    applyEffects();
+  }
+  function removeEffect(idx){
+    STATE.effects.splice(idx,1);
+    renderEffects();
+    applyEffects();
+  }
+  function renderEffects(){
+    var el = document.getElementById('effects-list');
+    el.innerHTML = '';
+    STATE.effects.forEach(function(fx,i){
+      var defs = EFFECT_DEFS[fx.name] || [];
+      var div = document.createElement('div');
+      div.className = 'effect-item';
+      var paramRows = defs.map(function(def,pi){
+        var v = fx.params[pi] !== undefined ? fx.params[pi] : def.def;
+        return '<div class="param-row"><span class="param-label" style="width:70px;font-size:9px">'+def.n+'</span>'+
+          '<input class="param-slider" type="range" min="'+def.min+'" max="'+def.max+'" step="'+def.step+'" value="'+v+'"'+
+          ' oninput="FX.setParam('+i+','+pi+',+this.value);this.nextSibling.textContent=parseFloat(this.value).toFixed(2)">'+
+          '<span class="param-value" style="font-size:9px">'+parseFloat(v).toFixed(2)+'</span></div>';
+      }).join('');
+      div.innerHTML = '<div class="effect-header">'+
+        '<div class="effect-toggle'+(fx.enabled?' on':'')+'" onclick="FX.toggleEffect('+i+',this)"></div>'+
+        '<span class="effect-name">'+fx.name+'</span>'+
+        '<span style="font-size:9px;color:var(--red);cursor:pointer" onclick="FX.removeEffect('+i+')">✕</span></div>'+
+        '<div class="effect-body" id="efxbody-'+i+'">'+paramRows+'</div>';
+      div.querySelector('.effect-header').addEventListener('click',function(e){
+        if(e.target.classList.contains('effect-toggle')||e.target.tagName==='SPAN') return;
+        var body = document.getElementById('efxbody-'+i);
+        body.classList.toggle('open');
+      });
+      el.appendChild(div);
+    });
+  }
+  function toggleEffect(i, el){
+    STATE.effects[i].enabled = !STATE.effects[i].enabled;
+    el.classList.toggle('on');
+    applyEffects();
+  }
+  function setParam(i, pi, v){
+    STATE.effects[i].params[pi] = v;
+    applyEffects();
+  }
+  function applyEffects(){
+    var idata = ctx.getImageData(0,0,canvas.width,canvas.height);
+    var data = idata.data;
+    STATE.effects.forEach(function(fx){
+      if(!fx.enabled) return;
+      applyEffect(fx, data, canvas.width, canvas.height);
+    });
+    ctx.putImageData(idata,0,0);
+  }
+  function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+  function applyEffect(fx, data, w, h){
+    var p = fx.params;
+    var name = fx.name;
+    var i, r, g, b, a, lum;
+    switch(name){
+      case 'Arithmetic Color':
+        for(i=0;i<data.length;i+=4){
+          data[i]=clamp(data[i]*(p[0]||1)+(p[3]||0),0,255);
+          data[i+1]=clamp(data[i+1]*(p[1]||1)+(p[3]||0),0,255);
+          data[i+2]=clamp(data[i+2]*(p[2]||1)+(p[3]||0),0,255);
+        }break;
+      case 'Hue/Saturation':
+        var hShift=(p[1]||0)/360,sSat=(p[2]||0)/100,lLight=(p[3]||0)/100;
+        for(i=0;i<data.length;i+=4){
+          var rgb=rgbToHsl(data[i],data[i+1],data[i+2]);
+          rgb[0]=(rgb[0]+hShift+1)%1;
+          rgb[1]=clamp(rgb[1]+sSat,0,1);
+          rgb[2]=clamp(rgb[2]+lLight,0,1);
+          var out=hslToRgb(rgb[0],rgb[1],rgb[2]);
+          data[i]=out[0];data[i+1]=out[1];data[i+2]=out[2];
+        }break;
+      case 'Invert':
+        for(i=0;i<data.length;i+=4){
+          if(p[0])data[i]=255-data[i];
+          if(p[1])data[i+1]=255-data[i+1];
+          if(p[2])data[i+2]=255-data[i+2];
+          if(p[3])data[i+3]=255-data[i+3];
+        }break;
+      case 'Tint':
+        for(i=0;i<data.length;i+=4){
+          lum=(data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255;
+          var t=p[6]||1;
+          data[i]=clamp(data[i]*(1-t)+((p[0]||0)*255+(lum*(((p[3]||1)-(p[0]||0))*255)))*t,0,255);
+          data[i+1]=clamp(data[i+1]*(1-t)+((p[1]||0)*255+(lum*(((p[4]||1)-(p[1]||0))*255)))*t,0,255);
+          data[i+2]=clamp(data[i+2]*(1-t)+((p[2]||0)*255+(lum*(((p[5]||1)-(p[2]||0))*255)))*t,0,255);
+        }break;
+      case 'Colorize':
+        var hue=(p[0]||200)/360,sat=p[1]||.8,lit=p[2]||.5,blend=p[3]||1;
+        for(i=0;i<data.length;i+=4){
+          lum=(data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255;
+          var col=hslToRgb(hue,sat,lum*lit+(1-lit)*.5);
+          data[i]=clamp(data[i]*(1-blend)+col[0]*blend,0,255);
+          data[i+1]=clamp(data[i+1]*(1-blend)+col[1]*blend,0,255);
+          data[i+2]=clamp(data[i+2]*(1-blend)+col[2]*blend,0,255);
+        }break;
+      case 'Color Temperature':
+        var temp=p[0]||6500;
+        var tr=temp<6600?255:clamp(329.698727*(Math.pow(temp/100-60,-.1332047)),0,255);
+        var tg=temp<6600?clamp(99.4708025*Math.log(temp/100)-161.1195681,0,255):clamp(288.1221695*(Math.pow(temp/100-60,-.0755148)),0,255);
+        var tb=temp>=6600?255:temp<=1900?0:clamp(138.5177312*Math.log(temp/100-10)-305.0447927,0,255);
+        for(i=0;i<data.length;i+=4){data[i]=clamp(data[i]*(tr/255),0,255);data[i+1]=clamp(data[i+1]*(tg/255),0,255);data[i+2]=clamp(data[i+2]*(tb/255),0,255);}break;
+      case 'Bloom':
+        var thresh=(p[0]||.5)*255;
+        for(i=0;i<data.length;i+=4){
+          if(data[i]>thresh||data[i+1]>thresh||data[i+2]>thresh){
+            data[i]=clamp(data[i]*(p[3]||1)*(p[2]||1),0,255);
+            data[i+1]=clamp(data[i+1]*(p[4]||.9)*(p[2]||1),0,255);
+            data[i+2]=clamp(data[i+2]*(p[5]||.8)*(p[2]||1),0,255);
+          }
+        }break;
+      case 'Heatmap':
+        var palettes=[[0,0,255,0,255,0,255,0,0],[0,0,0,255,0,0,0,255,255,255,255,255]];
+        var pal=palettes[Math.round(p[2]||0)%2||0];
+        for(i=0;i<data.length;i+=4){
+          lum=clamp((data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255,0,1);
+          var pi2=Math.floor(lum*(pal.length/3-1))*3;
+          data[i]=clamp(pal[pi2]||0,0,255);
+          data[i+1]=clamp(pal[pi2+1]||0,0,255);
+          data[i+2]=clamp(pal[pi2+2]||0,0,255);
+        }break;
+      case 'Tritone':
+        for(i=0;i<data.length;i+=4){
+          lum=(data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255;
+          var sh=[p[0]||0,p[1]||0,p[2]||.5],mid=[p[3]||.5,p[4]||.5,p[4]||.5],hi=[p[5]||1,p[5]||1,p[5]||1];
+          var f=lum<.5?lum*2:1,s=lum<.5?1:1-(lum-.5)*2;
+          data[i]=clamp((sh[0]*(1-f)+mid[0]*f)*s*255+(mid[0]*(1-(f-1))+hi[0]*(f-1))*(1-s)*255,0,255);
+          data[i+1]=clamp((sh[1]*(1-f)+mid[1]*f)*s*255+(mid[1]*(1-(f-1))+hi[1]*(f-1))*(1-s)*255,0,255);
+          data[i+2]=clamp((sh[2]*(1-f)+mid[2]*f)*s*255+(mid[2]*(1-(f-1))+hi[2]*(f-1))*(1-s)*255,0,255);
+        }break;
+      case 'Edge Detect':
+        var copy=new Uint8ClampedArray(data);
+        var thresh2=(p[0]||.2)*255;
+        for(var y=1;y<h-1;y++){for(var x=1;x<w-1;x++){
+          var idx=(y*w+x)*4;
+          var gx=(-copy[(y*w+(x-1))*4]+copy[(y*w+(x+1))*4])/2;
+          var gy=(-copy[((y-1)*w+x)*4]+copy[((y+1)*w+x)*4])/2;
+          var mag=Math.sqrt(gx*gx+gy*gy);
+          var col=mag>thresh2?255:0;
+          if(p[2])col=255-col;
+          data[idx]=data[idx+1]=data[idx+2]=col;
+        }}break;
+      case 'EFX RGB Split':
+      case 'Chromatic Aberration':
+        var orig=new Uint8ClampedArray(data);
+        var rx=Math.round(p[0]||0),ry=Math.round(p[1]||0),bx=Math.round(p[2]||0),by=Math.round(p[3]||0);
+        for(i=0;i<data.length;i+=4){
+          var cy2=Math.floor(i/4/w),cx=Math.floor((i/4)%w);
+          var rIdx=((clamp(cy2+ry,0,h-1))*w+clamp(cx+rx,0,w-1))*4;
+          var bIdx=((clamp(cy2+by,0,h-1))*w+clamp(cx+bx,0,w-1))*4;
+          data[i]=orig[rIdx];
+          data[i+2]=orig[bIdx+2];
+        }break;
+      case 'Channel Exposure':
+        var er=Math.pow(2,p[0]||0),eg=Math.pow(2,p[1]||0),eb=Math.pow(2,p[2]||0);
+        for(i=0;i<data.length;i+=4){data[i]=clamp(data[i]*er,0,255);data[i+1]=clamp(data[i+1]*eg,0,255);data[i+2]=clamp(data[i+2]*eb,0,255);}break;
+      case 'Channel Mixer':
+        var dc=new Uint8ClampedArray(data);
+        for(i=0;i<data.length;i+=4){
+          data[i]=clamp(dc[i]*(p[0]||1)+dc[i+1]*(p[1]||0)+dc[i+2]*(p[2]||0),0,255);
+          data[i+1]=clamp(dc[i]*(p[3]||0)+dc[i+1]*(p[4]||1)+dc[i+2]*(p[5]||0),0,255);
+          data[i+2]=clamp(dc[i]*(p[6]||0)+dc[i+1]*(p[7]||0)+dc[i+2]*(p[8]||1),0,255);
+        }break;
+      case 'Halftone':
+        var sz=p[0]||10;
+        for(var hy=0;hy<h;hy+=sz){for(var hx=0;hx<w;hx+=sz){
+          var sum=0,cnt=0;
+          for(var dy=0;dy<sz&&hy+dy<h;dy++){for(var dx=0;dx<sz&&hx+dx<w;dx++){
+            var ii=((hy+dy)*w+(hx+dx))*4;
+            sum+=(data[ii]*0.299+data[ii+1]*0.587+data[ii+2]*0.114)/255;cnt++;
+          }}
+          var avg=sum/cnt;var r2=avg*(sz/2)*(p[2]||.7);
+          for(var dy=0;dy<sz&&hy+dy<h;dy++){for(var dx=0;dx<sz&&hx+dx<w;dx++){
+            var di=Math.sqrt((dx-sz/2)*(dx-sz/2)+(dy-sz/2)*(dy-sz/2));
+            var col2=di<r2?0:255;
+            var ii2=((hy+dy)*w+(hx+dx))*4;
+            data[ii2]=data[ii2+1]=data[ii2+2]=col2;
+          }}
+        }}break;
+      case 'ZebrafyColor':
+        var freq2=p[0]||5;
+        for(var y2=0;y2<h;y2++){for(var x2=0;x2<w;x2++){
+          var ii3=(y2*w+x2)*4;
+          lum=(data[ii3]*0.299+data[ii3+1]*0.587+data[ii3+2]*0.114)/255;
+          var stripe=Math.sin(lum*freq2*Math.PI*2)>0;
+          if(!stripe){data[ii3]=data[ii3+1]=data[ii3+2]=Math.round(lum*255);}
+        }}break;
+      case 'Gradient Ramp':
+        for(i=0;i<data.length;i+=4){
+          var gy3=Math.floor(i/4/w)/h;
+          var t2=gy3;
+          var op=p[4]||1;
+          data[i]=clamp(data[i]+t2*255*op,0,255);
+          data[i+1]=clamp(data[i+1]+t2*128*op,0,255);
+          data[i+2]=clamp(data[i+2]*(1-t2*op),0,255);
+        }break;
+      case 'White Balance':
+        var wbTemp=p[0]||6500;var wbStr=p[2]||1;
+        var wbr=wbTemp<6500?1:clamp(6500/wbTemp,0,1);
+        var wbb=wbTemp>6500?1:clamp(wbTemp/6500,0,1);
+        for(i=0;i<data.length;i+=4){
+          data[i]=clamp(data[i]*(1+((1/wbr-1)*wbStr)),0,255);
+          data[i+2]=clamp(data[i+2]*(1+((1/wbb-1)*wbStr)),0,255);
+        }break;
+      case 'Colorama':
+        var phase3=(p[0]||0)/360,cyc=p[1]||1;
+        for(i=0;i<data.length;i+=4){
+          lum=(data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255;
+          var h3=(lum*cyc+phase3)%1;
+          var out2=hslToRgb(h3,1,.5);
+          var mx=p[2]||1;
+          data[i]=clamp(data[i]*(1-mx)+out2[0]*mx,0,255);
+          data[i+1]=clamp(data[i+1]*(1-mx)+out2[1]*mx,0,255);
+          data[i+2]=clamp(data[i+2]*(1-mx)+out2[2]*mx,0,255);
+        }break;
+      case 'PseudoColor':
+        var presets=[[0,0,255,0,255,0,255,0,0],[255,255,0,255,0,0,0,0,255],[0,255,255,0,255,0,255,0,0],[255,128,0,128,255,128,0,128,255]];
+        var preset=presets[Math.round(p[0]||0)%4];
+        for(i=0;i<data.length;i+=4){
+          lum=clamp((data[i]*0.299+data[i+1]*0.587+data[i+2]*0.114)/255,0,1);
+          var pi3=Math.floor(lum*(preset.length/3-.01))*3;
+          data[i]=clamp((preset[pi3]||0)*(p[1]!==undefined?Math.pow(2,p[1]):1),0,255);
+          data[i+1]=clamp((preset[pi3+1]||0)*(p[1]!==undefined?Math.pow(2,p[1]):1),0,255);
+          data[i+2]=clamp((preset[pi3+2]||0)*(p[1]!==undefined?Math.pow(2,p[1]):1),0,255);
+        }break;
+    }
+  }
+  function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;var max=Math.max(r,g,b),min=Math.min(r,g,b),h,s,l=(max+min)/2;if(max===min){h=s=0}else{var d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break}h/=6}return[h,s,l]}
+  function hslToRgb(h,s,l){var r,g,b;if(s===0){r=g=b=l}else{var q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;r=hue(p,q,h+1/3);g=hue(p,q,h);b=hue(p,q,h-1/3)}return[Math.round(r*255),Math.round(g*255),Math.round(b*255)]}
+  function hue(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<.5)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p}
+  return {addEffect,removeEffect,renderEffects,toggleEffect,setParam,applyEffects};
+})();
+
+// ─── AUDIO FX SYSTEM ───────────────────────────────────
+var AFX = (function(){
+  function addAudioFX(name){
+    var defs = AUDIOFX_DEFS[name] || [];
+    var params = defs.map(function(d){return d.def});
+    STATE.audioFX.push({name:name,enabled:true,params:params});
+    renderAudioFX();
+  }
+  function renderAudioFX(){
+    var el = document.getElementById('audiofx-list');
+    el.innerHTML = '';
+    STATE.audioFX.forEach(function(fx,i){
+      var defs = AUDIOFX_DEFS[fx.name] || [];
+      var div = document.createElement('div');
+      div.className = 'audiofx-item';
+      var paramRows = defs.map(function(def,pi){
+        var v = fx.params[pi]!==undefined ? fx.params[pi] : def.def;
+        return '<div class="param-row"><span class="param-label" style="width:80px;font-size:9px">'+def.n+'</span>'+
+          '<input class="param-slider" type="range" min="'+def.min+'" max="'+def.max+'" step="'+def.step+'" value="'+v+'"'+
+          ' oninput="AFX.setParam('+i+','+pi+',+this.value);this.nextSibling.textContent=parseFloat(this.value).toFixed(2)">'+
+          '<span class="param-value" style="font-size:9px">'+parseFloat(v).toFixed(2)+'</span></div>';
+      }).join('');
+      div.innerHTML = '<div class="audiofx-header">'+
+        '<div class="effect-toggle'+(fx.enabled?' on':'')+'" onclick="AFX.toggleFX('+i+',this)"></div>'+
+        '<span class="audiofx-name">'+fx.name+'</span>'+
+        '<span style="font-size:9px;color:var(--red);cursor:pointer" onclick="AFX.removeFX('+i+')">✕</span></div>'+
+        '<div class="audiofx-body" id="afxbody-'+i+'">'+paramRows+'</div>';
+      div.querySelector('.audiofx-header').addEventListener('click',function(e){
+        if(e.target.classList.contains('effect-toggle')||e.target.tagName==='SPAN') return;
+        document.getElementById('afxbody-'+i).classList.toggle('open');
+      });
+      el.appendChild(div);
+    });
+  }
+  function toggleFX(i,el){STATE.audioFX[i].enabled=!STATE.audioFX[i].enabled;el.classList.toggle('on')}
+  function removeFX(i){STATE.audioFX.splice(i,1);renderAudioFX()}
+  function setParam(i,pi,v){STATE.audioFX[i].params[pi]=v}
+  function loadVST(){openModal('modal-vst')}
+  function doLoadVST(){
+    var f = document.getElementById('vst-file-input').files[0];
+    if(f){
+      STATE.audioFX.push({name:'VST: '+f.name,enabled:true,params:[],isVST:true});
+      renderAudioFX();
+      setStatus('Loaded VST: '+f.name);
+    }
+    closeModal('modal-vst');
+  }
+  return {addAudioFX,renderAudioFX,toggleFX,removeFX,setParam,loadVST,doLoadVST};
+})();
+
+// ─── PLUGINS SYSTEM ────────────────────────────────────
+var Plugins = (function(){
+  var currentPlugin = null;
+  function create(){
+    document.getElementById('openfx-modal-title').textContent = 'Create OpenFX Plugin (C++)';
+    document.getElementById('openfx-modal-body').innerHTML =
+      '<div style="color:var(--text2);font-size:11px;margin-bottom:8px">Plugin Name:</div>'+
+      '<input type="text" id="plugin-name-input" class="num-input" style="width:100%;font-size:11px;margin-bottom:8px" placeholder="MyPlugin" value="MyPlugin">'+
+      '<div style="color:var(--text2);font-size:11px;margin-bottom:8px">Category:</div>'+
+      '<select class="blend-select" id="plugin-cat"><option>Color</option><option>Distort</option><option>Stylize</option><option>Blur</option><option>Transition</option></select>'+
+      '<div style="color:var(--text3);font-size:10px;margin-top:8px">Generates C++ OpenFX boilerplate stub.</div>';
+    document.getElementById('openfx-confirm-btn').onclick = function(){doCreate()};
+    openModal('modal-openfx');
+  }
+  function doCreate(){
+    var name = (document.getElementById('plugin-name-input')||{}).value || 'MyPlugin';
+    var cat = (document.getElementById('plugin-cat')||{}).value || 'Color';
+    var plugin = {name:name,category:cat,type:'OpenFX C++'};
+    STATE.plugins.push(plugin);
+    renderPlugins();
+    setStatus('Created OpenFX plugin: '+name);
+    closeModal('modal-openfx');
+  }
+  function save(){
+    if(STATE.plugins.length===0){setStatus('No plugins to save.');return}
+    var plugin = STATE.plugins[STATE.plugins.length-1];
+    var cppCode = generateCppStub(plugin.name, plugin.category);
+    var blob = new Blob([cppCode],{type:'text/plain'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = plugin.name+'.ofx.cpp';
+    a.click();
+    setStatus('Saved OpenFX plugin: '+plugin.name);
+  }
+  function generateCppStub(name, cat){
+    return '// OpenFX Plugin: '+name+' | Category: '+cat+'\n'+
+      '#include "ofxImageEffect.h"\n#include "ofxPixels.h"\n\n'+
+      'static OfxStatus describe(OfxImageEffectHandle effect){\n  return kOfxStatOK;\n}\n\n'+
+      'static OfxStatus render(OfxImageEffectHandle effect, OfxPropertySetHandle inArgs){\n  // TODO: implement '+name+' effect\n  return kOfxStatOK;\n}\n\n'+
+      'static OfxStatus pluginMain(const char* action, const void* handle, OfxPropertySetHandle inArgs, OfxPropertySetHandle outArgs){\n'+
+      '  if(strcmp(action, kOfxActionDescribe)==0) return describe((OfxImageEffectHandle)handle);\n'+
+      '  if(strcmp(action, kOfxImageEffectActionRender)==0) return render((OfxImageEffectHandle)handle,inArgs);\n'+
+      '  return kOfxStatReplyDefault;\n}\n\n'+
+      'static OfxPlugin plugin = { kOfxImageEffectPluginApi, 1, "'+name+'", 1, 0, pluginMain };\n'+
+      'EXPORT OfxPlugin* OfxGetPlugin(int nth){ return nth==0?&plugin:0; }\n'+
+      'EXPORT int OfxGetNumberOfPlugins(){ return 1; }\n';
+  }
+  function load(){document.getElementById('plugin-load-input').click()}
+  function handleLoad(e){
+    var f = e.target.files[0];
+    if(f){
+      STATE.plugins.push({name:f.name,category:'Loaded',type:'OpenFX C++'});
+      renderPlugins();
+      setStatus('Loaded plugin: '+f.name);
+    }
+  }
+  function renderPlugins(){
+    var el = document.getElementById('plugins-list');
+    el.innerHTML = '';
+    STATE.plugins.forEach(function(pl,i){
+      var div = document.createElement('div');
+      div.className = 'plugin-item';
+      div.innerHTML = '<div class="plugin-name">'+pl.name+'</div><div class="plugin-type">'+pl.type+' · '+pl.category+'</div>';
+      el.appendChild(div);
+    });
+  }
+  return {create,save,load,handleLoad,renderPlugins};
+})();
+
+// ─── TIMELINE SYSTEM ───────────────────────────────────
+var TL = (function(){
+  var playInterval = null;
+  var zoom = 100;
+  function init(){
+    STATE.tracks = [
+      {type:'video',name:'Video 1',clips:[{start:0,end:10,label:'Clip 1'}]},
+      {type:'video',name:'Video 2',clips:[]},
+      {type:'audio',name:'Audio 1',clips:[{start:0,end:10,label:'Audio 1'}]},
+    ];
+    renderTracks();
+    drawRuler();
+  }
+  function addTrack(){
+    STATE.tracks.push({type:'video',name:'Track '+(STATE.tracks.length+1),clips:[]});
+    renderTracks();
+  }
+  function addVideoTrack(){
+    STATE.tracks.push({type:'video',name:'Video '+(STATE.tracks.filter(function(t){return t.type==='video'}).length+1),clips:[]});
+    renderTracks();
+  }
+  function addAudioTrack(){
+    STATE.tracks.push({type:'audio',name:'Audio '+(STATE.tracks.filter(function(t){return t.type==='audio'}).length+1),clips:[]});
+    renderTracks();
+  }
+  function renderTracks(){
+    var labels = document.getElementById('track-labels');
+    var rows = document.getElementById('track-rows');
+    var ph = document.getElementById('tl-playhead');
+    labels.innerHTML = '';
+    // clear track rows except playhead
+    var existing = Array.from(rows.children);
+    existing.forEach(function(c){if(c.id!=='tl-playhead')rows.removeChild(c)});
+    STATE.tracks.forEach(function(t,ti){
+      var lbl = document.createElement('div');
+      lbl.className = 'track-label';
+      lbl.innerHTML = '<span class="track-vis" onclick="TL.toggleVis('+ti+')">👁</span><span class="track-label-name">'+t.name+'</span>';
+      labels.appendChild(lbl);
+      var row = document.createElement('div');
+      row.className = 'track-row';
+      (t.clips||[]).forEach(function(clip){
+        var cl = document.createElement('div');
+        cl.className = 'track-clip '+(t.type||'video');
+        cl.style.left = (clip.start*zoom)+'px';
+        cl.style.width = ((clip.end-clip.start)*zoom)+'px';
+        cl.textContent = clip.label||'Clip';
+        cl.onclick = function(){cl.classList.toggle('selected')};
+        row.appendChild(cl);
+      });
+      rows.insertBefore(row, ph);
+    });
+    document.getElementById('sb-layers').textContent = 'Tracks: '+STATE.tracks.length;
+    // set scroll width
+    rows.style.minWidth = (STATE.duration*zoom+200)+'px';
+    drawRuler();
+  }
+  function toggleVis(i){setStatus('Track '+(i+1)+' visibility toggled')}
+  function drawRuler(){
+    var rc = document.getElementById('ruler-canvas');
+    var tw = (STATE.duration*zoom+400);
+    rc.width = tw;
+    var rctx = rc.getContext('2d');
+    rctx.clearRect(0,0,tw,18);
+    rctx.fillStyle = '#1a1a1a';
+    rctx.fillRect(0,0,tw,18);
+    rctx.strokeStyle = '#333';
+    rctx.fillStyle = '#666';
+    rctx.font = '9px Open Sans';
+    var step = Math.max(1, Math.round(50/zoom));
+    for(var t=0;t<=STATE.duration;t+=step){
+      var x = t*zoom;
+      rctx.beginPath();rctx.moveTo(x,0);rctx.lineTo(x,18);rctx.stroke();
+      rctx.fillText(fmtTime(t),x+2,12);
+    }
+  }
+  function fmtTime(s){var m=Math.floor(s/60);var ss=Math.floor(s%60);return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss}
+  function fmtTimeFull(s){var h=Math.floor(s/3600);var m=Math.floor((s%3600)/60);var ss=Math.floor(s%60);var f=Math.floor((s%1)*30);return pad(h)+':'+pad(m)+':'+pad(ss)+':'+pad(f)}
+  function pad(n){return (n<10?'0':'')+n}
+  function togglePlay(){
+    STATE.playing = !STATE.playing;
+    document.getElementById('play-btn').textContent = STATE.playing ? '⏸' : '▶';
+    if(STATE.playing){
+      playInterval = setInterval(function(){
+        STATE.currentTime += 1/30;
+        if(STATE.currentTime>=STATE.duration){STATE.currentTime=0}
+        updateTimeDisplay();
+        updatePlayhead();
+      },1000/30);
+    } else {
+      clearInterval(playInterval);
+    }
+  }
+  function goStart(){STATE.currentTime=0;updateTimeDisplay();updatePlayhead()}
+  function goEnd(){STATE.currentTime=STATE.duration;updateTimeDisplay();updatePlayhead()}
+  function stepBack(){STATE.currentTime=Math.max(0,STATE.currentTime-1/30);updateTimeDisplay();updatePlayhead()}
+  function stepForward(){STATE.currentTime=Math.min(STATE.duration,STATE.currentTime+1/30);updateTimeDisplay();updatePlayhead()}
+  function updateTimeDisplay(){
+    var t = fmtTimeFull(STATE.currentTime);
+    document.getElementById('tl-time').textContent = fmtTime(STATE.currentTime);
+    document.getElementById('sb-time').textContent = t;
+  }
+  function updatePlayhead(){
+    var ph = document.getElementById('tl-playhead');
+    ph.style.left = (STATE.currentTime*zoom+0)+'px';
+  }
+  function setZoom(v){zoom=v;STATE.tlZoom=v;renderTracks();updatePlayhead()}
+  return {init,addTrack,addVideoTrack,addAudioTrack,renderTracks,toggleVis,drawRuler,togglePlay,goStart,goEnd,stepBack,stepForward,updateTimeDisplay,updatePlayhead,setZoom};
+})();
+
+// ─── UI FUNCTIONS ──────────────────────────────────────
+var UI = (function(){
+  var _zoom = 0.3;
+  var history = [];
+  var historyIdx = -1;
+  var clipboard = null;
+  function zoomIn(){_zoom=Math.min(4,_zoom+0.1);applyZoom()}
+  function zoomOut(){_zoom=Math.max(0.05,_zoom-0.1);applyZoom()}
+  function zoomFit(){_zoom=Math.min(document.getElementById('canvas-area').offsetWidth/canvas.width,document.getElementById('canvas-area').offsetHeight/canvas.height)*.9;applyZoom()}
+  function applyZoom(){
+    var w = canvas.width, h = canvas.height;
+    document.getElementById('canvas-wrap').style.transform = 'scale('+_zoom+')';
+    document.getElementById('canvas-wrap').style.transformOrigin = 'center center';
+    document.getElementById('zoom-display').textContent = Math.round(_zoom*100)+'%';
+  }
+  function undo(){if(historyIdx>0){historyIdx--;var s=history[historyIdx];ctx.putImageData(s,0,0);setStatus('Undo')}else setStatus('Nothing to undo')}
+  function redo(){if(historyIdx<history.length-1){historyIdx++;var s=history[historyIdx];ctx.putImageData(s,0,0);setStatus('Redo')}else setStatus('Nothing to redo')}
+  function pushHistory(){var s=ctx.getImageData(0,0,canvas.width,canvas.height);history=history.slice(0,historyIdx+1);history.push(s);historyIdx=history.length-1;if(history.length>50)history.shift()}
+  function copy(){clipboard=ctx.getImageData(0,0,canvas.width,canvas.height);setStatus('Copied')}
+  function paste(){if(clipboard){ctx.putImageData(clipboard,0,0);setStatus('Pasted')}else setStatus('Nothing to paste')}
+  function uploadMedia(type){
+    var inp = document.getElementById('upload-input');
+    inp.accept = type==='image'?'image/*':'video/*';
+    inp._uploadType = type;
+    inp.click();
+  }
+  function handleUpload(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    setStatus('Loading: '+f.name);
+    if(f.type.startsWith('image/')){
+      var img = new Image();
+      var url = URL.createObjectURL(f);
+      img.onload = function(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        pushHistory();
+        URL.revokeObjectURL(url);
+        setStatus('Loaded: '+f.name);
+        addLayerItem('Image: '+f.name);
+        TL.renderTracks();
+      };
+      img.src = url;
+    } else if(f.type.startsWith('video/')){
+      var vid = document.createElement('video');
+      var url2 = URL.createObjectURL(f);
+      vid.src = url2;
+      vid.onloadedmetadata = function(){
+        STATE.duration = vid.duration || 30;
+        TL.renderTracks();
+        setStatus('Loaded video: '+f.name+' ('+Math.round(vid.duration)+'s)');
+      };
+      vid.onseeked = function(){
+        ctx.drawImage(vid,0,0,canvas.width,canvas.height);
+        pushHistory();
+      };
+      vid.currentTime = 0;
+      vid.load();
+      addLayerItem('Video: '+f.name);
+    }
+  }
+  function replaceMedia(){document.getElementById('replace-input').click()}
+  function handleReplace(e){
+    var f = e.target.files[0];
+    if(!f) return;
+    handleUpload({target:{files:[f]}});
+    setStatus('Replaced media: '+f.name);
+  }
+  function exportMedia(fmt){
+    STATE.exportFormat = fmt;
+    var t = document.getElementById('modal-export-title');
+    var b = document.getElementById('modal-export-body');
+    t.textContent = 'Export as '+fmt.toUpperCase();
+    if(fmt==='mp4'||fmt==='mov'){
+      b.innerHTML = '<div style="color:var(--text2);font-size:12px;margin-bottom:8px">Video export uses canvas recording (MediaRecorder API).</div>'+
+        '<div class="param-row"><span class="param-label">Duration (s)</span><input class="num-input" type="number" id="exp-dur" value="'+Math.round(STATE.duration)+'" style="flex:1"></div>'+
+        '<div class="param-row"><span class="param-label">FPS</span><input class="num-input" type="number" id="exp-fps" value="30" style="flex:1"></div>';
+    } else {
+      b.innerHTML = '<div style="color:var(--text2);font-size:12px;margin-bottom:8px">Exports current canvas frame.</div>'+
+        '<div class="param-row"><span class="param-label">Quality</span><input class="param-slider" type="range" min="0.1" max="1" step="0.05" value="0.95" id="exp-quality" oninput="this.nextSibling.textContent=Math.round(this.value*100)+\'%\'"><span class="param-value">95%</span></div>';
+    }
+    openModal('modal-export');
+  }
+  function doExport(){
+    var fmt = STATE.exportFormat;
+    var a = document.createElement('a');
+    if(fmt==='png'){
+      a.href = canvas.toDataURL('image/png');
+      a.download = 'export.png';
+      a.click();
+    } else if(fmt==='jpg'||fmt==='jpeg'){
+      var q = parseFloat((document.getElementById('exp-quality')||{}).value||.95);
+      a.href = canvas.toDataURL('image/jpeg',q);
+      a.download = 'export.'+fmt;
+      a.click();
+    } else if(fmt==='mp4'||fmt==='mov'){
+      var stream = canvas.captureStream(30);
+      var rec = new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9'});
+      var chunks = [];
+      rec.ondataavailable = function(e){if(e.data.size)chunks.push(e.data)};
+      rec.onstop = function(){
+        var blob = new Blob(chunks,{type:'video/webm'});
+        a.href = URL.createObjectURL(blob);
+        a.download = 'export.webm';
+        a.click();
+        setStatus('Video exported.');
+      };
+      var dur = parseInt((document.getElementById('exp-dur')||{}).value||5)*1000;
+      rec.start();
+      setTimeout(function(){rec.stop()},dur);
+      setStatus('Recording '+dur/1000+'s...');
+    }
+    closeModal('modal-export');
+  }
+  function addLayer(){addLayerItem('Layer '+(STATE.layers.length+1));setStatus('Added layer')}
+  function deleteLayer(){if(STATE.selectedLayer<STATE.layers.length){STATE.layers.splice(STATE.selectedLayer,1);renderLayersList();setStatus('Deleted layer')}}
+  function addLayerItem(name){STATE.layers.push({name:name,visible:true});renderLayersList()}
+  function renderLayersList(){
+    var el = document.getElementById('layers-list');
+    el.innerHTML = '';
+    STATE.layers.forEach(function(l,i){
+      var div = document.createElement('div');
+      div.className = 'layer-item'+(i===STATE.selectedLayer?' active':'');
+      div.innerHTML = '<span class="layer-vis-btn" onclick="UI.toggleLayerVis('+i+')">'+( l.visible?'👁':'○')+'</span>'+
+        '<span class="layer-name">'+l.name+'</span>';
+      div.onclick = function(){STATE.selectedLayer=i;renderLayersList()};
+      el.appendChild(div);
+    });
+    document.getElementById('sb-layers').textContent = 'Layers: '+STATE.layers.length;
+  }
+  function toggleLayerVis(i){STATE.layers[i].visible=!STATE.layers[i].visible;renderLayersList()}
+  function addMarker(){
+    var t = STATE.currentTime;
+    var colors = ['#e05050','#e0b04a','#50e090','#4a90e0','#b04ae0'];
+    var col = colors[STATE.markers.length%5];
+    STATE.markers.push({time:t,label:'Marker '+(STATE.markers.length+1),color:col});
+    renderMarkers();
+  }
+  function renderMarkers(){
+    var el = document.getElementById('markers-list');
+    el.innerHTML = '';
+    STATE.markers.forEach(function(m,i){
+      var div = document.createElement('div');
+      div.className = 'marker-item';
+      div.innerHTML = '<div class="marker-color" style="background:'+m.color+'"></div>'+
+        '<span class="marker-label">'+m.label+'</span>'+
+        '<span class="marker-time">'+fmtT(m.time)+'</span>'+
+        '<span style="font-size:9px;color:var(--red);cursor:pointer;margin-left:4px" onclick="UI.removeMarker('+i+')">✕</span>';
+      el.appendChild(div);
+    });
+  }
+  function fmtT(s){var m=Math.floor(s/60);var ss=Math.floor(s%60);return (m<10?'0':'')+m+':'+(ss<10?'0':'')+ss}
+  function removeMarker(i){STATE.markers.splice(i,1);renderMarkers()}
+  function pickColor(target){STATE.colorTarget=target;var inp=document.getElementById('color-picker-input');inp.value=target==='fg'?STATE.fgColor:STATE.bgColor;inp.click()}
+  function applyColor(v){if(STATE.colorTarget==='fg'){STATE.fgColor=v;document.getElementById('fg-color').style.background=v}else{STATE.bgColor=v;document.getElementById('bg-color').style.background=v}document.getElementById('color-hex').value=v.toUpperCase()}
+  function setColorHex(v){applyColor(v)}
+  function boolOp(type){setStatus('Boolean: '+type+' applied to selection')}
+  function openPointTool(){openModal('modal-point')}
+  function setPoint(e){var rect=e.target.getBoundingClientRect();var x=(e.clientX-rect.left)/rect.width;var y=(e.clientY-rect.top)/rect.height;STATE.pointX=x;STATE.pointY=y;document.getElementById('point-dot').style.left=(x*100)+'%';document.getElementById('point-dot').style.top=(y*100)+'%';document.getElementById('point-x').value=Math.round(x*1920);document.getElementById('point-y').value=Math.round(y*1080)}
+  function updatePointFromInput(){var px=+document.getElementById('point-x').value/1920;var py=+document.getElementById('point-y').value/1080;STATE.pointX=px;STATE.pointY=py;document.getElementById('point-dot').style.left=(px*100)+'%';document.getElementById('point-dot').style.top=(py*100)+'%'}
+  function applyPoint(){setStatus('Point set: '+(Math.round(STATE.pointX*1920))+', '+(Math.round(STATE.pointY*1080)));closeModal('modal-point')}
+  function setPropX(v){STATE.props.x=v;renderCanvas()}
+  function setPropY(v){STATE.props.y=v;renderCanvas()}
+  function setPropScaleX(v){STATE.props.scaleX=v;renderCanvas()}
+  function setPropScaleY(v){STATE.props.scaleY=v;renderCanvas()}
+  function setPropRotate(v){STATE.props.rotate=v;renderCanvas()}
+  function setOpacity(v){STATE.props.opacity=v}
+  function setBlendMode(v){STATE.props.blendMode=v;ctx.globalCompositeOperation=v.toLowerCase().replace(/ /g,'-')||'normal'}
+  function setVideoSpeed(v){STATE.props.speed=v}
+  function setFont(v){STATE.props.font=v}
+  function setFontSize(v){STATE.props.fontSize=v}
+  function addKeyframe(prop){STATE.keyframes[prop]=STATE.keyframes[prop]||[];STATE.keyframes[prop].push({time:STATE.currentTime,value:0});setStatus('Keyframe added: '+prop+' @ '+Math.round(STATE.currentTime*100)/100+'s')}
+  function renderCanvas(){/* transform applied on upload/redraw */}
+  function zoomIn2(){zoomIn()}
+  return {zoomIn,zoomOut,zoomFit,undo,redo,copy,paste,uploadMedia,handleUpload,replaceMedia,handleReplace,exportMedia,doExport,addLayer,deleteLayer,addLayerItem,renderLayersList,toggleLayerVis,addMarker,renderMarkers,removeMarker,pickColor,applyColor,setColorHex,boolOp,openPointTool,setPoint,updatePointFromInput,applyPoint,setPropX,setPropY,setPropScaleX,setPropScaleY,setPropRotate,setOpacity,setBlendMode,setVideoSpeed,setFont,setFontSize,addKeyframe,pushHistory};
+})();
+
+// ─── HELPER FUNCTIONS ──────────────────────────────────
+function setStatus(msg){
+  document.getElementById('status-info').textContent = msg;
+  document.getElementById('sb-tool').textContent = 'Tool: '+STATE.currentTool;
+}
+function setTool(tool, el){
+  STATE.currentTool = tool;
+  document.querySelectorAll('.tool-btn').forEach(function(b){b.classList.remove('active')});
+  if(el) el.classList.add('active');
+  setStatus('Tool: '+tool);
+  canvas.style.cursor = tool==='crop'?'crosshair':tool==='text'?'text':tool==='pen'?'crosshair':'default';
+}
+function switchRTab(name, el){
+  document.querySelectorAll('.rtab-btn').forEach(function(b){b.classList.remove('active')});
+  if(el) el.classList.add('active');
+  document.querySelectorAll('.rtab-content').forEach(function(c){c.style.display='none'});
+  var tab = document.getElementById('tab-'+name);
+  if(tab) tab.style.display='block';
+  STATE.currentTab = name;
+}
+function setViewMode(mode, el){
+  document.querySelectorAll('.ct-btn').forEach(function(b){b.classList.remove('active')});
+  if(el) el.classList.add('active');
+}
+function openModal(id){document.getElementById(id).classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+// ─── MENU TOGGLE ───────────────────────────────────────
+document.addEventListener('click', function(e){
+  var btn = e.target.closest('.menu-btn');
+  document.querySelectorAll('.menu-btn').forEach(function(b){
+    if(b!==btn) b.classList.remove('open');
+  });
+  if(btn && btn.id && btn.id.startsWith('mb-')){
+    btn.classList.toggle('open');
+    e.stopPropagation();
+  }
+});
+
+// ─── KEYBOARD SHORTCUTS ────────────────────────────────
+document.addEventListener('keydown', function(e){
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();UI.undo()}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){e.preventDefault();UI.redo()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='c'){UI.copy()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='v'){UI.paste()}
+  if(e.key==='=')UI.zoomIn();
+  if(e.key==='-')UI.zoomOut();
+  if(e.key===' '){e.preventDefault();TL.togglePlay()}
+});
+
+// ─── CANVAS MOUSE ──────────────────────────────────────
+canvas.addEventListener('mousemove', function(e){
+  var r = canvas.getBoundingClientRect();
+  var sx = canvas.width/r.width, sy = canvas.height/r.height;
+  var x = Math.round((e.clientX-r.left)*sx), y = Math.round((e.clientY-r.top)*sy);
+  document.getElementById('sb-pos').textContent = 'X: '+x+' Y: '+y;
+});
+canvas.addEventListener('click', function(e){
+  if(STATE.currentTool==='text'){
+    var r = canvas.getBoundingClientRect();
+    var sx = canvas.width/r.width, sy = canvas.height/r.height;
+    var x = (e.clientX-r.left)*sx, y = (e.clientY-r.top)*sy;
+    ctx.save();
+    ctx.fillStyle = STATE.fgColor;
+    ctx.font = (STATE.props.fontSize||24)+'px '+(STATE.props.font||'Open Sans');
+    ctx.fillText('Text',x,y);
+    ctx.restore();
+    UI.pushHistory();
+  }
+});
+
+// ─── INIT CANVAS ───────────────────────────────────────
+(function initCanvas(){
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle = '#2a2a2a';
+  for(var x=0;x<canvas.width;x+=80){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke()}
+  for(var y=0;y<canvas.height;y+=80){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke()}
+  ctx.strokeStyle = '#333';
+  ctx.strokeRect(1,1,canvas.width-2,canvas.height-2);
+  UI.pushHistory();
+  UI.addLayerItem('Background');
+  UI.zoomFit();
+})();
+
+// ─── INIT ──────────────────────────────────────────────
+TL.init();
+FX.renderEffects();
+AFX.renderAudioFX();
+Plugins.renderPlugins();
+UI.renderLayersList();
+UI.renderMarkers();
+setStatus('Ready');
+document.getElementById('sb-size').textContent = '1920 × 1080';
+document.getElementById('sb-fps').textContent = '30 fps';
+</script>
+</body>
+</html>

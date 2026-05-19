@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#000;--bg1:#0a0a0a;--bg2:#111;--bg3:#1a1a1a;--bg4:#222;--bg5:#2a2a2a;
+--fg:#fff;--fg2:#ccc;--fg3:#888;--fg4:#555;
+--accent:#4af;--accent2:#f4a;--border:#2a2a2a;
+--slider:#333;--slider-thumb:#4af;
+--menu-h:28px;--panel-w:260px;--timeline-h:120px;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font-family:'Open Sans',sans-serif;font-size:12px;user-select:none}
+#app{display:flex;flex-direction:column;width:100%;height:100%}
+
+/* MENUBAR */
+#menubar{display:flex;align-items:center;height:var(--menu-h);background:var(--bg2);border-bottom:1px solid var(--border);z-index:1000;flex-shrink:0}
+.menu-item{position:relative;padding:0 10px;height:100%;display:flex;align-items:center;cursor:pointer;font-size:11px;color:var(--fg2);transition:background .1s}
+.menu-item:hover,.menu-item.open{background:var(--bg4);color:var(--fg)}
+.dropdown{display:none;position:absolute;top:100%;left:0;min-width:220px;background:var(--bg3);border:1px solid var(--border);z-index:9999;box-shadow:0 8px 32px #000a}
+.menu-item.open .dropdown{display:block}
+.dd-item{padding:5px 14px;cursor:pointer;color:var(--fg2);font-size:11px;display:flex;justify-content:space-between;align-items:center;transition:background .1s}
+.dd-item:hover{background:var(--bg5);color:var(--fg)}
+.dd-item.disabled{opacity:.35;pointer-events:none}
+.dd-sep{height:1px;background:var(--border);margin:3px 0}
+.dd-label{padding:4px 14px 2px;font-size:10px;color:var(--fg4);text-transform:uppercase;letter-spacing:.08em}
+.dd-sub{position:relative}
+.dd-sub>.dd-item::after{content:'▶';font-size:9px;opacity:.5}
+.dd-sub .sub-dropdown{display:none;position:absolute;left:100%;top:0;min-width:180px;background:var(--bg3);border:1px solid var(--border);z-index:10000;box-shadow:0 8px 32px #000a}
+.dd-sub:hover .sub-dropdown{display:block}
+
+/* MAIN AREA */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* TOOLBOX */
+#toolbox{width:40px;background:var(--bg1);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:4px 0;gap:2px;flex-shrink:0}
+.tool-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:4px;cursor:pointer;color:var(--fg3);font-size:14px;transition:all .1s;border:1px solid transparent}
+.tool-btn:hover{background:var(--bg4);color:var(--fg)}
+.tool-btn.active{background:var(--bg5);color:var(--accent);border-color:var(--accent)}
+
+/* CANVAS AREA */
+#canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#canvas-wrap{flex:1;position:relative;overflow:hidden;background:repeating-conic-gradient(#141414 0% 25%,#0a0a0a 0% 50%) 0 0/16px 16px}
+#canvas-wrap canvas{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);cursor:crosshair}
+#canvas-main{z-index:2}
+#canvas-overlay{z-index:3;pointer-events:none}
+#ruler-h{height:18px;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;overflow:hidden}
+#ruler-v{width:18px;background:var(--bg2);border-right:1px solid var(--border);position:absolute;top:18px;left:0;bottom:0}
+#zoom-bar{height:22px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:8px;font-size:10px;color:var(--fg3);flex-shrink:0}
+#zoom-bar input[type=range]{width:100px}
+
+/* RIGHT PANEL */
+#right-panel{width:var(--panel-w);background:var(--bg1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.panel-section{border-bottom:1px solid var(--border)}
+.panel-header{padding:6px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg4);display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:var(--bg2)}
+.panel-header:hover{background:var(--bg3)}
+.panel-body{padding:8px;display:none}
+.panel-body.open{display:block}
+.panel-section.open>.panel-body{display:block}
+
+/* LAYERS */
+#layers-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#layers-header{padding:6px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--fg4);background:var(--bg2);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+#layers-list{flex:1;overflow-y:auto}
+.layer-item{display:flex;align-items:center;padding:4px 8px;gap:6px;cursor:pointer;border-bottom:1px solid #0d0d0d;transition:background .1s}
+.layer-item:hover{background:var(--bg3)}
+.layer-item.active{background:var(--bg4)}
+.layer-thumb{width:28px;height:20px;border:1px solid var(--border);border-radius:2px;object-fit:cover;background:var(--bg5);flex-shrink:0}
+.layer-name{flex:1;font-size:11px;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-vis{color:var(--fg4);font-size:11px;cursor:pointer;padding:2px}
+.layer-vis:hover{color:var(--fg)}
+.layer-actions{display:flex;gap:4px;padding:6px 8px;border-top:1px solid var(--border);flex-shrink:0}
+.layer-btn{flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);color:var(--fg2);font-size:10px;cursor:pointer;border-radius:2px;font-family:'Open Sans',sans-serif;transition:background .1s}
+.layer-btn:hover{background:var(--bg5);color:var(--fg)}
+
+/* PROPERTIES */
+.prop-row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.prop-label{width:70px;font-size:10px;color:var(--fg3);flex-shrink:0}
+.prop-value{flex:1}
+.prop-value input[type=range]{width:100%;accent-color:var(--accent)}
+.prop-value input[type=number]{width:50px;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:'Open Sans',sans-serif;font-size:10px;padding:2px 4px;border-radius:2px}
+.prop-value input[type=text]{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:'Open Sans',sans-serif;font-size:10px;padding:2px 4px;border-radius:2px}
+.prop-value select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:'Open Sans',sans-serif;font-size:10px;padding:2px 4px;border-radius:2px}
+.color-swatch{width:24px;height:18px;border-radius:2px;border:1px solid var(--border);cursor:pointer}
+.blend-select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:'Open Sans',sans-serif;font-size:10px;padding:3px;border-radius:2px}
+
+/* EFFECTS PANEL */
+#fx-list{max-height:200px;overflow-y:auto}
+.fx-item{display:flex;align-items:center;padding:3px 8px;gap:6px;cursor:pointer;border-bottom:1px solid #0d0d0d}
+.fx-item:hover{background:var(--bg3)}
+.fx-name{flex:1;font-size:10px;color:var(--fg2)}
+.fx-toggle{color:var(--fg4);font-size:10px}
+
+/* EFFECT MODAL */
+#fx-modal{display:none;position:fixed;inset:0;z-index:5000;background:#0009;backdrop-filter:blur(4px)}
+#fx-modal.open{display:flex;align-items:center;justify-content:center}
+#fx-modal-inner{background:var(--bg2);border:1px solid var(--border);width:480px;max-height:80vh;display:flex;flex-direction:column;border-radius:4px;box-shadow:0 20px 60px #000c}
+#fx-modal-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+#fx-modal-header h3{font-size:13px;font-weight:600}
+#fx-modal-close{cursor:pointer;color:var(--fg4);font-size:16px;line-height:1}
+#fx-modal-close:hover{color:var(--fg)}
+#fx-modal-body{padding:14px;overflow-y:auto;flex:1}
+#fx-modal-footer{padding:10px 14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.btn{padding:5px 14px;border-radius:2px;font-family:'Open Sans',sans-serif;font-size:11px;cursor:pointer;border:1px solid var(--border);transition:all .1s}
+.btn-primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--bg4);color:var(--fg2)}
+.btn-secondary:hover{background:var(--bg5);color:var(--fg)}
+
+/* PLUGINS MODAL */
+#plugin-modal{display:none;position:fixed;inset:0;z-index:5000;background:#0009}
+#plugin-modal.open{display:flex;align-items:center;justify-content:center}
+#plugin-modal-inner{background:var(--bg2);border:1px solid var(--border);width:560px;max-height:80vh;display:flex;flex-direction:column;border-radius:4px;box-shadow:0 20px 60px #000c}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg1)}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--bg4)}
+
+/* TABS */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);background:var(--bg2)}
+.tab{padding:5px 12px;font-size:10px;cursor:pointer;color:var(--fg4);border-bottom:2px solid transparent;transition:all .1s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--fg2)}
+.tab-content{display:none;padding:8px}
+.tab-content.active{display:block}
+
+/* CONTEXT MENU */
+#ctx-menu{display:none;position:fixed;background:var(--bg3);border:1px solid var(--border);z-index:9998;min-width:160px;box-shadow:0 8px 24px #000a}
+#ctx-menu.open{display:block}
+.ctx-item{padding:5px 14px;cursor:pointer;font-size:11px;color:var(--fg2)}
+.ctx-item:hover{background:var(--bg5);color:var(--fg)}
+
+/* FONT PICKER */
+.font-list{max-height:120px;overflow-y:auto;background:var(--bg3);border:1px solid var(--border);border-radius:2px}
+.font-option{padding:3px 8px;cursor:pointer;font-size:11px;color:var(--fg2)}
+.font-option:hover{background:var(--bg5)}
+
+/* STATUS */
+#statusbar{height:20px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:16px;font-size:10px;color:var(--fg4);flex-shrink:0}
+#statusbar span{display:flex;align-items:center;gap:4px}
+
+/* EFFECTS CATEGORIES */
+.fx-cat{padding:4px 8px;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--accent);background:var(--bg1);border-bottom:1px solid var(--border)}
+
+/* HISTOGRAM */
+#histogram-canvas{width:100%;height:60px;display:block}
+
+/* COLOR PICKER */
+.color-input-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.hex-input{width:80px;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:'Open Sans',sans-serif;font-size:10px;padding:2px 4px;border-radius:2px}
+
+input[type=range]{-webkit-appearance:none;height:4px;background:var(--slider);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--slider-thumb);cursor:pointer}
+input[type=color]{-webkit-appearance:none;border:none;background:none;width:24px;height:18px;cursor:pointer;padding:0}
+
+.gl-warning{background:#ff000020;border:1px solid #ff000040;padding:6px 10px;border-radius:2px;font-size:10px;color:#f88;margin-bottom:8px;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="menubar">
+    <div class="menu-item" data-menu="file">File<div class="dropdown" id="menu-file">
+      <div class="dd-item" id="mi-upload">Upload Image…</div>
+      <div class="dd-sep"></div>
+      <div class="dd-label">Export As</div>
+      <div class="dd-item" data-export="png">Export as PNG</div>
+      <div class="dd-item" data-export="jpg">Export as JPEG</div>
+      <div class="dd-item" data-export="jpeg">Export as JPEG (High Quality)</div>
+      <div class="dd-item" data-export="tiff">Export as TIFF</div>
+      <div class="dd-item" data-export="svg">Export as SVG</div>
+      <div class="dd-item" data-export="xcf">Export as XCF (Metadata)</div>
+      <div class="dd-item" data-export="psd">Export as PSD (Metadata)</div>
+    </div></div>
+    <div class="menu-item" data-menu="edit">Edit<div class="dropdown" id="menu-edit">
+      <div class="dd-item" id="mi-undo">Undo<span style="color:var(--fg4);font-size:10px">Ctrl+Z</span></div>
+      <div class="dd-item" id="mi-redo">Redo<span style="color:var(--fg4);font-size:10px">Ctrl+Y</span></div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" id="mi-copy">Copy<span style="color:var(--fg4);font-size:10px">Ctrl+C</span></div>
+      <div class="dd-item" id="mi-paste">Paste<span style="color:var(--fg4);font-size:10px">Ctrl+V</span></div>
+    </div></div>
+    <div class="menu-item" data-menu="effects">Effects<div class="dropdown" id="menu-effects" style="min-width:260px;max-height:500px;overflow-y:auto"></div></div>
+    <div class="menu-item" data-menu="plugins">Plugins<div class="dropdown" id="menu-plugins">
+      <div class="dd-item" id="mi-create-filter">Create Filter/Effect (JSON+GLSL)…</div>
+      <div class="dd-item" id="mi-create-plugin">Create Plugin (JSON)…</div>
+      <div class="dd-sep"></div>
+      <div class="dd-item" id="mi-save-filter">Save Filter as JSON+GLSL…</div>
+      <div class="dd-item" id="mi-load-filter">Load Filter from JSON+GLSL…</div>
+    </div></div>
+    <div style="flex:1"></div>
+    <div style="padding:0 10px;font-size:10px;color:var(--fg4)" id="canvas-info">No image</div>
+  </div>
+
+  <div id="main">
+    <div id="toolbox">
+      <div class="tool-btn active" data-tool="select" title="Select">⬜</div>
+      <div class="tool-btn" data-tool="move" title="Move">✥</div>
+      <div class="tool-btn" data-tool="crop" title="Crop">⊡</div>
+      <div class="tool-btn" data-tool="brush" title="Brush">🖌</div>
+      <div class="tool-btn" data-tool="eraser" title="Eraser">⬡</div>
+      <div class="tool-btn" data-tool="text" title="Text">T</div>
+      <div class="tool-btn" data-tool="eyedrop" title="Eyedropper">💧</div>
+      <div class="tool-btn" data-tool="zoom" title="Zoom">🔍</div>
+      <div style="height:1px;width:28px;background:var(--border);margin:4px 0"></div>
+      <div class="tool-btn" id="fg-color" title="Foreground Color" style="background:#fff;border:1px solid #555;width:20px;height:20px;border-radius:2px;margin:2px"></div>
+      <div class="tool-btn" id="bg-color" title="Background Color" style="background:#000;border:1px solid #555;width:20px;height:20px;border-radius:2px;margin:2px"></div>
+    </div>
+
+    <div id="canvas-area">
+      <div id="ruler-h"></div>
+      <div style="display:flex;flex:1;overflow:hidden;position:relative">
+        <div id="ruler-v"></div>
+        <div id="canvas-wrap" style="margin-left:18px">
+          <canvas id="canvas-main" width="800" height="600"></canvas>
+          <canvas id="canvas-overlay" width="800" height="600"></canvas>
+        </div>
+      </div>
+      <div id="zoom-bar">
+        <span>Zoom:</span>
+        <input type="range" id="zoom-slider" min="10" max="500" value="100" step="5">
+        <span id="zoom-label">100%</span>
+        <div style="flex:1"></div>
+        <span id="cursor-pos">X: 0 Y: 0</span>
+      </div>
+    </div>
+
+    <div id="right-panel">
+      <div class="tab-bar">
+        <div class="tab active" data-tab="properties">Properties</div>
+        <div class="tab" data-tab="effects">Effects</div>
+        <div class="tab" data-tab="history">History</div>
+      </div>
+      <div class="tab-content active" id="tab-properties">
+        <div class="panel-section open">
+          <div class="panel-header">Transform</div>
+          <div class="panel-body open">
+            <div class="prop-row"><div class="prop-label">X</div><div class="prop-value"><input type="number" id="prop-x" value="0"></div></div>
+            <div class="prop-row"><div class="prop-label">Y</div><div class="prop-value"><input type="number" id="prop-y" value="0"></div></div>
+            <div class="prop-row"><div class="prop-label">Width</div><div class="prop-value"><input type="number" id="prop-w" value="800"></div></div>
+            <div class="prop-row"><div class="prop-label">Height</div><div class="prop-value"><input type="number" id="prop-h" value="600"></div></div>
+            <div class="prop-row"><div class="prop-label">Rotate</div><div class="prop-value"><input type="range" id="prop-rot" min="-180" max="180" value="0"><span id="prop-rot-val">0°</span></div></div>
+            <div class="prop-row"><div class="prop-label">Scale X</div><div class="prop-value"><input type="range" id="prop-sx" min="10" max="300" value="100"><span id="prop-sx-val">100%</span></div></div>
+            <div class="prop-row"><div class="prop-label">Scale Y</div><div class="prop-value"><input type="range" id="prop-sy" min="10" max="300" value="100"><span id="prop-sy-val">100%</span></div></div>
+          </div>
+        </div>
+        <div class="panel-section open">
+          <div class="panel-header">Blend Mode</div>
+          <div class="panel-body open">
+            <select class="blend-select" id="blend-mode">
+              <option>normal</option><option>multiply</option><option>screen</option><option>overlay</option>
+              <option>darken</option><option>lighten</option><option>color-dodge</option><option>color-burn</option>
+              <option>hard-light</option><option>soft-light</option><option>difference</option><option>exclusion</option>
+              <option>hue</option><option>saturation</option><option>color</option><option>luminosity</option>
+            </select>
+            <div class="prop-row" style="margin-top:8px"><div class="prop-label">Opacity</div><div class="prop-value"><input type="range" id="prop-opacity" min="0" max="100" value="100"><span id="prop-opacity-val">100%</span></div></div>
+          </div>
+        </div>
+        <div class="panel-section open">
+          <div class="panel-header">Font</div>
+          <div class="panel-body open">
+            <div class="prop-row">
+              <div class="prop-label">Family</div>
+              <div class="prop-value">
+                <select class="blend-select" id="font-family">
+                  <option>Open Sans</option><option>Arial</option><option>Georgia</option><option>Times New Roman</option>
+                  <option>Courier New</option><option>Verdana</option><option>Trebuchet MS</option><option>Impact</option>
+                  <option>Comic Sans MS</option><option>Palatino</option>
+                </select>
+              </div>
+            </div>
+            <div class="prop-row"><div class="prop-label">Size</div><div class="prop-value"><input type="number" id="font-size" value="24" min="6" max="400"></div></div>
+            <div class="prop-row"><div class="prop-label">Color</div><div class="prop-value"><input type="color" id="font-color" value="#ffffff"></div></div>
+            <div class="prop-row"><div class="prop-label">Bold</div><div class="prop-value"><input type="checkbox" id="font-bold"></div></div>
+            <div class="prop-row"><div class="prop-label">Italic</div><div class="prop-value"><input type="checkbox" id="font-italic"></div></div>
+          </div>
+        </div>
+        <div class="panel-section open">
+          <div class="panel-header">Color</div>
+          <div class="panel-body open">
+            <div class="color-input-row">
+              <input type="color" id="primary-color" value="#44aaff">
+              <input type="text" class="hex-input" id="hex-color" value="#44aaff">
+            </div>
+            <div class="prop-row"><div class="prop-label">R</div><div class="prop-value"><input type="range" id="color-r" min="0" max="255" value="68"><span id="color-r-val">68</span></div></div>
+            <div class="prop-row"><div class="prop-label">G</div><div class="prop-value"><input type="range" id="color-g" min="0" max="255" value="170"><span id="color-g-val">170</span></div></div>
+            <div class="prop-row"><div class="prop-label">B</div><div class="prop-value"><input type="range" id="color-b" min="0" max="255" value="255"><span id="color-b-val">255</span></div></div>
+            <div class="prop-row"><div class="prop-label">Histogram</div></div>
+            <canvas id="histogram-canvas" height="60"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="tab-content" id="tab-effects">
+        <div style="padding:6px 0;font-size:10px;color:var(--fg4)">Applied Effects</div>
+        <div id="fx-list"></div>
+        <div style="padding:6px;border-top:1px solid var(--border)">
+          <button class="btn btn-secondary" style="width:100%" id="btn-clear-fx">Clear All Effects</button>
+        </div>
+      </div>
+      <div class="tab-content" id="tab-history">
+        <div id="history-list" style="max-height:300px;overflow-y:auto"></div>
+      </div>
+
+      <div id="layers-panel">
+        <div id="layers-header">Layers
+          <div style="display:flex;gap:4px">
+            <span style="cursor:pointer;color:var(--fg4);padding:0 4px" id="btn-add-layer" title="Add Layer">+</span>
+            <span style="cursor:pointer;color:var(--fg4);padding:0 4px" id="btn-del-layer" title="Delete Layer">✕</span>
+            <span style="cursor:pointer;color:var(--fg4);padding:0 4px" id="btn-dup-layer" title="Duplicate Layer">⧉</span>
+          </div>
+        </div>
+        <div id="layers-list"></div>
+      </div>
+    </div>
+  </div>
+  <div id="statusbar">
+    <span>Studio v1.0</span>
+    <span id="status-size">800×600</span>
+    <span id="status-mode">RGB</span>
+    <span id="status-msg">Ready</span>
+  </div>
+</div>
+
+<!-- FX MODAL -->
+<div id="fx-modal">
+  <div id="fx-modal-inner">
+    <div id="fx-modal-header">
+      <h3 id="fx-modal-title">Effect</h3>
+      <span id="fx-modal-close">✕</span>
+    </div>
+    <div id="fx-modal-body"></div>
+    <div id="fx-modal-footer">
+      <button class="btn btn-secondary" id="fx-cancel">Cancel</button>
+      <button class="btn btn-primary" id="fx-apply">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLUGIN MODAL -->
+<div id="plugin-modal">
+  <div id="plugin-modal-inner">
+    <div id="fx-modal-header" style="border-bottom:1px solid var(--border)">
+      <h3 id="plugin-modal-title">Plugin</h3>
+      <span id="plugin-modal-close" style="cursor:pointer;color:var(--fg4);font-size:16px">✕</span>
+    </div>
+    <div id="plugin-modal-body" style="padding:14px;overflow-y:auto;flex:1;max-height:60vh">
+      <textarea id="plugin-json-editor" style="width:100%;height:200px;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:monospace;font-size:11px;padding:8px;resize:vertical;border-radius:2px"></textarea>
+      <textarea id="plugin-glsl-editor" style="width:100%;height:200px;background:var(--bg3);border:1px solid var(--border);color:var(--fg);font-family:monospace;font-size:11px;padding:8px;resize:vertical;border-radius:2px;margin-top:6px"></textarea>
+    </div>
+    <div id="fx-modal-footer" style="padding:10px 14px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn btn-secondary" id="plugin-cancel">Cancel</button>
+      <button class="btn btn-primary" id="plugin-save">Save Plugin</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu">
+  <div class="ctx-item" data-action="copy">Copy</div>
+  <div class="ctx-item" data-action="paste">Paste</div>
+  <div class="ctx-item" data-action="delete">Delete Layer</div>
+  <div class="ctx-item" data-action="duplicate">Duplicate Layer</div>
+</div>
+
+<!-- HIDDEN INPUTS -->
+<input type="file" id="upload-input" accept="image/*" style="display:none">
+<input type="file" id="load-filter-input" accept=".json" style="display:none">
+
+<script>
+// ========== CORE STATE ==========
+const S = {
+  layers: [],
+  activeLayer: null,
+  history: [],
+  historyIdx: -1,
+  zoom: 1,
+  tool: 'select',
+  appliedEffects: [],
+  plugins: [],
+  fgColor: '#ffffff',
+  bgColor: '#000000',
+  primaryColor: '#44aaff',
+  currentEffect: null,
+  currentEffectParams: {},
+  gl: null,
+  glCanvas: null,
+  clipboard: null,
+};
+
+const canvas = document.getElementById('canvas-main');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('canvas-overlay');
+const octx = overlay.getContext('2d');
+
+// ========== WEBGL SETUP ==========
+function initGL() {
+  const glc = document.createElement('canvas');
+  glc.width = canvas.width;
+  glc.height = canvas.height;
+  const gl = glc.getContext('webgl', {preserveDrawingBuffer: true}) || glc.getContext('experimental-webgl', {preserveDrawingBuffer: true});
+  if (!gl) return null;
+  S.gl = gl;
+  S.glCanvas = glc;
+  return gl;
+}
+initGL();
+
+function createShader(gl, type, src) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); gl.deleteShader(s); return null; }
+  return s;
+}
+function createProgram(gl, vs, fs) {
+  const v = createShader(gl, gl.VERTEX_SHADER, vs);
+  const f = createShader(gl, gl.FRAGMENT_SHADER, fs);
+  if (!v || !f) return null;
+  const p = gl.createProgram();
+  gl.attachShader(p, v); gl.attachShader(p, f); gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.warn(gl.getProgramInfoLog(p)); return null; }
+  return p;
+}
+
+const VS = `attribute vec2 a_pos;attribute vec2 a_uv;varying vec2 v_uv;void main(){gl_Position=vec4(a_pos,0,1);v_uv=a_uv;}`;
+
+function runShader(fsrc, uniforms) {
+  const gl = S.gl;
+  if (!gl || !canvas.width || !canvas.height) return false;
+  const prog = createProgram(gl, VS, fsrc);
+  if (!prog) return false;
+  gl.canvas.width = canvas.width; gl.canvas.height = canvas.height;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,0,1,-1,0,1,-1,1,0,1,-1,0,1,-1,0,1,1,1,1,-1,-1,0,1,-1,0,1,1,1,1,1,1,1,0]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, 'a_pos');
+  const aUV = gl.getAttribLocation(prog, 'a_uv');
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aUV, 2, gl.FLOAT, false, 16, 8);
+  gl.enableVertexAttribArray(aUV);
+  gl.useProgram(prog);
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
+  gl.uniform1i(gl.getUniformLocation(prog, 'u_tex'), 0);
+  gl.uniform2f(gl.getUniformLocation(prog, 'u_res'), canvas.width, canvas.height);
+  if (uniforms) Object.entries(uniforms).forEach(([k, v]) => {
+    const loc = gl.getUniformLocation(prog, k);
+    if (loc === null) return;
+    if (typeof v === 'number') gl.uniform1f(loc, v);
+    else if (Array.isArray(v) && v.length === 2) gl.uniform2fv(loc, v);
+    else if (Array.isArray(v) && v.length === 3) gl.uniform3fv(loc, v);
+    else if (Array.isArray(v) && v.length === 4) gl.uniform4fv(loc, v);
+  });
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(S.glCanvas, 0, 0);
+  gl.deleteTexture(tex); gl.deleteBuffer(buf); gl.deleteProgram(prog);
+  return true;
+}
+
+// ========== ALL SHADERS ==========
+const SHADERS = {
+  'Hue/Saturation': {
+    cat: 'Color', params: [{name:'Hue',key:'u_hue',min:-180,max:180,def:0},{name:'Saturation',key:'u_sat',min:-100,max:100,def:0},{name:'Lightness',key:'u_lit',min:-100,max:100,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_hue;uniform float u_sat;uniform float u_lit;varying vec2 v_uv;
+vec3 rgb2hsl(vec3 c){float mx=max(max(c.r,c.g),c.b),mn=min(min(c.r,c.g),c.b);float h=0.,s=0.,l=(mx+mn)/2.;if(mx!=mn){float d=mx-mn;s=l>.5?d/(2.-mx-mn):d/(mx+mn);if(mx==c.r)h=(c.g-c.b)/d+(c.g<c.b?6.:0.);else if(mx==c.g)h=(c.b-c.r)/d+2.;else h=(c.r-c.g)/d+4.;h/=6.;}return vec3(h,s,l);}
+float hue2rgb(float p,float q,float t){if(t<0.)t+=1.;if(t>1.)t-=1.;if(t<1./6.)return p+(q-p)*6.*t;if(t<.5)return q;if(t<2./3.)return p+(q-p)*(2./3.-t)*6.;return p;}
+vec3 hsl2rgb(vec3 c){float h=c.x,s=c.y,l=c.z;if(s==0.)return vec3(l);float q=l<.5?l*(1.+s):l+s-l*s,p=2.*l-q;return vec3(hue2rgb(p,q,h+1./3.),hue2rgb(p,q,h),hue2rgb(p,q,h-1./3.));}
+void main(){vec4 col=texture2D(u_tex,v_uv);vec3 hsl=rgb2hsl(col.rgb);hsl.x=mod(hsl.x+u_hue/360.,1.);hsl.y=clamp(hsl.y+u_sat/100.,0.,1.);hsl.z=clamp(hsl.z+u_lit/100.,0.,1.);gl_FragColor=vec4(hsl2rgb(hsl),col.a);}`
+  },
+  'Gradient Map': {
+    cat: 'Color', params: [{name:'Shadow R',key:'u_sr',min:0,max:255,def:0},{name:'Shadow G',key:'u_sg',min:0,max:255,def:0},{name:'Shadow B',key:'u_sb',min:0,max:255,def:128},{name:'Highlight R',key:'u_hr',min:0,max:255,def:255},{name:'Highlight G',key:'u_hg',min:0,max:255,def:200},{name:'Highlight B',key:'u_hb',min:0,max:255,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_sr,u_sg,u_sb,u_hr,u_hg,u_hb;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));vec3 sh=vec3(u_sr,u_sg,u_sb)/255.,hi=vec3(u_hr,u_hg,u_hb)/255.;gl_FragColor=vec4(mix(sh,hi,l),c.a);}`
+  },
+  'Contrast': {
+    cat: 'Color', params: [{name:'Contrast',key:'u_contrast',min:-100,max:100,def:0},{name:'Brightness',key:'u_bright',min:-100,max:100,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_contrast,u_bright;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float cont=1.+u_contrast/100.;float bri=u_bright/100.;vec3 col=clamp((c.rgb-.5)*cont+.5+bri,0.,1.);gl_FragColor=vec4(col,c.a);}`
+  },
+  'Duotone': {
+    cat: 'Color', params: [{name:'Color1 R',key:'u_c1r',min:0,max:255,def:30},{name:'Color1 G',key:'u_c1g',min:0,max:255,def:0},{name:'Color1 B',key:'u_c1b',min:0,max:255,def:80},{name:'Color2 R',key:'u_c2r',min:0,max:255,def:250},{name:'Color2 G',key:'u_c2g',min:0,max:255,def:180},{name:'Color2 B',key:'u_c2b',min:0,max:255,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_c1r,u_c1g,u_c1b,u_c2r,u_c2g,u_c2b;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));vec3 a=vec3(u_c1r,u_c1g,u_c1b)/255.,b=vec3(u_c2r,u_c2g,u_c2b)/255.;gl_FragColor=vec4(mix(a,b,l),c.a);}`
+  },
+  'EFX RGB Split': {
+    cat: 'Color', params: [{name:'Amount',key:'u_amount',min:0,max:50,def:5},{name:'Angle',key:'u_angle',min:0,max:360,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount,u_angle;varying vec2 v_uv;void main(){float a=radians(u_angle);vec2 d=vec2(cos(a),sin(a))*u_amount/u_res;float r=texture2D(u_tex,v_uv+d).r;float g=texture2D(u_tex,v_uv).g;float b=texture2D(u_tex,v_uv-d).b;float a2=texture2D(u_tex,v_uv).a;gl_FragColor=vec4(r,g,b,a2);}`
+  },
+  'Channel Exposure': {
+    cat: 'Color', params: [{name:'R Exposure',key:'u_re',min:-100,max:100,def:0},{name:'G Exposure',key:'u_ge',min:-100,max:100,def:0},{name:'B Exposure',key:'u_be',min:-100,max:100,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_re,u_ge,u_be;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 col=c.rgb*vec3(pow(2.,u_re/100.),pow(2.,u_ge/100.),pow(2.,u_be/100.));gl_FragColor=vec4(clamp(col,0.,1.),c.a);}`
+  },
+  'Light Sweep': {
+    cat: 'Light', params: [{name:'Angle',key:'u_angle',min:0,max:360,def:45},{name:'Width',key:'u_width',min:0.01,max:1,def:0.2},{name:'Intensity',key:'u_intensity',min:0,max:2,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_angle,u_width,u_intensity;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float a=radians(u_angle);vec2 dir=vec2(cos(a),sin(a));float d=dot(v_uv-.5,dir)+.5;float sweep=smoothstep(.5-u_width,.5,d)*smoothstep(.5+u_width,.5,d);gl_FragColor=vec4(c.rgb+sweep*u_intensity,c.a);}`
+  },
+  'Light Rays': {
+    cat: 'Light', params: [{name:'CX',key:'u_cx',min:0,max:1,def:0.5},{name:'CY',key:'u_cy',min:0,max:1,def:0.5},{name:'Exposure',key:'u_exp',min:0,max:2,def:0.5},{name:'Decay',key:'u_decay',min:0.8,max:1,def:0.96},{name:'Density',key:'u_density',min:0.1,max:1,def:0.5},{name:'Weight',key:'u_weight',min:0,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_cx,u_cy,u_exp,u_decay,u_density,u_weight;varying vec2 v_uv;void main(){vec2 tc=v_uv;vec2 delta=(tc-vec2(u_cx,u_cy))*u_density/64.;float illum=1.;vec3 col=vec3(0);for(int i=0;i<64;i++){tc-=delta;col+=texture2D(u_tex,tc).rgb*illum*u_weight;illum*=u_decay;}col*=u_exp;col=col+texture2D(u_tex,v_uv).rgb;gl_FragColor=vec4(clamp(col,0.,1.),1.);}`
+  },
+  'CMYK Halftone Dots': {
+    cat: 'Texture', params: [{name:'Dot Size',key:'u_size',min:1,max:20,def:6},{name:'Angle',key:'u_angle',min:0,max:90,def:45}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_size,u_angle;varying vec2 v_uv;void main(){vec2 uv=v_uv*u_res;float a=radians(u_angle);mat2 rot=mat2(cos(a),-sin(a),sin(a),cos(a));vec2 g=rot*uv;vec2 cell=floor(g/u_size);vec2 cp=(cell+.5)*u_size;vec2 bp=inverse(rot)*cp/u_res;vec4 sc=texture2D(u_tex,clamp(bp,0.,1.));float d=dot(sc.rgb,vec3(.299,.587,.114));float r=length(g-cell*u_size-vec2(u_size*.5))/u_size;float dot=step(r,d*.5+.01);gl_FragColor=vec4(dot*sc.rgb,1.);}`
+  },
+  'Channel Mixer': {
+    cat: 'Color', params: [{name:'RR',key:'u_rr',min:-200,max:200,def:100},{name:'RG',key:'u_rg',min:-200,max:200,def:0},{name:'RB',key:'u_rb',min:-200,max:200,def:0},{name:'GR',key:'u_gr',min:-200,max:200,def:0},{name:'GG',key:'u_gg',min:-200,max:200,def:100},{name:'GB',key:'u_gb',min:-200,max:200,def:0},{name:'BR',key:'u_br',min:-200,max:200,def:0},{name:'BG',key:'u_bg',min:-200,max:200,def:0},{name:'BB',key:'u_bb',min:-200,max:200,def:100}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_rr,u_rg,u_rb,u_gr,u_gg,u_gb,u_br,u_bg,u_bb;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 col;col.r=clamp(c.r*u_rr/100.+c.g*u_rg/100.+c.b*u_rb/100.,0.,1.);col.g=clamp(c.r*u_gr/100.+c.g*u_gg/100.+c.b*u_gb/100.,0.,1.);col.b=clamp(c.r*u_br/100.+c.g*u_bg/100.+c.b*u_bb/100.,0.,1.);gl_FragColor=vec4(col,c.a);}`
+  },
+  'Tritone': {
+    cat: 'Color', params: [{name:'Dark R',key:'u_dr',min:0,max:255,def:0},{name:'Dark G',key:'u_dg',min:0,max:255,def:0},{name:'Dark B',key:'u_db',min:0,max:255,def:80},{name:'Mid R',key:'u_mr',min:0,max:255,def:100},{name:'Mid G',key:'u_mg',min:0,max:255,def:0},{name:'Mid B',key:'u_mb',min:0,max:255,def:120},{name:'Hi R',key:'u_lr',min:0,max:255,def:255},{name:'Hi G',key:'u_lg',min:0,max:255,def:220},{name:'Hi B',key:'u_lb',min:0,max:255,def:180}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_dr,u_dg,u_db,u_mr,u_mg,u_mb,u_lr,u_lg,u_lb;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));vec3 dark=vec3(u_dr,u_dg,u_db)/255.,mid=vec3(u_mr,u_mg,u_mb)/255.,hi=vec3(u_lr,u_lg,u_lb)/255.;vec3 col=l<.5?mix(dark,mid,l*2.):mix(mid,hi,(l-.5)*2.);gl_FragColor=vec4(col,c.a);}`
+  },
+  'Quadtone': {
+    cat: 'Color', params: [{name:'C1 R',key:'u_c1r',min:0,max:255,def:0},{name:'C1 G',key:'u_c1g',min:0,max:255,def:0},{name:'C1 B',key:'u_c1b',min:0,max:255,def:0},{name:'C2 R',key:'u_c2r',min:0,max:255,def:80},{name:'C2 G',key:'u_c2g',min:0,max:255,def:0},{name:'C2 B',key:'u_c2b',min:0,max:255,def:120},{name:'C3 R',key:'u_c3r',min:0,max:255,def:200},{name:'C3 G',key:'u_c3g',min:0,max:255,def:100},{name:'C3 B',key:'u_c3b',min:0,max:255,def:50},{name:'C4 R',key:'u_c4r',min:0,max:255,def:255},{name:'C4 G',key:'u_c4g',min:0,max:255,def:255},{name:'C4 B',key:'u_c4b',min:0,max:255,def:200}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_c1r,u_c1g,u_c1b,u_c2r,u_c2g,u_c2b,u_c3r,u_c3g,u_c3b,u_c4r,u_c4g,u_c4b;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));vec3 c1=vec3(u_c1r,u_c1g,u_c1b)/255.,c2=vec3(u_c2r,u_c2g,u_c2b)/255.,c3=vec3(u_c3r,u_c3g,u_c3b)/255.,c4=vec3(u_c4r,u_c4g,u_c4b)/255.;vec3 col;if(l<.33)col=mix(c1,c2,l*3.);else if(l<.66)col=mix(c2,c3,(l-.33)*3.);else col=mix(c3,c4,(l-.66)*3.);gl_FragColor=vec4(col,c.a);}`
+  },
+  'Arithmetic Color': {
+    cat: 'Color', params: [{name:'Scale R',key:'u_sr',min:0,max:4,def:1},{name:'Scale G',key:'u_sg',min:0,max:4,def:1},{name:'Scale B',key:'u_sb',min:0,max:4,def:1},{name:'Offset',key:'u_off',min:-1,max:1,def:0},{name:'Gamma',key:'u_gamma',min:0.1,max:4,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_sr,u_sg,u_sb,u_off,u_gamma;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 col=c.rgb*vec3(u_sr,u_sg,u_sb)+u_off;col=pow(clamp(col,0.,1.),vec3(1./u_gamma));gl_FragColor=vec4(col,c.a);}`
+  },
+  'ZebrafyColor': {
+    cat: 'Color', params: [{name:'Threshold',key:'u_thresh',min:0,max:1,def:0.9},{name:'Bandwidth',key:'u_band',min:0.01,max:0.3,def:0.05}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_thresh,u_band;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));float z=step(u_thresh,l)*step(mod(v_uv.y*50.,1.),.5);gl_FragColor=z>0.?vec4(1.,0.,0.,1.):c;}`
+  },
+  'Color Curves': {
+    cat: 'Color', params: [{name:'R Gamma',key:'u_rg',min:0.1,max:4,def:1},{name:'G Gamma',key:'u_gg',min:0.1,max:4,def:1},{name:'B Gamma',key:'u_bg',min:0.1,max:4,def:1},{name:'R In Min',key:'u_rmin',min:0,max:1,def:0},{name:'R In Max',key:'u_rmax',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_rg,u_gg,u_bg,u_rmin,u_rmax;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 col=c.rgb;col.r=(col.r-u_rmin)/(u_rmax-u_rmin+.001);col=clamp(col,0.,1.);col=pow(col,vec3(1./u_rg,1./u_gg,1./u_bg));gl_FragColor=vec4(col,c.a);}`
+  },
+  'Color Lookup Table': {
+    cat: 'Color', params: [{name:'Lut Offset',key:'u_lut',min:0,max:1,def:0},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_lut,u_mix;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));vec3 mapped=vec3(l+u_lut*sin(l*6.28),l+u_lut*cos(l*6.28),l);gl_FragColor=vec4(mix(c.rgb,clamp(mapped,0.,1.),u_mix),c.a);}`
+  },
+  'Invert': {
+    cat: 'Color', params: [{name:'Amount',key:'u_amount',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 inv=1.-c.rgb;gl_FragColor=vec4(mix(c.rgb,inv,u_amount),c.a);}`
+  },
+  'Heatmap': {
+    cat: 'Color', params: [{name:'Intensity',key:'u_int',min:0,max:2,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_int;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114))*u_int;vec3 col;if(l<.25)col=mix(vec3(0.,0.,.5),vec3(0.,1.,1.),l*4.);else if(l<.5)col=mix(vec3(0.,1.,1.),vec3(0.,1.,0.),(l-.25)*4.);else if(l<.75)col=mix(vec3(0.,1.,0.),vec3(1.,1.,0.),(l-.5)*4.);else col=mix(vec3(1.,1.,0.),vec3(1.,0.,0.),(l-.75)*4.);gl_FragColor=vec4(clamp(col,0.,1.),c.a);}`
+  },
+  'Kaleido': {
+    cat: 'Distort', params: [{name:'Segments',key:'u_segs',min:2,max:32,def:6},{name:'CX',key:'u_cx',min:0,max:1,def:0.5},{name:'CY',key:'u_cy',min:0,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_segs,u_cx,u_cy;varying vec2 v_uv;void main(){vec2 uv=v_uv-vec2(u_cx,u_cy);float angle=atan(uv.y,uv.x);float seg=3.14159*2./u_segs;angle=mod(angle,seg);if(angle>seg/2.)angle=seg-angle;vec2 nuv=vec2(cos(angle),sin(angle))*length(uv)+vec2(u_cx,u_cy);gl_FragColor=texture2D(u_tex,clamp(nuv,0.,1.));}`
+  },
+  'Displace': {
+    cat: 'Distort', params: [{name:'Amount X',key:'u_ax',min:-0.5,max:0.5,def:0.05},{name:'Amount Y',key:'u_ay',min:-0.5,max:0.5,def:0.05},{name:'Frequency',key:'u_freq',min:1,max:50,def:10}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_ax,u_ay,u_freq;varying vec2 v_uv;void main(){float dx=sin(v_uv.y*u_freq)*u_ax;float dy=cos(v_uv.x*u_freq)*u_ay;gl_FragColor=texture2D(u_tex,clamp(v_uv+vec2(dx,dy),0.,1.));}`
+  },
+  'Melt': {
+    cat: 'Distort', params: [{name:'Amount',key:'u_amount',min:0,max:0.2,def:0.05},{name:'Frequency',key:'u_freq',min:1,max:20,def:5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount,u_freq;varying vec2 v_uv;void main(){float d=sin(v_uv.x*u_freq*6.28)*u_amount*(1.-v_uv.y);gl_FragColor=texture2D(u_tex,clamp(vec2(v_uv.x,v_uv.y+d),0.,1.));}`
+  },
+  'Shear': {
+    cat: 'Distort', params: [{name:'Shear X',key:'u_sx',min:-1,max:1,def:0},{name:'Shear Y',key:'u_sy',min:-1,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_sx,u_sy;varying vec2 v_uv;void main(){vec2 uv=v_uv+vec2(u_sx*(v_uv.y-.5),u_sy*(v_uv.x-.5));gl_FragColor=texture2D(u_tex,clamp(uv,0.,1.));}`
+  },
+  'Wave': {
+    cat: 'Distort', params: [{name:'Amplitude X',key:'u_ax',min:0,max:0.2,def:0.05},{name:'Amplitude Y',key:'u_ay',min:0,max:0.2,def:0.05},{name:'Frequency X',key:'u_fx',min:1,max:50,def:10},{name:'Frequency Y',key:'u_fy',min:1,max:50,def:10}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_ax,u_ay,u_fx,u_fy;varying vec2 v_uv;void main(){float dx=sin(v_uv.y*u_fx)*u_ax;float dy=sin(v_uv.x*u_fy)*u_ay;gl_FragColor=texture2D(u_tex,clamp(v_uv+vec2(dx,dy),0.,1.));}`
+  },
+  'CC Lens': {
+    cat: 'Distort', params: [{name:'Strength',key:'u_str',min:-2,max:2,def:0.5},{name:'CX',key:'u_cx',min:0,max:1,def:0.5},{name:'CY',key:'u_cy',min:0,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_str,u_cx,u_cy;varying vec2 v_uv;void main(){vec2 uv=v_uv-vec2(u_cx,u_cy);float r=length(uv);float f=1.+u_str*r*r;vec2 nuv=uv/f+vec2(u_cx,u_cy);gl_FragColor=texture2D(u_tex,clamp(nuv,0.,1.));}`
+  },
+  'Optics Compensation': {
+    cat: 'Distort', params: [{name:'FOV',key:'u_fov',min:0,max:200,def:60},{name:'Reverse',key:'u_rev',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_fov,u_rev;varying vec2 v_uv;void main(){vec2 uv=v_uv*2.-1.;float r=length(uv);float f=tan(r*radians(u_fov)/2.)/(r+.0001);if(u_rev>0.5)f=1./f;vec2 nuv=(uv*f+1.)/2.;gl_FragColor=texture2D(u_tex,clamp(nuv,0.,1.));}`
+  },
+  'Smear': {
+    cat: 'Distort', params: [{name:'Amount',key:'u_amount',min:0,max:0.5,def:0.1},{name:'Direction',key:'u_dir',min:0,max:360,def:0},{name:'Samples',key:'u_samples',min:2,max:32,def:16}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount,u_dir,u_samples;varying vec2 v_uv;void main(){float a=radians(u_dir);vec2 d=vec2(cos(a),sin(a))*u_amount/u_samples;vec4 col=vec4(0);float n=u_samples;for(float i=0.;i<32.;i++){if(i>=n)break;col+=texture2D(u_tex,clamp(v_uv+d*i,0.,1.));}gl_FragColor=col/n;}`
+  },
+  'Mirror': {
+    cat: 'Distort', params: [{name:'Axis',key:'u_axis',min:0,max:1,def:0},{name:'Position',key:'u_pos',min:0,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_axis,u_pos;varying vec2 v_uv;void main(){vec2 uv=v_uv;if(u_axis<.5){if(uv.x>u_pos)uv.x=2.*u_pos-uv.x;}else{if(uv.y>u_pos)uv.y=2.*u_pos-uv.y;}gl_FragColor=texture2D(u_tex,clamp(uv,0.,1.));}`
+  },
+  'Flo Motion': {
+    cat: 'Distort', params: [{name:'Magnitude',key:'u_mag',min:0,max:0.2,def:0.05},{name:'Frequency',key:'u_freq',min:1,max:20,def:5},{name:'Phase',key:'u_phase',min:0,max:6.28,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_mag,u_freq,u_phase;varying vec2 v_uv;void main(){float dx=sin(v_uv.y*u_freq+u_phase)*u_mag;float dy=cos(v_uv.x*u_freq+u_phase)*u_mag;gl_FragColor=texture2D(u_tex,clamp(v_uv+vec2(dx,dy),0.,1.));}`
+  },
+  'Dual Pinch': {
+    cat: 'Distort', params: [{name:'Pinch1 X',key:'u_p1x',min:0,max:1,def:0.3},{name:'Pinch1 Y',key:'u_p1y',min:0,max:1,def:0.5},{name:'Pinch2 X',key:'u_p2x',min:0,max:1,def:0.7},{name:'Pinch2 Y',key:'u_p2y',min:0,max:1,def:0.5},{name:'Strength',key:'u_str',min:-2,max:2,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_p1x,u_p1y,u_p2x,u_p2y,u_str;varying vec2 v_uv;void main(){vec2 uv=v_uv;vec2 p1=vec2(u_p1x,u_p1y),p2=vec2(u_p2x,u_p2y);float r1=length(uv-p1);float r2=length(uv-p2);uv+=(p1-uv)*u_str*.1/(r1*r1+.001);uv+=(p2-uv)*u_str*.1/(r2*r2+.001);gl_FragColor=texture2D(u_tex,clamp(uv,0.,1.));}`
+  },
+  'VR360 Transform': {
+    cat: 'Distort', params: [{name:'Longitude',key:'u_lon',min:-180,max:180,def:0},{name:'Latitude',key:'u_lat',min:-90,max:90,def:0},{name:'FOV',key:'u_fov',min:30,max:180,def:90}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_lon,u_lat,u_fov;varying vec2 v_uv;void main(){vec2 uv=v_uv;float f=tan(radians(u_fov/2.));vec2 d=(uv-.5)*2.*f;float theta=atan(d.x)+radians(u_lon);float phi=atan(d.y/sqrt(d.x*d.x+1.))+radians(u_lat);vec2 equi=vec2(theta/(2.*3.14159)+.5,phi/3.14159+.5);gl_FragColor=texture2D(u_tex,clamp(equi,0.,1.));}`
+  },
+  'Warp Perspective': {
+    cat: 'Distort', params: [{name:'TL X',key:'u_tlx',min:-0.3,max:0.3,def:0},{name:'TL Y',key:'u_tly',min:-0.3,max:0.3,def:0},{name:'TR X',key:'u_trx',min:-0.3,max:0.3,def:0},{name:'TR Y',key:'u_try',min:-0.3,max:0.3,def:0},{name:'BL X',key:'u_blx',min:-0.3,max:0.3,def:0},{name:'BL Y',key:'u_bly',min:-0.3,max:0.3,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_tlx,u_tly,u_trx,u_try,u_blx,u_bly;varying vec2 v_uv;void main(){vec2 uv=v_uv;float mx=mix(u_tlx,u_trx,uv.x);float my=mix(u_tly,u_bly,uv.y);uv+=vec2(mx,my)*uv.y*(1.-uv.y);gl_FragColor=texture2D(u_tex,clamp(uv,0.,1.));}`
+  },
+  'Swirl': {
+    cat: 'Distort', params: [{name:'Angle',key:'u_angle',min:-720,max:720,def:90},{name:'Radius',key:'u_radius',min:0.1,max:1,def:0.5},{name:'CX',key:'u_cx',min:0,max:1,def:0.5},{name:'CY',key:'u_cy',min:0,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_angle,u_radius,u_cx,u_cy;varying vec2 v_uv;void main(){vec2 uv=v_uv-vec2(u_cx,u_cy);float r=length(uv);float a=atan(uv.y,uv.x);float sw=radians(u_angle)*max(0.,1.-r/u_radius);a+=sw;vec2 nuv=vec2(cos(a),sin(a))*r+vec2(u_cx,u_cy);gl_FragColor=texture2D(u_tex,clamp(nuv,0.,1.));}`
+  },
+  'ZigZag': {
+    cat: 'Distort', params: [{name:'Amplitude',key:'u_amp',min:0,max:0.2,def:0.05},{name:'Frequency',key:'u_freq',min:1,max:40,def:10},{name:'Phase',key:'u_phase',min:0,max:6.28,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amp,u_freq,u_phase;varying vec2 v_uv;void main(){float d=u_amp*sin(v_uv.y*u_freq*6.28+u_phase);gl_FragColor=texture2D(u_tex,clamp(vec2(v_uv.x+d,v_uv.y),0.,1.));}`
+  },
+  'Polar Coordinates': {
+    cat: 'Distort', params: [{name:'Rect to Polar',key:'u_mode',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_mode;varying vec2 v_uv;void main(){vec2 uv;if(u_mode<.5){float r=v_uv.y;float a=v_uv.x*3.14159*2.-3.14159;uv=vec2(cos(a)*r+.5,sin(a)*r+.5);}else{vec2 p=v_uv-.5;float r=length(p);float a=(atan(p.y,p.x)+3.14159)/(3.14159*2.);uv=vec2(a,r);}gl_FragColor=texture2D(u_tex,clamp(uv,0.,1.));}`
+  },
+  'Gaussian Blur': {
+    cat: 'Blur', params: [{name:'Radius',key:'u_radius',min:0,max:20,def:3}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_radius;varying vec2 v_uv;void main(){vec4 col=vec4(0);float total=0.;for(float i=-10.;i<=10.;i++){for(float j=-10.;j<=10.;j++){if(abs(i)>u_radius||abs(j)>u_radius)continue;float w=exp(-(i*i+j*j)/(2.*u_radius*u_radius+.001));col+=texture2D(u_tex,v_uv+vec2(i,j)/u_res)*w;total+=w;}}gl_FragColor=col/total;}`
+  },
+  'Box Blur': {
+    cat: 'Blur', params: [{name:'Radius',key:'u_radius',min:1,max:20,def:3}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_radius;varying vec2 v_uv;void main(){vec4 col=vec4(0);float n=0.;for(float i=-10.;i<=10.;i++){for(float j=-10.;j<=10.;j++){if(abs(i)>u_radius||abs(j)>u_radius)continue;col+=texture2D(u_tex,v_uv+vec2(i,j)/u_res);n+=1.;}}gl_FragColor=col/n;}`
+  },
+  'Linear Blur': {
+    cat: 'Blur', params: [{name:'Amount',key:'u_amount',min:0,max:0.1,def:0.02},{name:'Angle',key:'u_angle',min:0,max:360,def:0},{name:'Samples',key:'u_samples',min:2,max:32,def:16}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount,u_angle,u_samples;varying vec2 v_uv;void main(){float a=radians(u_angle);vec2 d=vec2(cos(a),sin(a))*u_amount/u_samples;vec4 col=vec4(0);float n=u_samples;for(float i=0.;i<32.;i++){if(i>=n)break;col+=texture2D(u_tex,clamp(v_uv+d*(i-n/2.),0.,1.));}gl_FragColor=col/n;}`
+  },
+  'Radial Blur': {
+    cat: 'Blur', params: [{name:'Amount',key:'u_amount',min:0,max:0.1,def:0.02},{name:'CX',key:'u_cx',min:0,max:1,def:0.5},{name:'CY',key:'u_cy',min:0,max:1,def:0.5},{name:'Samples',key:'u_samples',min:2,max:32,def:16}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount,u_cx,u_cy,u_samples;varying vec2 v_uv;void main(){vec2 c=vec2(u_cx,u_cy);vec2 dir=(v_uv-c);vec4 col=vec4(0);float n=u_samples;for(float i=0.;i<32.;i++){if(i>=n)break;col+=texture2D(u_tex,clamp(v_uv+dir*u_amount*(i/n-.5),0.,1.));}gl_FragColor=col/n;}`
+  },
+  'Motion Blur': {
+    cat: 'Blur', params: [{name:'Amount',key:'u_amount',min:0,max:0.2,def:0.05},{name:'Angle',key:'u_angle',min:0,max:360,def:0},{name:'Samples',key:'u_samples',min:2,max:32,def:16}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount,u_angle,u_samples;varying vec2 v_uv;void main(){float a=radians(u_angle);vec2 dir=vec2(cos(a),sin(a))*u_amount;vec4 col=vec4(0);float n=u_samples;for(float i=0.;i<32.;i++){if(i>=n)break;col+=texture2D(u_tex,clamp(v_uv+dir*(i/n),0.,1.));}gl_FragColor=col/n;}`
+  },
+  'Sharpen': {
+    cat: 'Sharpen', params: [{name:'Amount',key:'u_amount',min:0,max:5,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_amount;varying vec2 v_uv;void main(){vec2 t=1./u_res;vec4 c=texture2D(u_tex,v_uv);vec4 n=texture2D(u_tex,v_uv+vec2(0,t.y));vec4 s=texture2D(u_tex,v_uv-vec2(0,t.y));vec4 e=texture2D(u_tex,v_uv+vec2(t.x,0));vec4 w=texture2D(u_tex,v_uv-vec2(t.x,0));vec4 sharp=c*(1.+4.*u_amount)-(n+s+e+w)*u_amount;gl_FragColor=clamp(sharp,0.,1.);}`
+  },
+  'Unsharp Mask': {
+    cat: 'Sharpen', params: [{name:'Radius',key:'u_radius',min:1,max:10,def:2},{name:'Amount',key:'u_amount',min:0,max:3,def:1},{name:'Threshold',key:'u_thresh',min:0,max:0.5,def:0.02}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_radius,u_amount,u_thresh;varying vec2 v_uv;void main(){vec4 col=vec4(0);float total=0.;for(float i=-5.;i<=5.;i++){for(float j=-5.;j<=5.;j++){if(abs(i)>u_radius||abs(j)>u_radius)continue;float w=exp(-(i*i+j*j)/(2.*u_radius*u_radius));col+=texture2D(u_tex,v_uv+vec2(i,j)/u_res)*w;total+=w;}}vec4 blur=col/total;vec4 orig=texture2D(u_tex,v_uv);vec4 diff=orig-blur;if(length(diff.rgb)>u_thresh)gl_FragColor=clamp(orig+diff*u_amount,0.,1.);else gl_FragColor=orig;}`
+  },
+  'Edge Detection': {
+    cat: 'Sharpen', params: [{name:'Threshold',key:'u_thresh',min:0,max:1,def:0.1},{name:'Invert',key:'u_inv',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_thresh,u_inv;varying vec2 v_uv;void main(){vec2 t=1./u_res;float gx=-texture2D(u_tex,v_uv+vec2(-t.x,-t.y)).r-2.*texture2D(u_tex,v_uv+vec2(-t.x,0)).r-texture2D(u_tex,v_uv+vec2(-t.x,t.y)).r+texture2D(u_tex,v_uv+vec2(t.x,-t.y)).r+2.*texture2D(u_tex,v_uv+vec2(t.x,0)).r+texture2D(u_tex,v_uv+vec2(t.x,t.y)).r;float gy=-texture2D(u_tex,v_uv+vec2(-t.x,-t.y)).r-2.*texture2D(u_tex,v_uv+vec2(0,-t.y)).r-texture2D(u_tex,v_uv+vec2(t.x,-t.y)).r+texture2D(u_tex,v_uv+vec2(-t.x,t.y)).r+2.*texture2D(u_tex,v_uv+vec2(0,t.y)).r+texture2D(u_tex,v_uv+vec2(t.x,t.y)).r;float edge=length(vec2(gx,gy));float e=step(u_thresh,edge);if(u_inv>.5)e=1.-e;gl_FragColor=vec4(vec3(e),1.);}`
+  },
+  'Convolve Kernel': {
+    cat: 'Sharpen', params: [{name:'K00',key:'u_k00',min:-5,max:5,def:0},{name:'K01',key:'u_k01',min:-5,max:5,def:-1},{name:'K02',key:'u_k02',min:-5,max:5,def:0},{name:'K10',key:'u_k10',min:-5,max:5,def:-1},{name:'K11',key:'u_k11',min:-5,max:5,def:5},{name:'K12',key:'u_k12',min:-5,max:5,def:-1},{name:'K20',key:'u_k20',min:-5,max:5,def:0},{name:'K21',key:'u_k21',min:-5,max:5,def:-1},{name:'K22',key:'u_k22',min:-5,max:5,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_k00,u_k01,u_k02,u_k10,u_k11,u_k12,u_k20,u_k21,u_k22;varying vec2 v_uv;void main(){vec2 t=1./u_res;vec4 col=texture2D(u_tex,v_uv+vec2(-t.x,-t.y))*u_k00+texture2D(u_tex,v_uv+vec2(0,-t.y))*u_k01+texture2D(u_tex,v_uv+vec2(t.x,-t.y))*u_k02+texture2D(u_tex,v_uv+vec2(-t.x,0))*u_k10+texture2D(u_tex,v_uv)*u_k11+texture2D(u_tex,v_uv+vec2(t.x,0))*u_k12+texture2D(u_tex,v_uv+vec2(-t.x,t.y))*u_k20+texture2D(u_tex,v_uv+vec2(0,t.y))*u_k21+texture2D(u_tex,v_uv+vec2(t.x,t.y))*u_k22;gl_FragColor=clamp(col,0.,1.);}`
+  },
+  'Flower Kaleida': {
+    cat: 'Generate', params: [{name:'Petals',key:'u_petals',min:2,max:20,def:6},{name:'Scale',key:'u_scale',min:0.1,max:5,def:1},{name:'Rotation',key:'u_rot',min:0,max:6.28,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_petals,u_scale,u_rot;varying vec2 v_uv;void main(){vec2 uv=(v_uv-.5)*u_scale;float a=atan(uv.y,uv.x)+u_rot;float seg=3.14159*2./u_petals;a=mod(a,seg);if(a>seg/2.)a=seg-a;vec2 nuv=vec2(cos(a),sin(a))*length(uv)*u_res.x/u_res.y;nuv=nuv/u_scale+.5;gl_FragColor=texture2D(u_tex,clamp(nuv,0.,1.));}`
+  },
+  'Halftone': {
+    cat: 'Texture', params: [{name:'Dot Size',key:'u_size',min:2,max:30,def:8},{name:'Angle',key:'u_angle',min:0,max:90,def:45},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_size,u_angle,u_mix;varying vec2 v_uv;void main(){float a=radians(u_angle);mat2 rot=mat2(cos(a),-sin(a),sin(a),cos(a));vec2 uv=v_uv*u_res;vec2 g=rot*uv;vec2 cell=floor(g/u_size);vec2 center=cell*u_size+u_size*.5;vec2 bp=mat2(cos(-a),-sin(-a),sin(-a),cos(-a))*center/u_res;vec4 sc=texture2D(u_tex,clamp(bp,0.,1.));float l=dot(sc.rgb,vec3(.299,.587,.114));float r=length(g-cell*u_size-u_size*.5)/u_size;float ht=step(r,l*.48+.01);gl_FragColor=mix(texture2D(u_tex,v_uv),vec4(ht*sc.rgb,1.),u_mix);}`
+  },
+  'Hexagon Mosaic': {
+    cat: 'Texture', params: [{name:'Size',key:'u_size',min:4,max:80,def:20}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_size;varying vec2 v_uv;void main(){vec2 uv=v_uv*u_res;float h=u_size*sqrt(3.)/2.;float row=floor(uv.y/h);float col=floor(uv.x/u_size+(mod(row,2.)==0.?0.:.5));vec2 center;if(mod(row,2.)==0.)center=vec2((col+.5)*u_size,row*h+h/2.);else center=vec2(col*u_size,row*h+h/2.);gl_FragColor=texture2D(u_tex,center/u_res);}`
+  },
+  'Motion Tile': {
+    cat: 'Texture', params: [{name:'Tiles X',key:'u_tx',min:1,max:16,def:4},{name:'Tiles Y',key:'u_ty',min:1,max:16,def:4},{name:'Offset X',key:'u_ox',min:0,max:1,def:0},{name:'Offset Y',key:'u_oy',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_tx,u_ty,u_ox,u_oy;varying vec2 v_uv;void main(){vec2 uv=mod(v_uv*vec2(u_tx,u_ty)+vec2(u_ox,u_oy),1.);gl_FragColor=texture2D(u_tex,uv);}`
+  },
+  'CC Tiler': {
+    cat: 'Texture', params: [{name:'Scale',key:'u_scale',min:0.1,max:8,def:2},{name:'Rotate Tile',key:'u_rot',min:0,max:360,def:0},{name:'Mirror',key:'u_mirror',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_scale,u_rot,u_mirror;varying vec2 v_uv;void main(){float a=radians(u_rot);mat2 rot=mat2(cos(a),-sin(a),sin(a),cos(a));vec2 uv=mod(rot*(v_uv-.5)*u_scale+.5,1.);if(u_mirror>.5){if(mod(floor((v_uv.x-.5)*u_scale),2.)==1.)uv.x=1.-uv.x;if(mod(floor((v_uv.y-.5)*u_scale),2.)==1.)uv.y=1.-uv.y;}gl_FragColor=texture2D(u_tex,uv);}`
+  },
+  'Etching': {
+    cat: 'Texture', params: [{name:'Strength',key:'u_str',min:0,max:20,def:5},{name:'Angle',key:'u_angle',min:0,max:180,def:45}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_str,u_angle;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=dot(c.rgb,vec3(.299,.587,.114));float a=radians(u_angle);vec2 dir=vec2(cos(a),sin(a));float line=sin((v_uv.x*dir.x+v_uv.y*dir.y)*u_str*100.);float etch=step(l*2.-1.,line);gl_FragColor=vec4(vec3(etch),c.a);}`
+  },
+  'Fourier Transform': {
+    cat: 'Generate', params: [{name:'Frequency',key:'u_freq',min:1,max:50,def:10},{name:'Phase',key:'u_phase',min:0,max:6.28,def:0},{name:'Mix',key:'u_mix',min:0,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_freq,u_phase,u_mix;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float wave=.5+.5*sin(v_uv.x*u_freq*6.28+u_phase)*cos(v_uv.y*u_freq*6.28+u_phase);gl_FragColor=mix(c,vec4(vec3(wave),1.),u_mix);}`
+  },
+  'Clouds': {
+    cat: 'Generate', params: [{name:'Scale',key:'u_scale',min:1,max:20,def:5},{name:'Octaves',key:'u_oct',min:1,max:6,def:4},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_scale,u_oct,u_mix;varying vec2 v_uv;float rand(vec2 n){return fract(sin(dot(n,vec2(12.9898,4.1414)))*43758.5453);}float noise(vec2 p){vec2 ip=floor(p);vec2 u=fract(p);u=u*u*(3.-2.*u);float a=rand(ip);float b=rand(ip+vec2(1,0));float c=rand(ip+vec2(0,1));float d=rand(ip+vec2(1,1));return mix(mix(a,b,u.x),mix(c,d,u.x),u.y);}void main(){vec4 c=texture2D(u_tex,v_uv);float n=0.,s=1.,w=0.;for(float i=0.;i<6.;i++){if(i>=u_oct)break;n+=noise(v_uv*u_scale*s)*(1./s);w+=1./s;s*=2.;}n/=w;gl_FragColor=mix(c,vec4(vec3(n),1.),u_mix);}`
+  },
+  'Checkerboard': {
+    cat: 'Generate', params: [{name:'Size',key:'u_size',min:4,max:100,def:20},{name:'Mix',key:'u_mix',min:0,max:1,def:1},{name:'Color1 R',key:'u_c1r',min:0,max:1,def:1},{name:'Color2 R',key:'u_c2r',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_size,u_mix,u_c1r,u_c2r;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 g=floor(v_uv*u_res/u_size);float ch=mod(g.x+g.y,2.);vec3 col=mix(vec3(u_c2r),vec3(u_c1r),ch);gl_FragColor=mix(c,vec4(col,1.),u_mix);}`
+  },
+  '4-Point Color Gradient': {
+    cat: 'Generate', params: [{name:'TL R',key:'u_tlr',min:0,max:1,def:1},{name:'TL G',key:'u_tlg',min:0,max:1,def:0},{name:'TL B',key:'u_tlb',min:0,max:1,def:0},{name:'TR R',key:'u_trr',min:0,max:1,def:0},{name:'TR G',key:'u_trg',min:0,max:1,def:1},{name:'TR B',key:'u_trb',min:0,max:1,def:0},{name:'BL R',key:'u_blr',min:0,max:1,def:0},{name:'BL G',key:'u_blg',min:0,max:1,def:0},{name:'BL B',key:'u_blb',min:0,max:1,def:1},{name:'BR R',key:'u_brr',min:0,max:1,def:1},{name:'BR G',key:'u_brg',min:0,max:1,def:1},{name:'BR B',key:'u_brb',min:0,max:1,def:0},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_tlr,u_tlg,u_tlb,u_trr,u_trg,u_trb,u_blr,u_blg,u_blb,u_brr,u_brg,u_brb,u_mix;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec3 tl=vec3(u_tlr,u_tlg,u_tlb),tr=vec3(u_trr,u_trg,u_trb),bl=vec3(u_blr,u_blg,u_blb),br=vec3(u_brr,u_brg,u_brb);vec3 top=mix(tl,tr,v_uv.x);vec3 bot=mix(bl,br,v_uv.x);vec3 col=mix(top,bot,v_uv.y);gl_FragColor=mix(c,vec4(col,1.),u_mix);}`
+  },
+  'Linear Gradient': {
+    cat: 'Generate', params: [{name:'Angle',key:'u_angle',min:0,max:360,def:0},{name:'C1 R',key:'u_c1r',min:0,max:1,def:0},{name:'C1 G',key:'u_c1g',min:0,max:1,def:0},{name:'C1 B',key:'u_c1b',min:0,max:1,def:0},{name:'C2 R',key:'u_c2r',min:0,max:1,def:1},{name:'C2 G',key:'u_c2g',min:0,max:1,def:1},{name:'C2 B',key:'u_c2b',min:0,max:1,def:1},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_angle,u_c1r,u_c1g,u_c1b,u_c2r,u_c2g,u_c2b,u_mix;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float a=radians(u_angle);vec2 dir=vec2(cos(a),sin(a));float t=dot(v_uv-.5,dir)+.5;t=clamp(t,0.,1.);vec3 col=mix(vec3(u_c1r,u_c1g,u_c1b),vec3(u_c2r,u_c2g,u_c2b),t);gl_FragColor=mix(c,vec4(col,1.),u_mix);}`
+  },
+  'Radial Gradient': {
+    cat: 'Generate', params: [{name:'CX',key:'u_cx',min:0,max:1,def:0.5},{name:'CY',key:'u_cy',min:0,max:1,def:0.5},{name:'Radius',key:'u_radius',min:0.1,max:2,def:0.5},{name:'C1 R',key:'u_c1r',min:0,max:1,def:1},{name:'C1 G',key:'u_c1g',min:0,max:1,def:1},{name:'C1 B',key:'u_c1b',min:0,max:1,def:1},{name:'C2 R',key:'u_c2r',min:0,max:1,def:0},{name:'C2 G',key:'u_c2g',min:0,max:1,def:0},{name:'C2 B',key:'u_c2b',min:0,max:1,def:0},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_cx,u_cy,u_radius,u_c1r,u_c1g,u_c1b,u_c2r,u_c2g,u_c2b,u_mix;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float t=clamp(length(v_uv-vec2(u_cx,u_cy))/u_radius,0.,1.);vec3 col=mix(vec3(u_c1r,u_c1g,u_c1b),vec3(u_c2r,u_c2g,u_c2b),t);gl_FragColor=mix(c,vec4(col,1.),u_mix);}`
+  },
+  'RGB to HSV': {
+    cat: 'Color Space', params: [{name:'Visualize',key:'u_vis',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_vis;varying vec2 v_uv;vec3 rgb2hsv(vec3 c){float mx=max(max(c.r,c.g),c.b),mn=min(min(c.r,c.g),c.b);float d=mx-mn;float h=0.,s=mx==0.?0.:d/mx,v=mx;if(d>0.){if(mx==c.r)h=mod((c.g-c.b)/d,6.);else if(mx==c.g)h=(c.b-c.r)/d+2.;else h=(c.r-c.g)/d+4.;h/=6.;}return vec3(h,s,v);}void main(){vec4 c=texture2D(u_tex,v_uv);vec3 hsv=rgb2hsv(c.rgb);gl_FragColor=vec4(hsv,c.a);}`
+  },
+  'HSV to RGB': {
+    cat: 'Color Space', params: [{name:'Hue Shift',key:'u_hs',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_hs;varying vec2 v_uv;vec3 hsv2rgb(vec3 c){float h=c.x*6.,s=c.y,v=c.z;int i=int(floor(h));float f=h-float(i);float p=v*(1.-s),q=v*(1.-s*f),t2=v*(1.-s*(1.-f));if(i==0)return vec3(v,t2,p);if(i==1)return vec3(q,v,p);if(i==2)return vec3(p,v,t2);if(i==3)return vec3(p,q,v);if(i==4)return vec3(t2,p,v);return vec3(v,p,q);}void main(){vec4 c=texture2D(u_tex,v_uv);vec3 hsv=vec3(mod(c.r+u_hs,1.),c.g,c.b);gl_FragColor=vec4(hsv2rgb(hsv),c.a);}`
+  },
+  'YUV to RGB': {
+    cat: 'Color Space', params: [{name:'Y Gain',key:'u_yg',min:0,max:2,def:1},{name:'U Shift',key:'u_us',min:-0.5,max:0.5,def:0},{name:'V Shift',key:'u_vs',min:-0.5,max:0.5,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_yg,u_us,u_vs;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float y=dot(c.rgb,vec3(.299,.587,.114))*u_yg;float u=c.b-y+u_us;float v=c.r-y+u_vs;vec3 rgb=vec3(y+1.13983*v,y-.39465*u-.58060*v,y+2.03211*u);gl_FragColor=vec4(clamp(rgb,0.,1.),c.a);}`
+  },
+  '3D Rotate': {
+    cat: '3D', params: [{name:'Rot X',key:'u_rx',min:-180,max:180,def:0},{name:'Rot Y',key:'u_ry',min:-180,max:180,def:0},{name:'Rot Z',key:'u_rz',min:-180,max:180,def:0},{name:'FOV',key:'u_fov',min:30,max:150,def:60}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_rx,u_ry,u_rz,u_fov;varying vec2 v_uv;mat3 rotX(float a){return mat3(1,0,0,0,cos(a),-sin(a),0,sin(a),cos(a));}mat3 rotY(float a){return mat3(cos(a),0,sin(a),0,1,0,-sin(a),0,cos(a));}mat3 rotZ(float a){return mat3(cos(a),-sin(a),0,sin(a),cos(a),0,0,0,1);}void main(){vec3 d=vec3((v_uv-.5)*2.,1.);d=rotX(radians(u_rx))*rotY(radians(u_ry))*rotZ(radians(u_rz))*d;float f=tan(radians(u_fov/2.));vec2 uv=d.xy/(d.z*f)*.5+.5;if(uv.x<0.||uv.x>1.||uv.y<0.||uv.y>1.)gl_FragColor=vec4(0);else gl_FragColor=texture2D(u_tex,uv);}`
+  },
+  'Cube': {
+    cat: '3D', params: [{name:'Rot Y',key:'u_ry',min:-180,max:180,def:30},{name:'Rot X',key:'u_rx',min:-90,max:90,def:20},{name:'Size',key:'u_size',min:0.1,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_ry,u_rx,u_size;varying vec2 v_uv;void main(){vec4 bg=texture2D(u_tex,v_uv);vec2 uv=(v_uv-.5)/u_size;if(abs(uv.x)>.5||abs(uv.y)>.5){gl_FragColor=bg;return;}vec2 fuv=uv+.5;float ax=cos(radians(u_rx)),ay=sin(radians(u_rx)),bx=cos(radians(u_ry)),by=sin(radians(u_ry));vec2 nuv=vec2(fuv.x*bx+fuv.y*ay,fuv.y*ax);gl_FragColor=texture2D(u_tex,clamp(nuv,0.,1.));}`
+  },
+  'Sphere': {
+    cat: '3D', params: [{name:'Radius',key:'u_radius',min:0.1,max:1,def:0.45},{name:'Light X',key:'u_lx',min:-1,max:1,def:0.5},{name:'Light Y',key:'u_ly',min:-1,max:1,def:0.5}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_radius,u_lx,u_ly;varying vec2 v_uv;void main(){vec2 p=v_uv-.5;float r=length(p);if(r>u_radius){gl_FragColor=texture2D(u_tex,v_uv);return;}float z=sqrt(u_radius*u_radius-r*r);vec3 n=normalize(vec3(p,z));vec3 l=normalize(vec3(u_lx,u_ly,1.));float diff=max(dot(n,l),0.);float theta=atan(p.y,p.x)/(2.*3.14159)+.5;float phi=acos(z/u_radius)/3.14159;vec2 uv=vec2(theta,phi);gl_FragColor=texture2D(u_tex,uv)*(.3+.7*diff);}`
+  },
+  'Cylinder': {
+    cat: '3D', params: [{name:'Bend',key:'u_bend',min:0,max:3,def:1},{name:'Axis',key:'u_axis',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_bend,u_axis;varying vec2 v_uv;void main(){float t=u_axis<.5?v_uv.x:v_uv.y;float cy=sin((t-.5)*3.14159*u_bend)*.5+.5;vec2 uv=u_axis<.5?vec2(t,v_uv.y*cy+.5*(1.-cy)):vec2(v_uv.x*cy+.5*(1.-cy),t);gl_FragColor=texture2D(u_tex,clamp(uv,0.,1.));}`
+  },
+  'Shape': {
+    cat: '3D', params: [{name:'Sides',key:'u_sides',min:3,max:12,def:5},{name:'Size',key:'u_size',min:0.1,max:1,def:0.4},{name:'Fill R',key:'u_fr',min:0,max:1,def:0.2},{name:'Fill G',key:'u_fg',min:0,max:1,def:0.5},{name:'Fill B',key:'u_fb',min:0,max:1,def:0.9},{name:'Mix',key:'u_mix',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_sides,u_size,u_fr,u_fg,u_fb,u_mix;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 p=v_uv-.5;float a=atan(p.y,p.x);float r=length(p);float n=u_sides;float s=cos(3.14159/n)/cos(mod(a,2.*3.14159/n)-3.14159/n);bool inside=r<s*u_size;gl_FragColor=inside?mix(c,vec4(u_fr,u_fg,u_fb,1.),u_mix):c;}`
+  },
+  'Hollow Box': {
+    cat: '3D', params: [{name:'Width',key:'u_w',min:0.01,max:0.5,def:0.1},{name:'Size',key:'u_size',min:0.1,max:0.9,def:0.4},{name:'R',key:'u_r',min:0,max:1,def:1},{name:'G',key:'u_g',min:0,max:1,def:1},{name:'B',key:'u_b',min:0,max:1,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_w,u_size,u_r,u_g,u_b;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 p=abs(v_uv-.5);bool outer=p.x<u_size&&p.y<u_size;bool inner=p.x<u_size-u_w&&p.y<u_size-u_w;bool box=outer&&!inner;gl_FragColor=box?vec4(u_r,u_g,u_b,1.):c;}`
+  },
+  'Star Prism': {
+    cat: '3D', params: [{name:'Points',key:'u_pts',min:3,max:12,def:5},{name:'Inner Radius',key:'u_ir',min:0.1,max:0.9,def:0.4},{name:'Size',key:'u_size',min:0.1,max:0.9,def:0.4},{name:'R',key:'u_r',min:0,max:1,def:1},{name:'G',key:'u_g',min:0,max:1,def:0.8},{name:'B',key:'u_b',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_pts,u_ir,u_size,u_r,u_g,u_b;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);vec2 p=v_uv-.5;float a=atan(p.y,p.x);float r=length(p)/u_size;float n=u_pts;float seg=3.14159*2./n;float sa=mod(a,seg);float ra=abs(sa-seg/2.)/(seg/2.);float sp=mix(u_ir,1.,ra);bool star=r<sp;gl_FragColor=star?vec4(u_r,u_g,u_b,1.):c;}`
+  },
+  'RGB to YUV': {
+    cat: 'Color Space', params: [{name:'Y Gain',key:'u_yg',min:0,max:2,def:1},{name:'UV Scale',key:'u_uvs',min:0,max:4,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_yg,u_uvs;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float y=dot(c.rgb,vec3(.299,.587,.114))*u_yg;float u2=((c.b-y)*.565*u_uvs)*.5+.5;float v2=((c.r-y)*.713*u_uvs)*.5+.5;gl_FragColor=vec4(y,u2,v2,c.a);}`
+  },
+  'YUV to HSL': {
+    cat: 'Color Space', params: [{name:'Rotate',key:'u_rot',min:0,max:1,def:0}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_rot;varying vec2 v_uv;vec3 hsl2rgb(vec3 c){float h=c.x*6.+u_rot*6.,s=c.y,l=c.z;float q=l<.5?l*(1.+s):l+s-l*s,p=2.*l-q;float r=abs(mod(h+0.,6.)-.5)-.5;float g=abs(mod(h-2.,6.)-.5)-.5;float b=abs(mod(h-4.,6.)-.5)-.5;return vec3(clamp(p+(q-p)*6.*r,0.,1.),clamp(p+(q-p)*6.*g,0.,1.),clamp(p+(q-p)*6.*b,0.,1.));}void main(){vec4 c=texture2D(u_tex,v_uv);vec3 hsl=vec3(c.r,c.g,c.b);gl_FragColor=vec4(hsl2rgb(hsl),c.a);}`
+  },
+  'HSL to YUV': {
+    cat: 'Color Space', params: [{name:'Scale',key:'u_scale',min:0,max:2,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_scale;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float y=dot(c.rgb,vec3(.299,.587,.114));float u2=((c.b-y)*.565*u_scale)*.5+.5;float v2=((c.r-y)*.713*u_scale)*.5+.5;gl_FragColor=vec4(y,u2,v2,c.a);}`
+  },
+  'Pseudocolor - rainbow': {
+    cat: 'Color', params: [{name:'Gamma',key:'u_gamma',min:0.1,max:4,def:1},{name:'Cycles',key:'u_cycles',min:1,max:8,def:1}],
+    fs: `precision mediump float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_gamma,u_cycles;varying vec2 v_uv;void main(){vec4 c=texture2D(u_tex,v_uv);float l=pow(dot(c.rgb,vec3(.299,.587,.114)),1./u_gamma);float h=mod(l*u_cycles,1.)*6.;float r=abs(mod(h,6.)-3.)-1.;float g=2.-abs(mod(h,6.)-2.);float b=2.-abs(mod(h,6.)-4.);gl_FragColor=vec4(clamp(vec3(r,g,b),0.,1.),c.a);}`
+  }
+};
+
+// ========== BUILD EFFECTS MENU ==========
+function buildEffectsMenu() {
+  const menu = document.getElementById('menu-effects');
+  menu.innerHTML = '';
+  const cats = {};
+  Object.entries(SHADERS).forEach(([name, sh]) => {
+    if (!cats[sh.cat]) cats[sh.cat] = [];
+    cats[sh.cat].push(name);
+  });
+  Object.entries(cats).forEach(([cat, names]) => {
+    const label = document.createElement('div');
+    label.className = 'dd-label';
+    label.textContent = cat;
+    menu.appendChild(label);
+    names.forEach(name => {
+      const item = document.createElement('div');
+      item.className = 'dd-item';
+      item.textContent = name;
+      item.addEventListener('click', () => openFXModal(name));
+      menu.appendChild(item);
+    });
+    const sep = document.createElement('div');
+    sep.className = 'dd-sep';
+    menu.appendChild(sep);
+  });
+}
+buildEffectsMenu();
+
+// ========== FX MODAL ==========
+function openFXModal(name) {
+  closeAllMenus();
+  const sh = SHADERS[name];
+  if (!sh) return;
+  S.currentEffect = name;
+  S.currentEffectParams = {};
+  sh.params.forEach(p => S.currentEffectParams[p.key] = p.def);
+  document.getElementById('fx-modal-title').textContent = name;
+  const body = document.getElementById('fx-modal-body');
+  body.innerHTML = '';
+  const glWarn = document.createElement('div');
+  glWarn.className = 'gl-warning';
+  glWarn.id = 'gl-warn';
+  glWarn.textContent = 'WebGL not available. Effect cannot be applied.';
+  if (!S.gl) glWarn.style.display = 'block';
+  body.appendChild(glWarn);
+  sh.params.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'prop-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'prop-label';
+    lbl.textContent = p.name;
+    const val = document.createElement('div');
+    val.className = 'prop-value';
+    val.style.display = 'flex';
+    val.style.gap = '6px';
+    val.style.alignItems = 'center';
+    const range = document.createElement('input');
+    range.type = 'range';
+    range.min = p.min;
+    range.max = p.max;
+    range.step = (p.max - p.min) / 200;
+    range.value = p.def;
+    range.style.flex = '1';
+    const num = document.createElement('span');
+    num.textContent = p.def.toFixed(2);
+    num.style.width = '44px';
+    num.style.fontSize = '10px';
+    num.style.color = 'var(--fg3)';
+    range.addEventListener('input', () => {
+      S.currentEffectParams[p.key] = parseFloat(range.value);
+      num.textContent = parseFloat(range.value).toFixed(2);
+    });
+    val.appendChild(range);
+    val.appendChild(num);
+    row.appendChild(lbl);
+    row.appendChild(val);
+    body.appendChild(row);
+  });
+  document.getElementById('fx-modal').classList.add('open');
+}
+
+document.getElementById('fx-modal-close').addEventListener('click', () => document.getElementById('fx-modal').classList.remove('open'));
+document.getElementById('fx-cancel').addEventListener('click', () => document.getElementById('fx-modal').classList.remove('open'));
+document.getElementById('fx-apply').addEventListener('click', () => {
+  const name = S.currentEffect;
+  const sh = SHADERS[name];
+  if (!sh) return;
+  pushHistory('Effect: ' + name);
+  const uniforms = {...S.currentEffectParams};
+  const ok = runShader(sh.fs, uniforms);
+  if (ok) {
+    S.appliedEffects.push({name, params: {...S.currentEffectParams}});
+    renderFXList();
+    setStatus('Applied: ' + name);
+  } else {
+    setStatus('WebGL error applying ' + name);
+  }
+  document.getElementById('fx-modal').classList.remove('open');
+  drawHistogram();
+});
+
+function renderFXList() {
+  const list = document.getElementById('fx-list');
+  list.innerHTML = '';
+  S.appliedEffects.forEach((fx, i) => {
+    const item = document.createElement('div');
+    item.className = 'fx-item';
+    const name = document.createElement('div');
+    name.className = 'fx-name';
+    name.textContent = fx.name;
+    const del = document.createElement('div');
+    del.className = 'fx-toggle';
+    del.textContent = '✕';
+    del.style.cursor = 'pointer';
+    del.addEventListener('click', () => {
+      S.appliedEffects.splice(i, 1);
+      renderFXList();
+    });
+    item.appendChild(name);
+    item.appendChild(del);
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('btn-clear-fx').addEventListener('click', () => {
+  S.appliedEffects = [];
+  renderFXList();
+});
+
+// ========== UI FUNCTIONS ==========
+function UI() {
+  const panel = document.getElementById('tab-properties');
+  return panel;
+}
+
+function UImenu() {
+  return document.getElementById('menubar');
+}
+
+function slider(container, label, min, max, def, step, onChange) {
+  const row = document.createElement('div');
+  row.className = 'prop-row';
+  const lbl = document.createElement('div');
+  lbl.className = 'prop-label';
+  lbl.textContent = label;
+  const val = document.createElement('div');
+  val.className = 'prop-value';
+  val.style.display = 'flex';
+  val.style.gap = '6px';
+  val.style.alignItems = 'center';
+  const range = document.createElement('input');
+  range.type = 'range';
+  range.min = min; range.max = max; range.value = def; range.step = step || 1;
+  range.style.flex = '1';
+  const num = document.createElement('span');
+  num.textContent = def;
+  num.style.fontSize = '10px';
+  num.style.color = 'var(--fg3)';
+  range.addEventListener('input', () => { num.textContent = range.value; if (onChange) onChange(parseFloat(range.value)); });
+  val.appendChild(range); val.appendChild(num);
+  row.appendChild(lbl); row.appendChild(val);
+  if (container) container.appendChild(row);
+  return {element: row, getValue: () => parseFloat(range.value), setValue: v => { range.value = v; num.textContent = v; }};
+}
+
+function cubefile(name, data) { return {name, data, type: 'lut'}; }
+function point(x, y) { return {x, y}; }
+function marker(canvas, x, y, color, size) {
+  const c = canvas.getContext('2d');
+  c.beginPath();
+  c.arc(x, y, size || 5, 0, Math.PI * 2);
+  c.fillStyle = color || '#f00';
+  c.fill();
+}
+function boolean(val) { return !!val; }
+function color(r, g, b, a) { return {r: r||0, g: g||0, b: b||0, a: a===undefined?1:a}; }
+
+function unlimitedlayers() {
+  const layer = {id: Date.now(), name: 'Layer ' + (S.layers.length + 1), visible: true, opacity: 100, blend: 'normal', data: null, x: 0, y: 0, w: canvas.width, h: canvas.height};
+  S.layers.push(layer);
+  S.activeLayer = layer;
+  renderLayers();
+  return layer;
+}
+
+function rotate(deg) {
+  pushHistory('Rotate ' + deg + '°');
+  const tmp = document.createElement('canvas');
+  const rad = deg * Math.PI / 180;
+  const cos = Math.abs(Math.cos(rad)), sin = Math.abs(Math.sin(rad));
+  tmp.width = canvas.width * cos + canvas.height * sin;
+  tmp.height = canvas.width * sin + canvas.height * cos;
+  const tc = tmp.getContext('2d');
+  tc.translate(tmp.width / 2, tmp.height / 2);
+  tc.rotate(rad);
+  tc.drawImage(canvas, -canvas.width / 2, -canvas.height / 2);
+  canvas.width = tmp.width; canvas.height = tmp.height;
+  overlay.width = tmp.width; overlay.height = tmp.height;
+  ctx.drawImage(tmp, 0, 0);
+  updateCanvasInfo();
+}
+
+function blendmodes() {
+  return ['normal','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity'];
+}
+
+function scale(sx, sy) {
+  pushHistory('Scale ' + sx + ',' + sy);
+  const tmp = document.createElement('canvas');
+  tmp.width = Math.round(canvas.width * sx);
+  tmp.height = Math.round(canvas.height * sy);
+  const tc = tmp.getContext('2d');
+  tc.drawImage(canvas, 0, 0, tmp.width, tmp.height);
+  canvas.width = tmp.width; canvas.height = tmp.height;
+  overlay.width = tmp.width; overlay.height = tmp.height;
+  ctx.drawImage(tmp, 0, 0);
+  updateCanvasInfo();
+}
+
+function positionxandy(x, y) {
+  if (S.activeLayer) { S.activeLayer.x = x; S.activeLayer.y = y; }
+  document.getElementById('prop-x').value = x;
+  document.getElementById('prop-y').value = y;
+}
+
+function uploadimage() {
+  document.getElementById('upload-input').click();
+}
+
+function fonts() {
+  return ['Open Sans','Arial','Georgia','Times New Roman','Courier New','Verdana','Trebuchet MS','Impact','Comic Sans MS','Palatino'];
+}
+
+function exportimage(format) {
+  format = format || 'png';
+  const lc = format.toLowerCase();
+  if (lc === 'png') {
+    const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'image.png'; a.click();
+  } else if (lc === 'jpg' || lc === 'jpeg') {
+    const a = document.createElement('a'); a.href = canvas.toDataURL('image/jpeg', 0.95); a.download = 'image.' + lc; a.click();
+  } else if (lc === 'tiff') {
+    const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'image.tiff'; a.click();
+    setStatus('TIFF: saved as PNG (browser limitation)');
+  } else if (lc === 'svg') {
+    const w = canvas.width, h = canvas.height;
+    const data = canvas.toDataURL('image/png');
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><image href="${data}" width="${w}" height="${h}"/></svg>`;
+    const blob = new Blob([svg], {type: 'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'image.svg'; a.click(); URL.revokeObjectURL(url);
+  } else if (lc === 'xcf') {
+    const json = JSON.stringify({format:'xcf',width:canvas.width,height:canvas.height,layers:S.layers.map(l=>({name:l.name,visible:l.visible,opacity:l.opacity,blend:l.blend})),data:canvas.toDataURL('image/png')});
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'image.xcf.json'; a.click(); URL.revokeObjectURL(url);
+  } else if (lc === 'psd') {
+    const json = JSON.stringify({format:'psd',width:canvas.width,height:canvas.height,layers:S.layers.map(l=>({name:l.name,visible:l.visible,opacity:l.opacity,blend:l.blend})),data:canvas.toDataURL('image/png')});
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'image.psd.json'; a.click(); URL.revokeObjectURL(url);
+  }
+  setStatus('Exported as ' + format.toUpperCase());
+}
+
+// ========== LAYERS ==========
+function renderLayers() {
+  const list = document.getElementById('layers-list');
+  list.innerHTML = '';
+  [...S.layers].reverse().forEach(layer => {
+    const item = document.createElement('div');
+    item.className = 'layer-item' + (layer === S.activeLayer ? ' active' : '');
+    const vis = document.createElement('span');
+    vis.className = 'layer-vis';
+    vis.textContent = layer.visible ? '👁' : '○';
+    vis.addEventListener('click', e => { e.stopPropagation(); layer.visible = !layer.visible; renderLayers(); });
+    const thumb = document.createElement('div');
+    thumb.className = 'layer-thumb';
+    thumb.style.background = layer.data ? 'var(--bg4)' : 'var(--bg3)';
+    const name = document.createElement('div');
+    name.className = 'layer-name';
+    name.textContent = layer.name;
+    name.contentEditable = false;
+    name.addEventListener('dblclick', () => { name.contentEditable = true; name.focus(); });
+    name.addEventListener('blur', () => { layer.name = name.textContent; name.contentEditable = false; });
+    item.appendChild(vis); item.appendChild(thumb); item.appendChild(name);
+    item.addEventListener('click', () => { S.activeLayer = layer; renderLayers(); });
+    list.appendChild(item);
+  });
+}
+
+document.getElementById('btn-add-layer').addEventListener('click', () => { unlimitedlayers(); });
+document.getElementById('btn-del-layer').addEventListener('click', () => {
+  if (S.layers.length <= 1) return;
+  S.layers = S.layers.filter(l => l !== S.activeLayer);
+  S.activeLayer = S.layers[S.layers.length - 1] || null;
+  renderLayers();
+});
+document.getElementById('btn-dup-layer').addEventListener('click', () => {
+  if (!S.activeLayer) return;
+  const clone = {...S.activeLayer, id: Date.now(), name: S.activeLayer.name + ' copy'};
+  S.layers.push(clone);
+  S.activeLayer = clone;
+  renderLayers();
+});
+
+// ========== HISTORY ==========
+function pushHistory(action) {
+  const img = canvas.toDataURL();
+  S.history = S.history.slice(0, S.historyIdx + 1);
+  S.history.push({action, img});
+  if (S.history.length > 50) S.history.shift();
+  S.historyIdx = S.history.length - 1;
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = '';
+  S.history.forEach((h, i) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:4px 10px;font-size:10px;cursor:pointer;border-bottom:1px solid #0d0d0d;color:' + (i === S.historyIdx ? 'var(--accent)' : 'var(--fg3)');
+    item.textContent = (i + 1) + '. ' + h.action;
+    item.addEventListener('click', () => { S.historyIdx = i; loadHistoryState(i); });
+    list.appendChild(item);
+  });
+}
+
+function loadHistoryState(i) {
+  const h = S.history[i];
+  if (!h) return;
+  const img = new Image();
+  img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); drawHistogram(); };
+  img.src = h.img;
+  renderHistory();
+}
+
+function undo() {
+  if (S.historyIdx > 0) { S.historyIdx--; loadHistoryState(S.historyIdx); setStatus('Undo'); }
+}
+function redo() {
+  if (S.historyIdx < S.history.length - 1) { S.historyIdx++; loadHistoryState(S.historyIdx); setStatus('Redo'); }
+}
+
+// ========== MENUS ==========
+function closeAllMenus() {
+  document.querySelectorAll('.menu-item.open').forEach(m => m.classList.remove('open'));
+}
+
+document.querySelectorAll('.menu-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.stopPropagation();
+    const wasOpen = item.classList.contains('open');
+    closeAllMenus();
+    if (!wasOpen) item.classList.add('open');
+  });
+});
+
+document.addEventListener('click', closeAllMenus);
+
+// File menu
+document.getElementById('mi-upload').addEventListener('click', uploadimage);
+document.querySelectorAll('[data-export]').forEach(el => {
+  el.addEventListener('click', () => exportimage(el.dataset.export));
+});
+
+// Edit menu
+document.getElementById('mi-undo').addEventListener('click', undo);
+document.getElementById('mi-redo').addEventListener('click', redo);
+document.getElementById('mi-copy').addEventListener('click', () => {
+  S.clipboard = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  setStatus('Copied');
+});
+document.getElementById('mi-paste').addEventListener('click', () => {
+  if (S.clipboard) { pushHistory('Paste'); ctx.putImageData(S.clipboard, 0, 0); setStatus('Pasted'); drawHistogram(); }
+});
+
+// ========== UPLOAD IMAGE ==========
+document.getElementById('upload-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.width; canvas.height = img.height;
+      overlay.width = img.width; overlay.height = img.height;
+      if (S.glCanvas) { S.glCanvas.width = img.width; S.glCanvas.height = img.height; }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      pushHistory('Upload Image');
+      if (S.layers.length === 0) unlimitedlayers();
+      S.activeLayer.data = img;
+      renderLayers();
+      updateCanvasInfo();
+      drawHistogram();
+      setStatus('Loaded: ' + file.name);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+});
+
+// ========== TABS ==========
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    const tc = document.getElementById('tab-' + tab.dataset.tab);
+    if (tc) tc.classList.add('active');
+  });
+});
+
+// ========== TOOLS ==========
+document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.tool = btn.dataset.tool;
+    canvas.style.cursor = S.tool === 'brush' ? 'crosshair' : S.tool === 'zoom' ? 'zoom-in' : S.tool === 'eyedrop' ? 'cell' : 'default';
+  });
+});
+
+// ========== ZOOM ==========
+const zoomSlider = document.getElementById('zoom-slider');
+const zoomLabel = document.getElementById('zoom-label');
+zoomSlider.addEventListener('input', () => {
+  S.zoom = parseInt(zoomSlider.value) / 100;
+  zoomLabel.textContent = zoomSlider.value + '%';
+  canvas.style.transform = `translate(-50%,-50%) scale(${S.zoom})`;
+  overlay.style.transform = `translate(-50%,-50%) scale(${S.zoom})`;
+});
+
+// ========== CANVAS INTERACTION ==========
+let painting = false, lastX, lastY;
+canvas.addEventListener('mousedown', e => {
+  if (S.tool === 'brush') { painting = true; ctx.beginPath(); }
+  if (S.tool === 'zoom') { S.zoom = Math.min(5, S.zoom * 1.25); updateZoom(); }
+  if (S.tool === 'eyedrop') {
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.round((e.clientX - rect.left) / S.zoom);
+    const y = Math.round((e.clientY - rect.top) / S.zoom);
+    const px = ctx.getImageData(x, y, 1, 1).data;
+    S.primaryColor = '#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2,'0')).join('');
+    document.getElementById('primary-color').value = S.primaryColor;
+    document.getElementById('hex-color').value = S.primaryColor;
+    syncColorSliders(S.primaryColor);
+    setStatus('Color picked: ' + S.primaryColor);
+  }
+});
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const x = Math.round((e.clientX - rect.left) / S.zoom);
+  const y = Math.round((e.clientY - rect.top) / S.zoom);
+  document.getElementById('cursor-pos').textContent = 'X: ' + x + ' Y: ' + y;
+  if (painting && S.tool === 'brush') {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = S.primaryColor;
+    ctx.lineWidth = parseInt(document.getElementById('font-size').value) || 10;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (lastX !== undefined) { ctx.moveTo(lastX, lastY); ctx.lineTo(x, y); ctx.stroke(); }
+    lastX = x; lastY = y;
+  }
+});
+canvas.addEventListener('mouseup', () => { if (painting) { painting = false; pushHistory('Brush Stroke'); drawHistogram(); } lastX = lastY = undefined; });
+canvas.addEventListener('mouseleave', () => { painting = false; lastX = lastY = undefined; });
+
+canvas.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  const cm = document.getElementById('ctx-menu');
+  cm.style.left = e.clientX + 'px';
+  cm.style.top = e.clientY + 'px';
+  cm.classList.add('open');
+});
+document.addEventListener('click', () => document.getElementById('ctx-menu').classList.remove('open'));
+document.querySelectorAll('.ctx-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const action = item.dataset.action;
+    if (action === 'copy') { S.clipboard = ctx.getImageData(0,0,canvas.width,canvas.height); setStatus('Copied'); }
+    else if (action === 'paste' && S.clipboard) { pushHistory('Paste'); ctx.putImageData(S.clipboard,0,0); drawHistogram(); }
+    else if (action === 'delete') document.getElementById('btn-del-layer').click();
+    else if (action === 'duplicate') document.getElementById('btn-dup-layer').click();
+  });
+});
+
+// ========== COLOR CONTROLS ==========
+function syncColorSliders(hex) {
+  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  document.getElementById('color-r').value = r; document.getElementById('color-r-val').textContent = r;
+  document.getElementById('color-g').value = g; document.getElementById('color-g-val').textContent = g;
+  document.getElementById('color-b').value = b; document.getElementById('color-b-val').textContent = b;
+}
+
+document.getElementById('primary-color').addEventListener('input', e => {
+  S.primaryColor = e.target.value;
+  document.getElementById('hex-color').value = e.target.value;
+  syncColorSliders(e.target.value);
+});
+document.getElementById('hex-color').addEventListener('input', e => {
+  const v = e.target.value;
+  if (/^#[0-9a-fA-F]{6}$/.test(v)) { S.primaryColor = v; document.getElementById('primary-color').value = v; syncColorSliders(v); }
+});
+['r','g','b'].forEach(ch => {
+  document.getElementById('color-' + ch).addEventListener('input', e => {
+    document.getElementById('color-' + ch + '-val').textContent = e.target.value;
+    const r = document.getElementById('color-r').value;
+    const g = document.getElementById('color-g').value;
+    const b = document.getElementById('color-b').value;
+    const hex = '#' + [r,g,b].map(v => parseInt(v).toString(16).padStart(2,'0')).join('');
+    S.primaryColor = hex;
+    document.getElementById('primary-color').value = hex;
+    document.getElementById('hex-color').value = hex;
+  });
+});
+
+// ========== PROPERTY CONTROLS ==========
+document.getElementById('prop-rot').addEventListener('input', e => {
+  document.getElementById('prop-rot-val').textContent = e.target.value + '°';
+});
+document.getElementById('prop-sx').addEventListener('input', e => {
+  document.getElementById('prop-sx-val').textContent = e.target.value + '%';
+});
+document.getElementById('prop-sy').addEventListener('input', e => {
+  document.getElementById('prop-sy-val').textContent = e.target.value + '%';
+});
+document.getElementById('prop-opacity').addEventListener('input', e => {
+  document.getElementById('prop-opacity-val').textContent = e.target.value + '%';
+});
+
+// ========== HISTOGRAM ==========
+function drawHistogram() {
+  const hc = document.getElementById('histogram-canvas');
+  const hctx = hc.getContext('2d');
+  hc.width = hc.offsetWidth || 220;
+  const w = hc.width, h = hc.height;
+  hctx.clearRect(0, 0, w, h);
+  hctx.fillStyle = '#111';
+  hctx.fillRect(0, 0, w, h);
+  try {
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const bins = {r: new Array(256).fill(0), g: new Array(256).fill(0), b: new Array(256).fill(0)};
+    for (let i = 0; i < data.length; i += 4) { bins.r[data[i]]++; bins.g[data[i+1]]++; bins.b[data[i+2]]++; }
+    ['r','g','b'].forEach((ch, ci) => {
+      const max = Math.max(...bins[ch]) || 1;
+      hctx.beginPath();
+      hctx.strokeStyle = ci === 0 ? '#f44' : ci === 1 ? '#4f4' : '#44f';
+      hctx.lineWidth = 1;
+      bins[ch].forEach((v, i) => {
+        const x = i / 255 * w;
+        const y = h - v / max * h;
+        i === 0 ? hctx.moveTo(x, y) : hctx.lineTo(x, y);
+      });
+      hctx.stroke();
+    });
+  } catch(e) {}
+}
+
+// ========== KEYBOARD ==========
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === 'z') { e.preventDefault(); undo(); }
+    if (e.key === 'y') { e.preventDefault(); redo(); }
+    if (e.key === 'c') { S.clipboard = ctx.getImageData(0,0,canvas.width,canvas.height); setStatus('Copied'); }
+    if (e.key === 'v' && S.clipboard) { pushHistory('Paste'); ctx.putImageData(S.clipboard,0,0); drawHistogram(); setStatus('Pasted'); }
+    if (e.key === 'z' && e.shiftKey) { e.preventDefault(); redo(); }
+  }
+  if (e.key === '[') { zoomSlider.value = Math.max(10, parseInt(zoomSlider.value) - 10); zoomSlider.dispatchEvent(new Event('input')); }
+  if (e.key === ']') { zoomSlider.value = Math.min(500, parseInt(zoomSlider.value) + 10); zoomSlider.dispatchEvent(new Event('input')); }
+});
+
+// ========== PLUGINS ==========
+document.getElementById('mi-create-filter').addEventListener('click', () => {
+  closeAllMenus();
+  document.getElementById('plugin-modal-title').textContent = 'Create Filter/Effect (JSON + GLSL)';
+  document.getElementById('plugin-json-editor').value = JSON.stringify({name:'My Filter',category:'Custom',params:[{name:'Strength',key:'u_str',min:0,max:1,def:0.5}]}, null, 2);
+  document.getElementById('plugin-glsl-editor').value = `precision mediump float;\nuniform sampler2D u_tex;\nuniform vec2 u_res;\nuniform float u_str;\nvarying vec2 v_uv;\nvoid main() {\n  vec4 c = texture2D(u_tex, v_uv);\n  gl_FragColor = mix(c, vec4(1.0 - c.rgb, c.a), u_str);\n}`;
+  document.getElementById('plugin-modal').classList.add('open');
+});
+
+document.getElementById('mi-create-plugin').addEventListener('click', () => {
+  closeAllMenus();
+  document.getElementById('plugin-modal-title').textContent = 'Create Plugin (JSON)';
+  document.getElementById('plugin-json-editor').value = JSON.stringify({name:'My Plugin',version:'1.0',author:'',description:'',effects:[]}, null, 2);
+  document.getElementById('plugin-glsl-editor').value = '';
+  document.getElementById('plugin-modal').classList.add('open');
+});
+
+document.getElementById('mi-save-filter').addEventListener('click', () => {
+  closeAllMenus();
+  const json = JSON.stringify({shaders: SHADERS, applied: S.appliedEffects}, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'filters.json'; a.click(); URL.revokeObjectURL(url);
+  setStatus('Filters saved');
+});
+
+document.getElementById('mi-load-filter').addEventListener('click', () => {
+  closeAllMenus();
+  document.getElementById('load-filter-input').click();
+});
+
+document.getElementById('load-filter-input').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.applied) { S.appliedEffects = data.applied; renderFXList(); }
+      setStatus('Filter loaded: ' + file.name);
+    } catch(err) { setStatus('Error loading filter'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('plugin-modal-close').addEventListener('click', () => document.getElementById('plugin-modal').classList.remove('open'));
+document.getElementById('plugin-cancel').addEventListener('click', () => document.getElementById('plugin-modal').classList.remove('open'));
+document.getElementById('plugin-save').addEventListener('click', () => {
+  try {
+    const json = JSON.parse(document.getElementById('plugin-json-editor').value);
+    const glsl = document.getElementById('plugin-glsl-editor').value;
+    if (json.name && glsl) {
+      SHADERS[json.name] = {cat: json.category || 'Custom', params: json.params || [], fs: glsl};
+      buildEffectsMenu();
+      setStatus('Plugin saved: ' + json.name);
+    } else if (json.name) {
+      S.plugins.push(json);
+      setStatus('Plugin registered: ' + json.name);
+    }
+    document.getElementById('plugin-modal').classList.remove('open');
+  } catch(err) { setStatus('Invalid JSON'); }
+});
+
+// ========== STATUS ==========
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function updateCanvasInfo() {
+  document.getElementById('canvas-info').textContent = canvas.width + '×' + canvas.height + ' px';
+  document.getElementById('status-size').textContent = canvas.width + '×' + canvas.height;
+  document.getElementById('prop-w').value = canvas.width;
+  document.getElementById('prop-h').value = canvas.height;
+  if (S.glCanvas) { S.glCanvas.width = canvas.width; S.glCanvas.height = canvas.height; }
+}
+
+function updateZoom() {
+  const v = Math.round(S.zoom * 100);
+  zoomSlider.value = v;
+  zoomLabel.textContent = v + '%';
+  canvas.style.transform = `translate(-50%,-50%) scale(${S.zoom})`;
+  overlay.style.transform = `translate(-50%,-50%) scale(${S.zoom})`;
+}
+
+// ========== INIT ==========
+(function init() {
+  unlimitedlayers();
+  ctx.fillStyle = '#222';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#333';
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 6; j++) {
+    if ((i+j)%2===0) ctx.fillRect(i*100, j*100, 100, 100);
+  }
+  ctx.fillStyle = '#4af';
+  ctx.font = 'bold 40px Open Sans';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Studio', canvas.width/2, canvas.height/2 - 20);
+  ctx.fillStyle = '#888';
+  ctx.font = '16px Open Sans';
+  ctx.fillText('Upload an image or start editing', canvas.width/2, canvas.height/2 + 30);
+  pushHistory('New Document');
+  updateCanvasInfo();
+  drawHistogram();
+  setStatus('Ready — WebGL: ' + (S.gl ? 'Available' : 'Unavailable'));
+})();
+</script>
+</body>
+</html>

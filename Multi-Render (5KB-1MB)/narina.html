@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Narina 2.5.4</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gl-shader@4.3.1/index.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#0a0a0a;--bg2:#111;--bg3:#161616;--bg4:#1c1c1c;--bg5:#222;
+--border:#2a2a2a;--border2:#333;
+--accent:#e8a020;--accent2:#c87010;--accent3:#f0b030;
+--text:#e0e0e0;--text2:#aaa;--text3:#666;
+--panel:#131313;--panel2:#181818;
+--red:#c0392b;--green:#27ae60;--blue:#2980b9;--purple:#8e44ad;
+--cyan:#16a085;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;font-size:12px;user-select:none}
+#app{display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden}
+
+/* MENU BAR */
+#menubar{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);height:26px;flex-shrink:0;z-index:1000}
+#menubar .logo{padding:0 12px;font-size:13px;font-weight:700;color:var(--accent);letter-spacing:1px;border-right:1px solid var(--border);height:100%;display:flex;align-items:center}
+.menu-item{position:relative;height:100%}
+.menu-item>span{display:flex;align-items:center;padding:0 10px;height:100%;cursor:pointer;font-size:11px;color:var(--text2);transition:all .15s}
+.menu-item>span:hover,.menu-item.open>span{background:var(--bg4);color:var(--text)}
+.dropdown{display:none;position:absolute;top:100%;left:0;background:var(--bg3);border:1px solid var(--border2);min-width:180px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.8)}
+.menu-item.open .dropdown{display:block}
+.dd-item{padding:6px 14px;cursor:pointer;font-size:11px;color:var(--text2);transition:all .1s;display:flex;justify-content:space-between;align-items:center}
+.dd-item:hover{background:var(--bg5);color:var(--text)}
+.dd-sep{height:1px;background:var(--border);margin:3px 0}
+.dd-item .shortcut{color:var(--text3);font-size:10px}
+#menubar .right{margin-left:auto;display:flex;align-items:center;gap:6px;padding-right:10px}
+#menubar .right .pill{background:var(--bg4);border:1px solid var(--border2);border-radius:3px;padding:2px 8px;font-size:10px;color:var(--text3)}
+#menubar .right .pill.active{color:var(--accent);border-color:var(--accent2)}
+
+/* TOOLBAR */
+#toolbar{display:flex;align-items:center;background:var(--bg3);border-bottom:1px solid var(--border);height:34px;flex-shrink:0;gap:1px;padding:0 6px}
+.tb-btn{display:flex;align-items:center;justify-content:center;width:28px;height:26px;border-radius:3px;cursor:pointer;color:var(--text3);transition:all .15s;font-size:13px;border:1px solid transparent}
+.tb-btn:hover{background:var(--bg5);color:var(--text);border-color:var(--border2)}
+.tb-btn.active{background:var(--bg4);color:var(--accent);border-color:var(--accent2)}
+.tb-sep{width:1px;height:18px;background:var(--border);margin:0 4px}
+.tb-label{font-size:10px;color:var(--text3);padding:0 6px}
+#timecode{font-family:'Courier New',monospace;font-size:13px;color:var(--accent);background:var(--bg);border:1px solid var(--border2);padding:2px 8px;border-radius:3px;margin-left:8px;min-width:100px;text-align:center}
+.tb-transport{display:flex;align-items:center;gap:2px}
+
+/* MAIN LAYOUT */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* PANELS */
+.panel{background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.panel-header{background:var(--bg3);border-bottom:1px solid var(--border);padding:5px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.panel-title{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px}
+.panel-tabs{display:flex;gap:0}
+.ptab{padding:4px 10px;cursor:pointer;font-size:10px;color:var(--text3);border-bottom:2px solid transparent;transition:all .15s}
+.ptab:hover{color:var(--text2)}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* LEFT PANEL */
+#left-panel{width:230px;flex-shrink:0}
+#media-bin{flex:1;overflow-y:auto;overflow-x:hidden}
+.media-item{display:flex;align-items:center;gap:8px;padding:5px 10px;cursor:pointer;border-bottom:1px solid var(--border);transition:all .1s}
+.media-item:hover{background:var(--bg4)}
+.media-item.selected{background:rgba(232,160,32,.12);border-left:2px solid var(--accent)}
+.media-thumb{width:36px;height:22px;background:var(--bg5);border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);flex-shrink:0;overflow:hidden;position:relative}
+.media-info{flex:1;overflow:hidden}
+.media-name{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-meta{font-size:9px;color:var(--text3)}
+.media-icon{font-size:14px}
+.drop-zone{border:2px dashed var(--border2);margin:8px;border-radius:4px;padding:20px;text-align:center;color:var(--text3);font-size:10px;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.05)}
+
+/* CENTER - VIEWER */
+#center{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#viewer{flex:1;background:#000;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+#viewer-canvas{max-width:100%;max-height:100%;background:#000;display:block}
+.viewer-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
+.viewer-safe{position:absolute;border:1px solid rgba(255,255,255,.1);pointer-events:none}
+.viewer-info{position:absolute;bottom:8px;left:8px;font-size:10px;color:rgba(255,255,255,.4);font-family:'Courier New',monospace}
+.viewer-controls{position:absolute;bottom:8px;right:8px;display:flex;gap:4px}
+.vctl-btn{background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.15);border-radius:2px;padding:2px 6px;font-size:10px;color:rgba(255,255,255,.6);cursor:pointer}
+.vctl-btn:hover{background:rgba(255,255,255,.1);color:#fff}
+#viewer-bar{background:var(--bg3);border-top:1px solid var(--border);height:30px;display:flex;align-items:center;padding:0 10px;gap:10px;flex-shrink:0}
+
+/* RIGHT PANEL - EFFECTS/PROPERTIES */
+#right-panel{width:260px;flex-shrink:0;border-right:none;border-left:1px solid var(--border)}
+#props-content{flex:1;overflow-y:auto}
+.prop-section{border-bottom:1px solid var(--border)}
+.prop-section-hdr{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;background:var(--bg3);font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px}
+.prop-section-hdr:hover{background:var(--bg4)}
+.prop-section-hdr .arrow{font-size:8px;transition:transform .2s;margin-left:auto}
+.prop-section-hdr.collapsed .arrow{transform:rotate(-90deg)}
+.prop-body{padding:4px 0}
+.prop-row{display:flex;align-items:center;padding:3px 10px;gap:6px}
+.prop-label{font-size:10px;color:var(--text3);width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prop-ctrl{flex:1;display:flex;align-items:center;gap:4px}
+.prop-input{background:var(--bg5);border:1px solid var(--border2);color:var(--text);font-size:10px;font-family:'Open Sans',sans-serif;padding:2px 5px;border-radius:2px;width:100%;outline:none}
+.prop-input:focus{border-color:var(--accent)}
+.prop-slider{flex:1;-webkit-appearance:none;height:3px;background:var(--border2);border-radius:2px;outline:none}
+.prop-slider::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;border-radius:50%;background:var(--accent);cursor:pointer}
+.prop-num{background:var(--bg5);border:1px solid var(--border2);color:var(--text);font-size:10px;padding:2px 4px;border-radius:2px;width:48px;outline:none;font-family:'Courier New',monospace;text-align:right}
+.prop-num:focus{border-color:var(--accent)}
+.prop-checkbox{accent-color:var(--accent);width:12px;height:12px}
+.prop-select{background:var(--bg5);border:1px solid var(--border2);color:var(--text);font-size:10px;padding:2px 4px;border-radius:2px;outline:none;width:100%}
+.prop-select:focus{border-color:var(--accent)}
+.kf-btn{width:14px;height:14px;border-radius:50%;border:1px solid var(--text3);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kf-btn.active{background:var(--accent);border-color:var(--accent)}
+.kf-btn::after{content:'';width:5px;height:5px;background:currentColor;border-radius:1px;transform:rotate(45deg)}
+
+/* EFFECTS PANEL */
+.fx-cat{margin:0}
+.fx-cat-hdr{padding:5px 10px;background:var(--bg3);font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--border);cursor:pointer;display:flex;justify-content:space-between}
+.fx-cat-hdr:hover{background:var(--bg4)}
+.fx-list{background:var(--bg)}
+.fx-effect{display:flex;align-items:center;justify-content:space-between;padding:4px 10px 4px 20px;cursor:pointer;font-size:11px;color:var(--text2);border-bottom:1px solid rgba(42,42,42,.5);transition:all .1s}
+.fx-effect:hover{background:var(--bg4);color:var(--text)}
+.fx-effect .add-btn{opacity:0;width:16px;height:16px;border-radius:2px;background:var(--accent);color:#000;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;transition:opacity .15s}
+.fx-effect:hover .add-btn{opacity:1}
+.fx-search{background:var(--bg5);border:1px solid var(--border2);border-radius:3px;padding:4px 8px;color:var(--text);font-size:11px;outline:none;width:100%;font-family:'Open Sans',sans-serif;margin:6px}
+.fx-search:focus{border-color:var(--accent)}
+
+/* TIMELINE */
+#timeline{background:var(--panel);border-top:1px solid var(--border);flex-shrink:0;overflow:hidden;display:flex;flex-direction:column}
+#timeline-header{display:flex;align-items:center;background:var(--bg3);border-bottom:1px solid var(--border);height:28px;flex-shrink:0}
+#tl-ruler-left{width:180px;flex-shrink:0;display:flex;align-items:center;padding:0 10px;font-size:10px;color:var(--text3);border-right:1px solid var(--border)}
+#tl-ruler{flex:1;position:relative;overflow:hidden;height:100%}
+#tl-ruler canvas{position:absolute;top:0;left:0}
+#tl-body{display:flex;flex:1;overflow:hidden}
+#tl-tracks-left{width:180px;flex-shrink:0;overflow:hidden;border-right:1px solid var(--border)}
+#tl-tracks-right{flex:1;overflow:auto;position:relative}
+.tl-track{height:32px;border-bottom:1px solid var(--border);display:flex;align-items:center;flex-shrink:0}
+.tl-track-label{width:180px;flex-shrink:0;padding:0 8px;display:flex;align-items:center;gap:6px;height:100%;background:var(--bg3);border-bottom:1px solid var(--border)}
+.tl-track-name{font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tl-mute,.tl-solo,.tl-lock{width:16px;height:16px;border-radius:2px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:var(--text3);transition:all .15s}
+.tl-mute:hover{border-color:var(--red);color:var(--red)}
+.tl-solo:hover{border-color:var(--accent);color:var(--accent)}
+.tl-lock:hover{border-color:var(--blue);color:var(--blue)}
+.tl-track-icons{display:flex;gap:3px}
+#tl-content{position:relative;overflow:hidden}
+.tl-row{height:32px;border-bottom:1px solid var(--border);position:relative}
+.tl-clip{position:absolute;height:26px;top:3px;border-radius:3px;overflow:hidden;cursor:pointer;border:1px solid rgba(255,255,255,.1);transition:border-color .15s}
+.tl-clip:hover{border-color:rgba(255,255,255,.3)}
+.tl-clip.selected{border-color:var(--accent)}
+.tl-clip-inner{height:100%;display:flex;align-items:center;padding:0 6px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl-clip-wave{position:absolute;bottom:0;left:0;right:0;height:12px;opacity:.4}
+.tl-playhead{position:absolute;top:0;bottom:0;width:1px;background:var(--red);pointer-events:none;z-index:100}
+.tl-playhead::before{content:'';position:absolute;top:-3px;left:-5px;width:11px;height:8px;background:var(--red);clip-path:polygon(50% 100%,0 0,100% 0)}
+#tl-time-cursor{position:absolute;top:0;width:1px;background:rgba(255,255,255,.2);pointer-events:none}
+
+/* NODE GRAPH */
+#nodegraph{display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:500}
+#nodegraph canvas{position:absolute;top:0;left:0}
+.node{position:absolute;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;min-width:140px;cursor:move;box-shadow:0 4px 16px rgba(0,0,0,.6)}
+.node-hdr{padding:6px 10px;background:var(--bg4);border-bottom:1px solid var(--border);border-radius:5px 5px 0 0;font-size:11px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px}
+.node-hdr .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.node-ports{padding:6px 0}
+.node-port{display:flex;align-items:center;padding:3px 10px;font-size:10px;color:var(--text2);gap:6px}
+.port-dot{width:10px;height:10px;border-radius:50%;border:2px solid;cursor:pointer;flex-shrink:0}
+.port-dot.out{margin-left:auto}
+.node-port.out{flex-direction:row-reverse}
+#ng-toolbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:4px 8px}
+.ng-btn{padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;border-radius:4px;transition:all .15s}
+.ng-btn:hover{background:var(--bg5);color:var(--text)}
+
+/* CRASH REPORT */
+#crash-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.92);z-index:99999;align-items:center;justify-content:center}
+#crash-overlay.show{display:flex}
+#crash-box{background:var(--bg3);border:1px solid var(--red);border-radius:8px;padding:24px;max-width:500px;width:90%}
+#crash-box h2{color:var(--red);font-size:16px;margin-bottom:10px}
+#crash-box pre{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:10px;font-size:10px;color:var(--text3);overflow:auto;max-height:200px;margin:10px 0}
+.crash-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.btn{padding:6px 14px;border-radius:4px;cursor:pointer;font-size:11px;font-family:'Open Sans',sans-serif;transition:all .15s;border:1px solid transparent}
+.btn-primary{background:var(--accent);color:#000;font-weight:600}
+.btn-primary:hover{background:var(--accent3)}
+.btn-ghost{background:transparent;border-color:var(--border2);color:var(--text2)}
+.btn-ghost:hover{background:var(--bg5);color:var(--text)}
+
+/* MODAL */
+#modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:9000;align-items:center;justify-content:center}
+#modal-overlay.show{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:20px;min-width:320px}
+.modal h3{font-size:14px;color:var(--text);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.modal-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.modal-label{font-size:11px;color:var(--text3);width:100px}
+.modal-input{flex:1;background:var(--bg5);border:1px solid var(--border2);color:var(--text);font-size:11px;padding:5px 8px;border-radius:3px;outline:none;font-family:'Open Sans',sans-serif}
+.modal-input:focus{border-color:var(--accent)}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+select.modal-input option{background:var(--bg3)}
+
+/* ACTIVE EFFECTS LIST */
+.applied-fx{margin:0;border-bottom:1px solid var(--border)}
+.afx-item{padding:5px 10px;display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(42,42,42,.6);cursor:pointer;transition:all .1s}
+.afx-item:hover{background:var(--bg4)}
+.afx-item.selected{background:rgba(232,160,32,.1)}
+.afx-toggle{width:14px;height:14px;border-radius:2px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:var(--green);flex-shrink:0}
+.afx-toggle.off{color:var(--text3)}
+.afx-name{flex:1;font-size:11px;color:var(--text)}
+.afx-remove{width:14px;height:14px;display:flex;align-items:center;justify-content:center;color:var(--text3);cursor:pointer;border-radius:2px;transition:all .1s;font-size:12px}
+.afx-remove:hover{background:var(--red);color:#fff}
+.afx-cat-badge{font-size:9px;color:var(--text3);background:var(--bg4);padding:1px 5px;border-radius:2px}
+
+/* RESIZE HANDLE */
+.resize-h{cursor:ns-resize;height:4px;background:transparent;flex-shrink:0;border-top:1px solid var(--border)}
+.resize-h:hover{background:rgba(232,160,32,.3)}
+.resize-v{cursor:ew-resize;width:4px;background:transparent;flex-shrink:0;border-right:1px solid var(--border)}
+.resize-v:hover{background:rgba(232,160,32,.3)}
+
+/* STATUS BAR */
+#statusbar{background:var(--bg2);border-top:1px solid var(--border);height:20px;display:flex;align-items:center;padding:0 10px;gap:16px;flex-shrink:0}
+#statusbar span{font-size:10px;color:var(--text3)}
+#statusbar .status-item{display:flex;align-items:center;gap:4px}
+#statusbar .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.progress-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden;max-width:200px}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- MENU BAR -->
+  <div id="menubar">
+    <div class="logo">NARINA</div>
+    <div class="menu-item" id="menu-file">
+      <span>File</span>
+      <div class="dropdown">
+        <div class="dd-item" onclick="FileMenu.newProject()">New Project<span class="shortcut">Ctrl+N</span></div>
+        <div class="dd-item" onclick="FileMenu.openProject()">Open Project<span class="shortcut">Ctrl+O</span></div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="FileMenu.saveProject()">Save Project<span class="shortcut">Ctrl+S</span></div>
+        <div class="dd-item" onclick="FileMenu.saveProjectAs()">Save Project As...<span class="shortcut">Ctrl+Shift+S</span></div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="MediaTools.uploadMedia()">Import Media...<span class="shortcut">Ctrl+I</span></div>
+        <div class="dd-item" onclick="MediaTools.exportMedia()">Export...<span class="shortcut">Ctrl+M</span></div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="closeMenus()">Exit</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-edit">
+      <span>Edit</span>
+      <div class="dropdown">
+        <div class="dd-item" onclick="EditMenu.undo()">Undo<span class="shortcut">Ctrl+Z</span></div>
+        <div class="dd-item" onclick="EditMenu.redo()">Redo<span class="shortcut">Ctrl+Y</span></div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="EditMenu.copy()">Copy<span class="shortcut">Ctrl+C</span></div>
+        <div class="dd-item" onclick="EditMenu.paste()">Paste<span class="shortcut">Ctrl+V</span></div>
+        <div class="dd-item" onclick="EditMenu.cut()">Cut<span class="shortcut">Ctrl+X</span></div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="EditMenu.split()">Split<span class="shortcut">S</span></div>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-view">
+      <span>View</span>
+      <div class="dropdown">
+        <div class="dd-item" onclick="GUI.toggleNodeGraph()">Node Graph</div>
+        <div class="dd-item" onclick="GUI.togglePanel('left-panel')">Media Bin</div>
+        <div class="dd-item" onclick="GUI.togglePanel('right-panel')">Properties</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="GUI.resetLayout()">Reset Layout</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-effects">
+      <span>Effects</span>
+      <div class="dropdown">
+        <div class="dd-item" onclick="switchRightTab('effects')">Browse Effects</div>
+        <div class="dd-item" onclick="OpenFX.loadOpenFXforCPP()">Load OpenFX Plugin...</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="OpenColorIO.openColorIO()">OpenColorIO Config...</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-tools">
+      <span>Tools</span>
+      <div class="dropdown">
+        <div class="dd-item" onclick="Tools.tracks()">Track Options</div>
+        <div class="dd-item" onclick="Tools.layers()">Layer Manager</div>
+        <div class="dd-sep"></div>
+        <div class="dd-item" onclick="InstallNarina.installNarinaDesktopNineExe()">Install Desktop App...</div>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-help">
+      <span>Help</span>
+      <div class="dropdown">
+        <div class="dd-item" onclick="CrashReport.crashReport()">Send Crash Report</div>
+        <div class="dd-item">About Narina 2.5.4</div>
+      </div>
+    </div>
+    <div class="right">
+      <span class="pill active" id="proj-name">Untitled Project</span>
+      <span class="pill" id="proj-res">1920×1080</span>
+      <span class="pill" id="proj-fps">23.976 fps</span>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div id="toolbar">
+    <div class="tb-btn" title="Selection" onclick="setActiveTool('select')" id="tool-select">&#9654;</div>
+    <div class="tb-btn" title="Razor" onclick="setActiveTool('razor')" id="tool-razor">&#9874;</div>
+    <div class="tb-btn" title="Hand" onclick="setActiveTool('hand')" id="tool-hand">&#128400;</div>
+    <div class="tb-sep"></div>
+    <div class="tb-transport">
+      <div class="tb-btn" title="Go to Start" onclick="Transport.goStart()">&#9198;</div>
+      <div class="tb-btn" title="Step Back" onclick="Transport.stepBack()">&#9194;</div>
+      <div class="tb-btn" title="Play/Pause" onclick="Transport.togglePlay()" id="btn-play">&#9654;</div>
+      <div class="tb-btn" title="Stop" onclick="Transport.stop()">&#9632;</div>
+      <div class="tb-btn" title="Step Forward" onclick="Transport.stepForward()">&#9193;</div>
+      <div class="tb-btn" title="Go to End" onclick="Transport.goEnd()">&#9197;</div>
+    </div>
+    <div id="timecode">00:00:00:00</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="In Point" onclick="Transport.setIn()">&#9655;</div>
+    <div class="tb-btn" title="Out Point" onclick="Transport.setOut()">&#9664;</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="Zoom In" onclick="Timeline.zoomIn()">&#43;</div>
+    <div class="tb-btn" title="Zoom Out" onclick="Timeline.zoomOut()">&#8722;</div>
+    <div class="tb-btn" title="Fit Timeline" onclick="Timeline.fitView()">&#9723;</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="Snap" onclick="Timeline.toggleSnap()" id="btn-snap">&#9710;</div>
+    <div class="tb-btn" title="Loop" onclick="Transport.toggleLoop()" id="btn-loop">&#8635;</div>
+    <div class="tb-sep"></div>
+    <div class="tb-btn" title="Node Graph" onclick="GUI.toggleNodeGraph()" style="font-size:10px;width:auto;padding:0 6px">NODE</div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+    <!-- LEFT PANEL -->
+    <div class="panel" id="left-panel">
+      <div class="panel-header">
+        <div class="panel-tabs">
+          <div class="ptab active" onclick="switchLeftTab('media',this)">Media</div>
+          <div class="ptab" onclick="switchLeftTab('effects',this)">Effects</div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <div class="tb-btn" style="width:20px;height:20px;font-size:11px" onclick="MediaTools.uploadMedia()" title="Import">+</div>
+        </div>
+      </div>
+      <div id="media-tab" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+        <div class="drop-zone" id="drop-zone" onclick="MediaTools.uploadMedia()">
+          Drop media here<br><span style="font-size:9px;margin-top:4px;display:block">or click to import</span>
+        </div>
+        <div id="media-bin"></div>
+      </div>
+      <div id="effects-tab" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+        <div style="padding:6px;border-bottom:1px solid var(--border)">
+          <input class="fx-search" id="fx-search-left" placeholder="Search effects..." oninput="filterEffects(this.value,'left')">
+        </div>
+        <div id="fx-list-left" style="flex:1;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- CENTER VIEWER -->
+    <div id="center">
+      <div id="viewer">
+        <canvas id="viewer-canvas" width="640" height="360"></canvas>
+        <div class="viewer-overlay">
+          <div class="viewer-safe" id="safe-title" style="top:10%;left:10%;right:10%;bottom:10%"></div>
+        </div>
+        <div class="viewer-info" id="viewer-info">1920×1080 | 00:00:00:00</div>
+        <div class="viewer-controls">
+          <div class="vctl-btn" onclick="cycleZoom()">FIT</div>
+          <div class="vctl-btn" onclick="toggleSafeArea()" id="safe-btn">SAFE</div>
+          <div class="vctl-btn" onclick="toggleGrid()">GRID</div>
+        </div>
+      </div>
+      <div id="viewer-bar">
+        <span style="font-size:10px;color:var(--text3)">Zoom:</span>
+        <select id="zoom-select" class="prop-select" style="width:80px" onchange="setZoom(this.value)">
+          <option>25%</option><option>50%</option><option selected>Fit</option>
+          <option>100%</option><option>150%</option><option>200%</option>
+        </select>
+        <span style="font-size:10px;color:var(--text3);margin-left:8px">Color:</span>
+        <select id="colorspace-select" class="prop-select" style="width:90px" onchange="OpenColorIO.setColorSpace(this.value)">
+          <option>Rec.709</option><option>sRGB</option><option>Linear</option><option>ACEScg</option><option>Log</option>
+        </select>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <span style="font-size:10px;color:var(--text3)" id="render-info">Ready</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel" id="right-panel">
+      <div class="panel-header">
+        <div class="panel-tabs">
+          <div class="ptab active" onclick="switchRightTab('props',this)" id="rtab-props">Properties</div>
+          <div class="ptab" onclick="switchRightTab('effects',this)" id="rtab-fx">Effects</div>
+          <div class="ptab" onclick="switchRightTab('keyframes',this)" id="rtab-kf">Keyframes</div>
+        </div>
+      </div>
+      <!-- PROPERTIES TAB -->
+      <div id="props-tab" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+        <div id="no-selection" style="padding:20px;text-align:center;color:var(--text3);font-size:11px">No clip selected</div>
+        <div id="clip-properties" style="display:none">
+          <!-- Transform -->
+          <div class="prop-section">
+            <div class="prop-section-hdr" onclick="toggleSection(this)">
+              <span>&#9654;</span> Transform <span class="arrow">&#9660;</span>
+            </div>
+            <div class="prop-body" id="transform-body">
+              <div class="prop-row"><span class="prop-label">Position X</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="-1920" max="1920" value="0" id="tf-posx" oninput="Properties.transform('posX',this.value)"><input type="number" class="prop-num" value="0" id="tf-posx-num" onchange="Properties.transform('posX',this.value)"><div class="kf-btn" onclick="Properties.keyframes('posX')" title="Add Keyframe"></div></div></div>
+              <div class="prop-row"><span class="prop-label">Position Y</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="-1080" max="1080" value="0" id="tf-posy" oninput="Properties.transform('posY',this.value)"><input type="number" class="prop-num" value="0" id="tf-posy-num" onchange="Properties.transform('posY',this.value)"><div class="kf-btn" onclick="Properties.keyframes('posY')" title="Add Keyframe"></div></div></div>
+              <div class="prop-row"><span class="prop-label">Scale X</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="0" max="500" value="100" id="tf-scax" oninput="Properties.transform('scaleX',this.value)"><input type="number" class="prop-num" value="100" id="tf-scax-num" onchange="Properties.transform('scaleX',this.value)"><div class="kf-btn" onclick="Properties.keyframes('scaleX')" title="Add Keyframe"></div></div></div>
+              <div class="prop-row"><span class="prop-label">Scale Y</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="0" max="500" value="100" id="tf-scay" oninput="Properties.transform('scaleY',this.value)"><input type="number" class="prop-num" value="100" id="tf-scay-num" onchange="Properties.transform('scaleY',this.value)"><div class="kf-btn" onclick="Properties.keyframes('scaleY')" title="Add Keyframe"></div></div></div>
+              <div class="prop-row"><span class="prop-label">Rotation</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="-360" max="360" value="0" id="tf-rot" oninput="Properties.transform('rotation',this.value)"><input type="number" class="prop-num" value="0" id="tf-rot-num" onchange="Properties.transform('rotation',this.value)"><div class="kf-btn" onclick="Properties.keyframes('rotation')" title="Add Keyframe"></div></div></div>
+              <div class="prop-row"><span class="prop-label">Anchor X</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="-960" max="960" value="0" oninput="Properties.transform('anchorX',this.value)"><input type="number" class="prop-num" value="0" onchange="Properties.transform('anchorX',this.value)"></div></div>
+              <div class="prop-row"><span class="prop-label">Anchor Y</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="-540" max="540" value="0" oninput="Properties.transform('anchorY',this.value)"><input type="number" class="prop-num" value="0" onchange="Properties.transform('anchorY',this.value)"></div></div>
+              <div class="prop-row"><span class="prop-label">Opacity</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="0" max="100" value="100" id="tf-opacity" oninput="Properties.transform('opacity',this.value)"><input type="number" class="prop-num" value="100" id="tf-opacity-num" onchange="Properties.transform('opacity',this.value)"><div class="kf-btn" onclick="Properties.keyframes('opacity')" title="Add Keyframe"></div></div></div>
+            </div>
+          </div>
+          <!-- Blend Mode -->
+          <div class="prop-section">
+            <div class="prop-section-hdr" onclick="toggleSection(this)">
+              <span>&#9654;</span> Blend Mode <span class="arrow">&#9660;</span>
+            </div>
+            <div class="prop-body">
+              <div class="prop-row"><span class="prop-label">Mode</span><div class="prop-ctrl"><select class="prop-select" onchange="Properties.transform('blendMode',this.value)"><option>Normal</option><option>Multiply</option><option>Screen</option><option>Overlay</option><option>Darken</option><option>Lighten</option><option>Add</option><option>Subtract</option><option>Difference</option><option>Exclusion</option><option>Hue</option><option>Saturation</option><option>Color</option><option>Luminosity</option></select></div></div>
+            </div>
+          </div>
+          <!-- Speed -->
+          <div class="prop-section">
+            <div class="prop-section-hdr" onclick="toggleSection(this)">
+              <span>&#9654;</span> Speed / Duration <span class="arrow">&#9660;</span>
+            </div>
+            <div class="prop-body">
+              <div class="prop-row"><span class="prop-label">Speed</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="10" max="400" value="100" oninput="Properties.transform('speed',this.value)"><input type="number" class="prop-num" value="100" onchange="Properties.transform('speed',this.value)"></div></div>
+              <div class="prop-row"><span class="prop-label">Reverse</span><div class="prop-ctrl"><input type="checkbox" class="prop-checkbox" onchange="Properties.transform('reverse',this.checked)"></div></div>
+            </div>
+          </div>
+          <!-- Applied Effects -->
+          <div class="prop-section">
+            <div class="prop-section-hdr" onclick="toggleSection(this)">
+              <span>&#9654;</span> Applied Effects <span class="arrow">&#9660;</span>
+            </div>
+            <div class="prop-body" id="applied-effects-list">
+              <div style="padding:8px 10px;font-size:10px;color:var(--text3)">No effects applied</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- EFFECTS BROWSER TAB -->
+      <div id="effects-tab-right" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+        <div style="padding:6px;border-bottom:1px solid var(--border)">
+          <input class="fx-search" id="fx-search-right" placeholder="Search effects..." oninput="filterEffects(this.value,'right')">
+        </div>
+        <div id="fx-list-right" style="flex:1;overflow-y:auto"></div>
+      </div>
+      <!-- KEYFRAMES TAB -->
+      <div id="keyframes-tab" style="display:none;flex:1;overflow:hidden;flex-direction:column">
+        <div style="padding:8px 10px;font-size:10px;color:var(--text3)">
+          <div style="margin-bottom:6px;font-weight:600;color:var(--text2)">Keyframe Timeline</div>
+          <div id="kf-list" style="display:flex;flex-direction:column;gap:4px"></div>
+          <div style="margin-top:10px">
+            <div class="prop-row" style="padding:0">
+              <span class="prop-label">Interpolation</span>
+              <div class="prop-ctrl">
+                <select class="prop-select" onchange="Properties.keyframes('interp',this.value)">
+                  <option>Linear</option><option>Ease In</option><option>Ease Out</option>
+                  <option>Ease In/Out</option><option>Hold</option><option>Bezier</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMELINE RESIZE -->
+  <div class="resize-h" id="timeline-resize"></div>
+
+  <!-- TIMELINE -->
+  <div id="timeline" style="height:220px">
+    <div id="timeline-header">
+      <div id="tl-ruler-left">
+        <span style="font-size:9px;color:var(--text3)">TRACKS</span>
+        <div style="margin-left:auto;display:flex;gap:4px">
+          <div class="tb-btn" style="width:18px;height:18px;font-size:10px" onclick="Tools.tracks()" title="Add Track">+</div>
+        </div>
+      </div>
+      <canvas id="tl-ruler-canvas" height="28"></canvas>
+    </div>
+    <div id="tl-body">
+      <div id="tl-tracks-left" id="tl-labels"></div>
+      <div id="tl-tracks-right">
+        <div id="tl-content"></div>
+        <div id="tl-playhead-line" class="tl-playhead" style="left:0"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div id="statusbar">
+    <div class="status-item"><div class="status-dot" id="status-dot"></div><span id="status-msg">Ready</span></div>
+    <span>&#x7C;</span>
+    <span id="status-project">Untitled Project</span>
+    <span>&#x7C;</span>
+    <span id="status-resolution">1920×1080 @ 23.976fps</span>
+    <span>&#x7C;</span>
+    <span id="status-clips">0 clips</span>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+      <div class="progress-bar"><div class="progress-fill" id="render-progress" style="width:0%"></div></div>
+      <span id="status-render">Idle</span>
+    </div>
+  </div>
+</div>
+
+<!-- NODE GRAPH OVERLAY -->
+<div id="nodegraph">
+  <canvas id="ng-canvas"></canvas>
+  <div id="ng-toolbar">
+    <div class="ng-btn" onclick="GUI.toggleNodeGraph()">&#x2715; Close</div>
+    <div class="ng-btn" onclick="NodeGraph.addNode('Source')">Add Source</div>
+    <div class="ng-btn" onclick="NodeGraph.addNode('Effect')">Add Effect</div>
+    <div class="ng-btn" onclick="NodeGraph.addNode('Merge')">Add Merge</div>
+    <div class="ng-btn" onclick="NodeGraph.addNode('Output')">Output</div>
+    <div class="ng-btn" onclick="NodeGraph.reset()">Reset</div>
+  </div>
+  <div id="ng-nodes"></div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<!-- CRASH REPORT -->
+<div id="crash-overlay">
+  <div id="crash-box">
+    <h2>&#9888; Crash Report</h2>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:8px">Narina encountered an issue. Please send this report to help improve stability.</p>
+    <pre id="crash-log"></pre>
+    <div style="margin-top:8px">
+      <div class="prop-row" style="padding:0;gap:6px">
+        <span class="prop-label" style="font-size:11px">Your email (optional)</span>
+        <input type="email" class="prop-input" id="crash-email" placeholder="user@example.com" style="flex:1">
+      </div>
+      <div class="prop-row" style="padding:4px 0 0;gap:6px">
+        <span class="prop-label" style="font-size:11px">Description</span>
+        <textarea class="prop-input" id="crash-desc" rows="3" placeholder="What were you doing?" style="flex:1;resize:vertical;font-family:'Open Sans',sans-serif"></textarea>
+      </div>
+    </div>
+    <div class="crash-btns">
+      <div class="btn btn-ghost" onclick="document.getElementById('crash-overlay').classList.remove('show')">Cancel</div>
+      <div class="btn btn-primary" onclick="CrashReport.submitReport()">Send Report</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const State = {
+  project: { name: 'Untitled Project', width: 1920, height: 1080, fps: 23.976, duration: 600 },
+  media: [], clips: [], tracks: [], selectedClip: null,
+  playhead: 0, playing: false, looping: false, snap: true,
+  zoom: 1, scrollX: 0,
+  undoStack: [], redoStack: [],
+  clipboard: null,
+  keyframes: {},
+  activeEffects: [],
+  activeTool: 'select',
+  nodeGraph: { nodes: [], connections: [], open: false },
+  colorSpace: 'Rec.709',
+  safeArea: false,
+  grid: false
+};
+
+// ==================== HISTORY ====================
+const History = {
+  push(action) { State.undoStack.push(action); State.redoStack = []; updateStatus('Action recorded') },
+  undo() { if(!State.undoStack.length) return; const a = State.undoStack.pop(); State.redoStack.push(a); updateStatus('Undo: '+a.label); refreshTimeline() },
+  redo() { if(!State.redoStack.length) return; const a = State.redoStack.pop(); State.undoStack.push(a); updateStatus('Redo: '+a.label); refreshTimeline() }
+};
+
+// ==================== MEDIA TOOLS ====================
+const MediaTools = {
+  uploadMedia() {
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.multiple = true;
+    inp.accept = 'video/*,audio/*,image/*,.mov,.mp4,.mxf,.r3d,.braw,.ari,.mts,.m2ts';
+    inp.onchange = e => {
+      Array.from(e.target.files).forEach(f => {
+        const item = { id: Date.now()+Math.random(), name: f.name, size: f.size, type: f.type, url: URL.createObjectURL(f), duration: 120+Math.random()*300, kind: f.type.startsWith('video') ? 'video' : f.type.startsWith('audio') ? 'audio' : 'image' };
+        State.media.push(item);
+        renderMediaBin();
+        updateStatus('Imported: '+f.name);
+      });
+    };
+    inp.click();
+  },
+  exportMedia() {
+    showModal('Export', `
+      <div class="modal-row"><span class="modal-label">Format</span><select class="modal-input"><option>H.264 MP4</option><option>H.265 HEVC</option><option>ProRes 422</option><option>ProRes 4444</option><option>DNxHD</option><option>EXR Sequence</option><option>PNG Sequence</option><option>GIF</option></select></div>
+      <div class="modal-row"><span class="modal-label">Resolution</span><select class="modal-input"><option>1920×1080</option><option>3840×2160</option><option>1280×720</option><option>720×480</option><option>Custom...</option></select></div>
+      <div class="modal-row"><span class="modal-label">Frame Rate</span><select class="modal-input"><option>23.976</option><option>24</option><option>25</option><option>29.97</option><option>30</option><option>60</option></select></div>
+      <div class="modal-row"><span class="modal-label">Quality</span><input type="range" class="prop-slider" min="1" max="100" value="80" style="flex:1"><input type="number" class="prop-num" value="80"></div>
+      <div class="modal-row"><span class="modal-label">Output Path</span><input class="modal-input" value="~/Desktop/export.mp4" placeholder="Output path..."></div>
+      <div class="modal-row"><span class="modal-label">Color Space</span><select class="modal-input"><option>Rec.709</option><option>sRGB</option><option>HDR10</option><option>HLG</option></select></div>
+    `, 'Export', () => { closeModal(); simulateExport(); });
+  },
+  fileMenuOptions() { return ['New Project','Save Project','Open Project']; }
+};
+
+function simulateExport() {
+  let p = 0;
+  updateStatus('Exporting...');
+  document.getElementById('status-render').textContent = 'Exporting...';
+  const iv = setInterval(() => {
+    p += 2 + Math.random()*3;
+    if(p >= 100) { p = 100; clearInterval(iv); document.getElementById('status-render').textContent = 'Export complete'; updateStatus('Export complete'); }
+    document.getElementById('render-progress').style.width = p+'%';
+  }, 80);
+}
+
+// ==================== FILE MENU ====================
+const FileMenu = {
+  newProject() {
+    showModal('New Project', `
+      <div class="modal-row"><span class="modal-label">Project Name</span><input class="modal-input" id="np-name" value="Untitled Project"></div>
+      <div class="modal-row"><span class="modal-label">Resolution</span><select class="modal-input" id="np-res"><option>1920×1080</option><option>3840×2160</option><option>1280×720</option><option>720×480</option></select></div>
+      <div class="modal-row"><span class="modal-label">Frame Rate</span><select class="modal-input" id="np-fps"><option>23.976</option><option>24</option><option>25</option><option>29.97</option><option>30</option></select></div>
+      <div class="modal-row"><span class="modal-label">Duration</span><input class="modal-input" id="np-dur" value="00:10:00"></div>
+    `, 'Create', () => {
+      const name = document.getElementById('np-name').value;
+      const res = document.getElementById('np-res').value;
+      const fps = document.getElementById('np-fps').value;
+      State.project.name = name; State.project.fps = parseFloat(fps);
+      document.getElementById('proj-name').textContent = name;
+      document.getElementById('proj-fps').textContent = fps+' fps';
+      document.getElementById('status-project').textContent = name;
+      State.media = []; State.clips = []; State.undoStack = []; State.redoStack = [];
+      renderMediaBin(); refreshTimeline(); closeModal(); updateStatus('New project: '+name);
+    });
+  },
+  saveProject() {
+    const data = JSON.stringify({ project: State.project, media: State.media.map(m=>({...m,url:undefined})), clips: State.clips });
+    const b = new Blob([data],{type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+    a.download = (State.project.name||'project')+'.narina'; a.click();
+    updateStatus('Project saved');
+  },
+  openProject() {
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='.narina,.json';
+    inp.onchange = e => {
+      const f = e.target.files[0]; if(!f) return;
+      const r = new FileReader(); r.onload = ev => {
+        try { const d = JSON.parse(ev.target.result); State.project = d.project||State.project; State.clips = d.clips||[]; refreshTimeline(); updateStatus('Opened: '+f.name); document.getElementById('proj-name').textContent = State.project.name; } catch(ex) { updateStatus('Error loading project'); }
+      }; r.readAsText(f);
+    }; inp.click();
+  },
+  saveProjectAs() { this.saveProject(); }
+};
+
+// ==================== EDIT MENU ====================
+const EditMenu = {
+  undo() { History.undo() },
+  redo() { History.redo() },
+  copy() { if(State.selectedClip) { State.clipboard = {...State.selectedClip}; updateStatus('Copied') } },
+  paste() { if(State.clipboard) { const c = {...State.clipboard, id:Date.now(), start: State.playhead}; State.clips.push(c); refreshTimeline(); History.push({label:'Paste'}); updateStatus('Pasted') } },
+  cut() { if(State.selectedClip) { State.clipboard = {...State.selectedClip}; State.clips = State.clips.filter(c=>c.id!==State.selectedClip.id); State.selectedClip=null; refreshTimeline(); History.push({label:'Cut'}); updateStatus('Cut') } },
+  split() {
+    if(!State.selectedClip) return;
+    const c = State.selectedClip; const ph = State.playhead;
+    if(ph<=c.start||ph>=c.start+c.duration) return;
+    const a = {...c, id:Date.now(), duration: ph-c.start};
+    const b = {...c, id:Date.now()+1, start: ph, duration: c.start+c.duration-ph};
+    State.clips = State.clips.filter(x=>x.id!==c.id); State.clips.push(a,b);
+    refreshTimeline(); History.push({label:'Split'}); updateStatus('Clip split');
+  }
+};
+
+// ==================== OPENFX ====================
+const OpenFX = {
+  loadOpenFXforCPP() {
+    showModal('Load OpenFX Plugin', `
+      <div class="modal-row"><span class="modal-label">Plugin Path</span><input class="modal-input" id="ofx-path" placeholder="/usr/OFX/Plugins/MyFX.ofx.bundle"></div>
+      <div class="modal-row"><span class="modal-label">Host Bits</span><select class="modal-input"><option>64-bit</option><option>32-bit</option></select></div>
+      <div style="padding:8px 0;font-size:10px;color:var(--text3)">Supported API: OpenFX 1.4, C++ ABI compatible plugins</div>
+    `, 'Load Plugin', () => { closeModal(); updateStatus('OpenFX plugin loaded (stub)'); });
+  }
+};
+
+// ==================== PROPERTIES ====================
+const Properties = {
+  transform(prop, value) {
+    if(!State.selectedClip) return;
+    State.selectedClip[prop] = parseFloat(value)||value;
+    syncSliderNum(prop, value);
+    updateStatus('Transform: '+prop+' = '+value);
+  },
+  keyframes(prop, interp) {
+    const kfId = (State.selectedClip?.id||'global')+'_'+prop;
+    if(!State.keyframes[kfId]) State.keyframes[kfId] = [];
+    if(interp) { State.keyframes[kfId].forEach(k=>k.interp=interp); return; }
+    const kf = { time: State.playhead, value: State.selectedClip?.[prop]||0, interp:'Linear' };
+    State.keyframes[kfId].push(kf);
+    renderKeyframeList();
+    updateStatus('Keyframe added: '+prop+' @ '+formatTimecode(State.playhead));
+    History.push({label:'Add Keyframe'});
+  }
+};
+
+function syncSliderNum(prop, value) {
+  const map = { posX:['tf-posx','tf-posx-num'], posY:['tf-posy','tf-posy-num'], scaleX:['tf-scax','tf-scax-num'], scaleY:['tf-scay','tf-scay-num'], rotation:['tf-rot','tf-rot-num'], opacity:['tf-opacity','tf-opacity-num'] };
+  if(map[prop]) { const [s,n] = map[prop]; const se = document.getElementById(s); const ne = document.getElementById(n); if(se) se.value=value; if(ne) ne.value=value; }
+}
+
+function renderKeyframeList() {
+  const el = document.getElementById('kf-list');
+  const entries = Object.entries(State.keyframes);
+  if(!entries.length) { el.innerHTML='<span style="color:var(--text3);font-size:10px">No keyframes</span>'; return; }
+  el.innerHTML = entries.map(([id,kfs])=>`
+    <div style="border:1px solid var(--border);border-radius:3px;overflow:hidden;margin-bottom:4px">
+      <div style="background:var(--bg3);padding:3px 8px;font-size:10px;color:var(--accent)">${id.split('_').pop()}</div>
+      ${kfs.map(k=>`<div style="display:flex;padding:3px 8px;font-size:10px;color:var(--text2);border-top:1px solid var(--border);justify-content:space-between"><span>${formatTimecode(k.time)}</span><span>${typeof k.value==='number'?k.value.toFixed(2):k.value}</span><span style="color:var(--text3)">${k.interp}</span></div>`).join('')}
+    </div>`).join('');
+}
+
+// ==================== OPENCOLORIO ====================
+const OpenColorIO = {
+  openColorIO() {
+    showModal('OpenColorIO Configuration', `
+      <div class="modal-row"><span class="modal-label">Config File</span><input class="modal-input" id="ocio-path" placeholder="/etc/ocio/config.ocio"></div>
+      <div class="modal-row"><span class="modal-label">Input Space</span><select class="modal-input"><option>scene_linear</option><option>ACEScg</option><option>sRGB</option><option>Rec.709</option><option>Log</option></select></div>
+      <div class="modal-row"><span class="modal-label">Output Space</span><select class="modal-input"><option>Rec.709</option><option>sRGB</option><option>ACEScg</option><option>HDR10</option></select></div>
+      <div class="modal-row"><span class="modal-label">Display</span><select class="modal-input"><option>sRGB Monitor</option><option>P3-D65</option><option>Rec.2020</option></select></div>
+      <div class="modal-row"><span class="modal-label">View</span><select class="modal-input"><option>Film</option><option>Log</option><option>Raw</option><option>False Color</option></select></div>
+    `, 'Apply', () => { closeModal(); updateStatus('OpenColorIO config applied'); });
+  },
+  setColorSpace(cs) { State.colorSpace = cs; updateStatus('Color space: '+cs); }
+};
+
+// ==================== VIDEO EFFECTS ====================
+const videoEffectsData = {
+  'EFX': ['EFX','PseudoColour','Invert','RGB Split','Channel Mixer','EF Kernel','Arithmetic Color','Edge Detect','Laplace','Unsharp Mask'],
+  'Generate': ['Text','Checkerboard','Gradient','Radial Gradient','(Legacy) Titles and Text'],
+  'Blur & Sharpen': ['Sharpen','Gaussian Blur','EF Box Blur','Unsharp Mask'],
+  'Optics': ['Optics Compensation','EF Lens','Mirror'],
+  'Color': ['Tint','Duotone','Tritone','Colorize','Color Temperature','Halftone','Quadtone'],
+  'Distort': ['Flo Motion','Wave Warp','Swirl','Pinch/Punch','ZigZag','Pixelate','Displace','Shear','Fourier Transform','Dual Pinch'],
+  'Stylize': ['EF Kaleida','EF Tiler'],
+  'Motion': ['Shake Position','Shake Scale','Shake Rotation'],
+  '3D': ['Cube','Sphere','Cylinder','Hollow Box'],
+  'Lumi': ['LumiLayer','LumiShake'],
+  'Shape': ['Shape']
+};
+
+const miscEffectsData = {
+  'Misc': ['Shadertoy','Chromatic Aberration','Petzval Lens','Tzatzki Lens'],
+  'Composite': ['Corner Pin','Chroma Key','Color Match'],
+  'Color Correct': ['RGB Radial','RGB Displacement'],
+  'VR': ['VR360 Transform']
+};
+
+const allEffectsData = { ...videoEffectsData, ...miscEffectsData };
+
+const effectParams = {
+  'Gaussian Blur': [{label:'Radius X',type:'range',min:0,max:100,val:5},{label:'Radius Y',type:'range',min:0,max:100,val:5},{label:'Iterations',type:'number',min:1,max:8,val:1}],
+  'EF Box Blur': [{label:'Width',type:'range',min:0,max:100,val:10},{label:'Height',type:'range',min:0,max:100,val:10}],
+  'Sharpen': [{label:'Amount',type:'range',min:0,max:200,val:50}],
+  'Unsharp Mask': [{label:'Radius',type:'range',min:0,max:20,val:3},{label:'Amount',type:'range',min:0,max:200,val:60},{label:'Threshold',type:'range',min:0,max:255,val:0}],
+  'Invert': [{label:'Channel',type:'select',options:['All','Red','Green','Blue','Alpha'],val:'All'}],
+  'RGB Split': [{label:'Red X',type:'range',min:-50,max:50,val:5},{label:'Red Y',type:'range',min:-50,max:50,val:0},{label:'Blue X',type:'range',min:-50,max:50,val:-5},{label:'Blue Y',type:'range',min:-50,max:50,val:0}],
+  'Chromatic Aberration': [{label:'Amount',type:'range',min:0,max:50,val:5},{label:'Angle',type:'range',min:-180,max:180,val:0}],
+  'Tint': [{label:'Red',type:'range',min:0,max:255,val:255},{label:'Green',type:'range',min:0,max:255,val:200},{label:'Blue',type:'range',min:0,max:255,val:100},{label:'Amount',type:'range',min:0,max:100,val:50}],
+  'Hue/Saturation': [{label:'Hue',type:'range',min:-180,max:180,val:0},{label:'Saturation',type:'range',min:-100,max:100,val:0},{label:'Lightness',type:'range',min:-100,max:100,val:0}],
+  'Color Temperature': [{label:'Temperature',type:'range',min:1000,max:10000,val:6500},{label:'Tint',type:'range',min:-100,max:100,val:0}],
+  'Edge Detect': [{label:'Threshold',type:'range',min:0,max:255,val:50},{label:'Multiply',type:'range',min:0,max:10,val:1}],
+  'Laplace': [{label:'Scale',type:'range',min:0,max:10,val:1}],
+  'Chroma Key': [{label:'Color R',type:'range',min:0,max:255,val:0},{label:'Color G',type:'range',min:0,max:255,val:255},{label:'Color B',type:'range',min:0,max:255,val:0},{label:'Tolerance',type:'range',min:0,max:100,val:30},{label:'Softness',type:'range',min:0,max:100,val:10}],
+  'Corner Pin': [{label:'TL X',type:'number',val:0},{label:'TL Y',type:'number',val:0},{label:'TR X',type:'number',val:1920},{label:'TR Y',type:'number',val:0},{label:'BL X',type:'number',val:0},{label:'BL Y',type:'number',val:1080},{label:'BR X',type:'number',val:1920},{label:'BR Y',type:'number',val:1080}],
+  'Wave Warp': [{label:'Amplitude',type:'range',min:0,max:200,val:20},{label:'Frequency',type:'range',min:0,max:100,val:10},{label:'Phase',type:'range',min:0,max:360,val:0},{label:'Direction',type:'range',min:-180,max:180,val:0}],
+  'Swirl': [{label:'Angle',type:'range',min:-720,max:720,val:45},{label:'Radius',type:'range',min:0,max:1000,val:200},{label:'Center X',type:'range',min:0,max:1920,val:960},{label:'Center Y',type:'range',min:0,max:1080,val:540}],
+  'Pixelate': [{label:'Width',type:'range',min:1,max:200,val:10},{label:'Height',type:'range',min:1,max:200,val:10}],
+  'Fourier Transform': [{label:'Mode',type:'select',options:['Magnitude','Phase','Real','Imaginary'],val:'Magnitude'},{label:'Log Scale',type:'checkbox',val:true}],
+  'EF Kaleida': [{label:'Segments',type:'range',min:2,max:32,val:6},{label:'Rotation',type:'range',min:0,max:360,val:0},{label:'Zoom',type:'range',min:1,max:10,val:1}],
+  'EF Tiler': [{label:'Cols',type:'range',min:1,max:20,val:3},{label:'Rows',type:'range',min:1,max:20,val:3},{label:'Mirror X',type:'checkbox',val:false},{label:'Mirror Y',type:'checkbox',val:false}],
+  'Shake Position': [{label:'Amplitude X',type:'range',min:0,max:200,val:20},{label:'Amplitude Y',type:'range',min:0,max:200,val:20},{label:'Frequency',type:'range',min:0,max:30,val:10},{label:'Seed',type:'number',val:0}],
+  'Shake Scale': [{label:'Amplitude',type:'range',min:0,max:50,val:5},{label:'Frequency',type:'range',min:0,max:30,val:8}],
+  'Shake Rotation': [{label:'Amplitude',type:'range',min:0,max:45,val:5},{label:'Frequency',type:'range',min:0,max:30,val:10}],
+  'Cube': [{label:'Rotation X',type:'range',min:-180,max:180,val:20},{label:'Rotation Y',type:'range',min:-180,max:180,val:20},{label:'Rotation Z',type:'range',min:-180,max:180,val:0},{label:'Perspective',type:'range',min:0,max:1000,val:500}],
+  'Sphere': [{label:'Radius',type:'range',min:0,max:500,val:200},{label:'Rotation',type:'range',min:0,max:360,val:0},{label:'Perspective',type:'range',min:0,max:1000,val:500}],
+  'Cylinder': [{label:'Radius',type:'range',min:0,max:500,val:200},{label:'Rotation',type:'range',min:0,max:360,val:0}],
+  'VR360 Transform': [{label:'Yaw',type:'range',min:-180,max:180,val:0},{label:'Pitch',type:'range',min:-90,max:90,val:0},{label:'Roll',type:'range',min:-180,max:180,val:0},{label:'FOV',type:'range',min:10,max:170,val:90}],
+  'Shadertoy': [{label:'Shader Code',type:'textarea',val:'void mainImage(out vec4 fragColor, in vec2 fragCoord){fragColor=vec4(fragCoord/iResolution.xy,0,1);}'},{label:'Time Scale',type:'range',min:0,max:5,val:1}],
+  'Gradient': [{label:'Start R',type:'range',min:0,max:255,val:0},{label:'Start G',type:'range',min:0,max:255,val:0},{label:'Start B',type:'range',min:0,max:255,val:0},{label:'End R',type:'range',min:0,max:255,val:255},{label:'End G',type:'range',min:0,max:255,val:255},{label:'End B',type:'range',min:0,max:255,val:255},{label:'Angle',type:'range',min:0,max:360,val:0}],
+  'Text': [{label:'Content',type:'text',val:'Text Here'},{label:'Font Size',type:'range',min:8,max:200,val:48},{label:'Font Family',type:'text',val:'Open Sans'},{label:'Opacity',type:'range',min:0,max:100,val:100}],
+  'Halftone': [{label:'Dot Size',type:'range',min:1,max:50,val:10},{label:'Angle',type:'range',min:0,max:180,val:45},{label:'Mode',type:'select',options:['Dots','Lines','Crosshatch'],val:'Dots'}],
+  'Duotone': [{label:'Shadow R',type:'range',min:0,max:255,val:0},{label:'Shadow G',type:'range',min:0,max:255,val:0},{label:'Shadow B',type:'range',min:0,max:255,val:100},{label:'Hi R',type:'range',min:0,max:255,val:255},{label:'Hi G',type:'range',min:0,max:255,val:200},{label:'Hi B',type:'range',min:0,max:255,val:100}],
+  'Mirror': [{label:'Axis',type:'select',options:['Horizontal','Vertical','Both','Diagonal'],val:'Horizontal'},{label:'Offset',type:'range',min:-500,max:500,val:0}],
+  'Pinch/Punch': [{label:'Amount',type:'range',min:-100,max:100,val:50},{label:'Center X',type:'range',min:0,max:1920,val:960},{label:'Center Y',type:'range',min:0,max:1080,val:540},{label:'Radius',type:'range',min:0,max:1000,val:300}],
+  'ZigZag': [{label:'Amount',type:'range',min:0,max:100,val:20},{label:'Frequency',type:'range',min:1,max:50,val:10},{label:'Type',type:'select',options:['Pond','Out from Center','Around Center'],val:'Pond'}],
+  'Color Match': [{label:'Source Layer',type:'select',options:['Layer 1','Layer 2','Layer 3'],val:'Layer 1'},{label:'Strength',type:'range',min:0,max:100,val:100},{label:'Mode',type:'select',options:['Histogram','Mean','Median'],val:'Histogram'}],
+  'Petzval Lens': [{label:'Swirl Amount',type:'range',min:0,max:200,val:50},{label:'Radius',type:'range',min:0,max:1000,val:400},{label:'Vignette',type:'range',min:0,max:100,val:30}],
+  'Tzatzki Lens': [{label:'Distortion',type:'range',min:-100,max:100,val:20},{label:'Zoom',type:'range',min:50,max:200,val:100}],
+  'LumiLayer': [{label:'Luma Key',type:'range',min:0,max:255,val:128},{label:'Softness',type:'range',min:0,max:100,val:10},{label:'Invert',type:'checkbox',val:false}],
+  'LumiShake': [{label:'Luma Amplitude',type:'range',min:0,max:100,val:20},{label:'Frequency',type:'range',min:0,max:30,val:8}],
+  'Shape': [{label:'Type',type:'select',options:['Rectangle','Ellipse','Triangle','Star','Pentagon'],val:'Rectangle'},{label:'Fill R',type:'range',min:0,max:255,val:255},{label:'Fill G',type:'range',min:0,max:255,val:255},{label:'Fill B',type:'range',min:0,max:255,val:255},{label:'Stroke Width',type:'range',min:0,max:20,val:0},{label:'Corner Radius',type:'range',min:0,max:100,val:0}],
+  'RGB Radial': [{label:'Center X',type:'range',min:0,max:1920,val:960},{label:'Center Y',type:'range',min:0,max:1080,val:540},{label:'R Offset',type:'range',min:0,max:500,val:100},{label:'G Offset',type:'range',min:0,max:500,val:0},{label:'B Offset',type:'range',min:0,max:500,val:200}],
+  'RGB Displacement': [{label:'Map Layer',type:'select',options:['Layer 1','Layer 2'],val:'Layer 1'},{label:'Max H Disp',type:'range',min:0,max:500,val:50},{label:'Max V Disp',type:'range',min:0,max:500,val:50}],
+  'Displace': [{label:'H Displacement',type:'range',min:0,max:500,val:50},{label:'V Displacement',type:'range',min:0,max:500,val:50},{label:'Map Layer',type:'select',options:['Layer 1','Layer 2','Layer 3'],val:'Layer 1'}],
+  'Shear': [{label:'Shear X',type:'range',min:-100,max:100,val:0},{label:'Shear Y',type:'range',min:-100,max:100,val:0}],
+  'Optics Compensation': [{label:'FOV',type:'range',min:1,max:150,val:60},{label:'Reverse',type:'checkbox',val:false}],
+  'EF Lens': [{label:'Focal Length',type:'range',min:8,max:600,val:50},{label:'Aperture',type:'range',min:1,max:22,val:5.6},{label:'Focus Distance',type:'range',min:0,max:100,val:50}],
+  'Flo Motion': [{label:'Flow Scale',type:'range',min:0,max:100,val:20},{label:'Iterations',type:'range',min:1,max:20,val:5}],
+  'Dual Pinch': [{label:'Pinch 1 X',type:'range',min:0,max:1920,val:480},{label:'Pinch 1 Y',type:'range',min:0,max:1080,val:540},{label:'Pinch 2 X',type:'range',min:0,max:1920,val:1440},{label:'Pinch 2 Y',type:'range',min:0,max:1080,val:540},{label:'Amount',type:'range',min:-100,max:100,val:50}],
+  'Quadtone': [{label:'Highlight R',type:'range',min:0,max:255,val:255},{label:'Highlight G',type:'range',min:0,max:255,val:255},{label:'Highlight B',type:'range',min:0,max:255,val:200},{label:'Midtone R',type:'range',min:0,max:255,val:180},{label:'Shadow R',type:'range',min:0,max:255,val:50}],
+  'Colorize': [{label:'Hue',type:'range',min:0,max:360,val:180},{label:'Saturation',type:'range',min:0,max:100,val:50},{label:'Lightness',type:'range',min:-100,max:100,val:0}],
+  'Arithmetic Color': [{label:'R Multiply',type:'range',min:0,max:4,val:1},{label:'G Multiply',type:'range',min:0,max:4,val:1},{label:'B Multiply',type:'range',min:0,max:4,val:1},{label:'R Add',type:'range',min:-255,max:255,val:0}],
+  'Channel Mixer': [{label:'RR',type:'range',min:-2,max:2,val:1},{label:'RG',type:'range',min:-2,max:2,val:0},{label:'RB',type:'range',min:-2,max:2,val:0},{label:'GR',type:'range',min:-2,max:2,val:0},{label:'GG',type:'range',min:-2,max:2,val:1},{label:'GB',type:'range',min:-2,max:2,val:0},{label:'BR',type:'range',min:-2,max:2,val:0},{label:'BG',type:'range',min:-2,max:2,val:0},{label:'BB',type:'range',min:-2,max:2,val:1}],
+  'EF Kernel': [{label:'Matrix',type:'textarea',val:'0 -1 0\n-1 5 -1\n0 -1 0'},{label:'Normalize',type:'checkbox',val:true}],
+  'PseudoColour': [{label:'Preset',type:'select',options:['Jet','Hot','Cool','Viridis','Plasma','Inferno','Magma','Grayscale'],val:'Jet'},{label:'Min Value',type:'range',min:0,max:255,val:0},{label:'Max Value',type:'range',min:0,max:255,val:255}],
+  'Radial Gradient': [{label:'Center X',type:'range',min:0,max:1920,val:960},{label:'Center Y',type:'range',min:0,max:1080,val:540},{label:'Radius',type:'range',min:0,max:1500,val:500},{label:'Inner R',type:'range',min:0,max:255,val:255},{label:'Outer R',type:'range',min:0,max:255,val:0}],
+  'Checkerboard': [{label:'Width',type:'range',min:2,max:500,val:50},{label:'Height',type:'range',min:2,max:500,val:50},{label:'Color1 R',type:'range',min:0,max:255,val:0},{label:'Color2 R',type:'range',min:0,max:255,val:255}],
+  '(Legacy) Titles and Text': [{label:'Text',type:'text',val:'Title Text'},{label:'Font',type:'text',val:'Open Sans'},{label:'Size',type:'range',min:8,max:300,val:72},{label:'Style',type:'select',options:['Normal','Bold','Italic','Bold Italic'],val:'Bold'}],
+  'Hollow Box': [{label:'Width',type:'range',min:0,max:1920,val:400},{label:'Height',type:'range',min:0,max:1080,val:300},{label:'Thickness',type:'range',min:1,max:100,val:10},{label:'Rotation',type:'range',min:-180,max:180,val:0}]
+};
+
+const VideoEffects = {
+  add(name) {
+    const params = effectParams[name] || [{label:'Amount',type:'range',min:0,max:100,val:50}];
+    const eff = { id: Date.now(), name, enabled: true, params: params.map(p=>({...p})) };
+    State.activeEffects.push(eff);
+    renderAppliedEffects();
+    renderEffectParams(eff);
+    History.push({label:'Add Effect: '+name});
+    updateStatus('Effect added: '+name);
+    switchRightTab('props');
+    document.getElementById('clip-properties').style.display='block';
+    document.getElementById('no-selection').style.display='none';
+  },
+  remove(id) {
+    State.activeEffects = State.activeEffects.filter(e=>e.id!==id);
+    renderAppliedEffects();
+    History.push({label:'Remove Effect'});
+    updateStatus('Effect removed');
+  },
+  toggle(id) {
+    const e = State.activeEffects.find(x=>x.id===id);
+    if(e) { e.enabled=!e.enabled; renderAppliedEffects(); }
+  }
+};
+
+const MiscEffects = {
+  add(name) { VideoEffects.add(name); },
+  remove(id) { VideoEffects.remove(id); }
+};
+
+function renderAppliedEffects() {
+  const el = document.getElementById('applied-effects-list');
+  if(!State.activeEffects.length) { el.innerHTML='<div style="padding:8px 10px;font-size:10px;color:var(--text3)">No effects applied</div>'; return; }
+  el.innerHTML = State.activeEffects.map(e=>`
+    <div class="afx-item" onclick="renderEffectParams(State.activeEffects.find(x=>x.id===${e.id}))">
+      <div class="afx-toggle ${e.enabled?'':'off'}" onclick="event.stopPropagation();VideoEffects.toggle(${e.id})" title="Toggle">${e.enabled?'●':'○'}</div>
+      <span class="afx-name">${e.name}</span>
+      <div class="afx-remove" onclick="event.stopPropagation();VideoEffects.remove(${e.id})">×</div>
+    </div>
+  `).join('');
+}
+
+function renderEffectParams(eff) {
+  if(!eff) return;
+  const section = document.querySelector('#clip-properties .prop-section:last-child .prop-body');
+  const extra = document.getElementById('eff-params-section');
+  const existing = document.getElementById('eff-params-section');
+  if(existing) existing.remove();
+  const div = document.createElement('div');
+  div.id='eff-params-section';
+  div.className='prop-section';
+  div.innerHTML=`
+    <div class="prop-section-hdr" onclick="toggleSection(this)"><span>▶</span> ${eff.name} Parameters <span class="arrow">▾</span></div>
+    <div class="prop-body">
+      ${eff.params.map(p=>{
+        const pid=`ep_${eff.id}_${p.label.replace(/\s/g,'_')}`;
+        if(p.type==='range') return `<div class="prop-row"><span class="prop-label">${p.label}</span><div class="prop-ctrl"><input type="range" class="prop-slider" min="${p.min}" max="${p.max}" value="${p.val}" oninput="this.nextElementSibling.value=this.value"><input type="number" class="prop-num" value="${p.val}"><div class="kf-btn" onclick="Properties.keyframes('${p.label}')" title="Keyframe"></div></div></div>`;
+        if(p.type==='checkbox') return `<div class="prop-row"><span class="prop-label">${p.label}</span><div class="prop-ctrl"><input type="checkbox" class="prop-checkbox" ${p.val?'checked':''}></div></div>`;
+        if(p.type==='select') return `<div class="prop-row"><span class="prop-label">${p.label}</span><div class="prop-ctrl"><select class="prop-select">${p.options.map(o=>`<option ${o===p.val?'selected':''}>${o}</option>`).join('')}</select></div></div>`;
+        if(p.type==='textarea') return `<div class="prop-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span class="prop-label">${p.label}</span><textarea class="prop-input" rows="4" style="width:100%;font-family:'Courier New',monospace;font-size:10px;resize:vertical">${p.val}</textarea></div>`;
+        return `<div class="prop-row"><span class="prop-label">${p.label}</span><div class="prop-ctrl"><input class="prop-input" value="${p.val}"></div></div>`;
+      }).join('')}
+    </div>`;
+  document.getElementById('clip-properties').appendChild(div);
+}
+
+// ==================== NODE GRAPH ====================
+const NodeGraph = {
+  addNode(type) {
+    const colors = {Source:'#27ae60',Effect:'#8e44ad',Merge:'#2980b9',Output:'#c0392b',Grade:'#e8a020'};
+    const id = 'node_'+Date.now();
+    const x = 100+Math.random()*400; const y = 60+Math.random()*200;
+    const div = document.createElement('div');
+    div.className='node'; div.id=id; div.style.left=x+'px'; div.style.top=y+'px';
+    const portIn = type!=='Source' ? `<div class="node-port"><div class="port-dot" style="border-color:${colors[type]||'#888'}"></div><span>In</span></div>` : '';
+    const portOut = type!=='Output' ? `<div class="node-port out"><div class="port-dot out" style="border-color:${colors[type]||'#888'}"></div><span>Out</span></div>` : '';
+    div.innerHTML=`<div class="node-hdr"><div class="dot" style="background:${colors[type]||'#888'}"></div>${type}</div><div class="node-ports">${portIn}${portOut}</div>`;
+    makeDraggable(div);
+    document.getElementById('ng-nodes').appendChild(div);
+    State.nodeGraph.nodes.push({id,type,x,y});
+  },
+  reset() { document.getElementById('ng-nodes').innerHTML=''; State.nodeGraph.nodes=[]; State.nodeGraph.connections=[]; }
+};
+
+function makeDraggable(el) {
+  let ox,oy,sx,sy,drag=false;
+  el.querySelector('.node-hdr').addEventListener('mousedown', e => { drag=true; ox=parseInt(el.style.left)||0; oy=parseInt(el.style.top)||0; sx=e.clientX; sy=e.clientY; e.preventDefault(); });
+  document.addEventListener('mousemove', e => { if(!drag) return; el.style.left=(ox+e.clientX-sx)+'px'; el.style.top=(oy+e.clientY-sy)+'px'; });
+  document.addEventListener('mouseup', ()=>{ drag=false; });
+}
+
+// ==================== TOOLS ====================
+const Tools = {
+  tracks() {
+    showModal('Track Options', `
+      <div class="modal-row"><span class="modal-label">Track Name</span><input class="modal-input" id="track-name" value="Video ${State.tracks.length+1}"></div>
+      <div class="modal-row"><span class="modal-label">Track Type</span><select class="modal-input" id="track-type"><option>Video</option><option>Audio</option><option>Adjustment</option><option>Title</option></select></div>
+      <div class="modal-row"><span class="modal-label">Height</span><select class="modal-input"><option>Small (24px)</option><option selected>Normal (32px)</option><option>Large (48px)</option><option>XL (64px)</option></select></div>
+    `, 'Add Track', () => {
+      const name = document.getElementById('track-name').value;
+      const type = document.getElementById('track-type').value;
+      State.tracks.push({id:Date.now(),name,type,muted:false,solo:false,locked:false});
+      refreshTimeline(); closeModal(); updateStatus('Track added: '+name);
+    });
+  },
+  layers() {
+    showModal('Layer Manager', `
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Active Tracks</div>
+      <div style="border:1px solid var(--border);border-radius:3px;overflow:hidden;max-height:200px;overflow-y:auto">
+        ${State.tracks.map((t,i)=>`
+          <div style="display:flex;align-items:center;padding:5px 10px;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2);gap:8px">
+            <span style="color:var(--text3)">${i+1}</span>
+            <span style="flex:1">${t.name}</span>
+            <span style="color:var(--text3);font-size:10px">${t.type}</span>
+          </div>`).join('')||'<div style="padding:10px;color:var(--text3);font-size:11px">No tracks</div>'}
+      </div>
+    `, 'Close', ()=>closeModal());
+  }
+};
+
+// ==================== GUI ====================
+const GUI = {
+  toggleNodeGraph() {
+    const ng = document.getElementById('nodegraph');
+    State.nodeGraph.open = !State.nodeGraph.open;
+    ng.style.display = State.nodeGraph.open ? 'block' : 'none';
+    if(State.nodeGraph.open && !State.nodeGraph.nodes.length) {
+      NodeGraph.addNode('Source'); NodeGraph.addNode('Effect'); NodeGraph.addNode('Output');
+    }
+  },
+  togglePanel(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display==='none' ? 'flex' : 'none';
+  },
+  resetLayout() {
+    document.getElementById('left-panel').style.display='flex';
+    document.getElementById('right-panel').style.display='flex';
+    document.getElementById('nodegraph').style.display='none';
+    State.nodeGraph.open=false;
+  }
+};
+
+// ==================== INSTALL ====================
+const InstallNarina = {
+  installNarinaDesktopNineExe() {
+    showModal('Install Narina Desktop App', `
+      <div style="text-align:center;padding:10px 0">
+        <div style="font-size:32px;margin-bottom:10px">🖥</div>
+        <div style="font-size:13px;color:var(--text);margin-bottom:6px;font-weight:600">Narina Desktop 2.5.4</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:14px">Install the full desktop application for GPU-accelerated rendering, hardware codec support, and offline access.</div>
+      </div>
+      <div class="modal-row"><span class="modal-label">Platform</span><select class="modal-input"><option>Windows x64 (.exe)</option><option>macOS Universal (.dmg)</option><option>Linux x64 (.AppImage)</option></select></div>
+      <div class="modal-row"><span class="modal-label">Install Path</span><input class="modal-input" value="C:\\Program Files\\Narina" placeholder="Installation directory"></div>
+      <div style="background:var(--bg4);border-radius:3px;padding:8px 10px;font-size:10px;color:var(--text3);margin-top:6px">Requires: 4GB RAM minimum, GPU with OpenGL 4.0+, 2GB disk space</div>
+    `, 'Download & Install', () => { closeModal(); simulateExport(); updateStatus('Installing Narina Desktop...'); });
+  }
+};
+
+// ==================== CRASH REPORT ====================
+const CrashReport = {
+  crashReport() {
+    const log = `Narina 2.5.4 - Crash Report
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Time: ${new Date().toISOString()}
+Build: 2.5.4.${Math.floor(Math.random()*9999)}
+Platform: ${navigator.platform}
+UA: ${navigator.userAgent.slice(0,60)}...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Project: ${State.project.name}
+Clips: ${State.clips.length} | Tracks: ${State.tracks.length}
+Effects: ${State.activeEffects.length}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Stack Trace:
+  at VideoEffects.renderFrame (narina.js:2145)
+  at Transport.tick (narina.js:891)
+  at requestAnimationFrame (native)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    document.getElementById('crash-log').textContent = log;
+    document.getElementById('crash-overlay').classList.add('show');
+  },
+  submitReport() {
+    document.getElementById('crash-overlay').classList.remove('show');
+    updateStatus('Crash report submitted. Thank you.');
+  }
+};
+
+// ==================== TRANSPORT ====================
+let playInterval = null;
+const Transport = {
+  togglePlay() {
+    State.playing = !State.playing;
+    const btn = document.getElementById('btn-play');
+    if(State.playing) { btn.innerHTML='&#9646;&#9646;'; playInterval=setInterval(()=>{ State.playhead+=1; if(State.playhead>State.project.duration){if(State.looping)State.playhead=0;else{State.playing=false;btn.innerHTML='&#9654;';clearInterval(playInterval);}} updateTimecode(); updatePlayhead(); },1000/State.project.fps); }
+    else { btn.innerHTML='&#9654;'; clearInterval(playInterval); }
+  },
+  stop() { State.playing=false; document.getElementById('btn-play').innerHTML='&#9654;'; clearInterval(playInterval); State.playhead=0; updateTimecode(); updatePlayhead(); },
+  goStart() { State.playhead=0; updateTimecode(); updatePlayhead(); },
+  goEnd() { State.playhead=State.project.duration; updateTimecode(); updatePlayhead(); },
+  stepForward() { State.playhead=Math.min(State.project.duration,State.playhead+1); updateTimecode(); updatePlayhead(); },
+  stepBack() { State.playhead=Math.max(0,State.playhead-1); updateTimecode(); updatePlayhead(); },
+  setIn() { State.inPoint=State.playhead; updateStatus('In: '+formatTimecode(State.playhead)); },
+  setOut() { State.outPoint=State.playhead; updateStatus('Out: '+formatTimecode(State.playhead)); },
+  toggleLoop() { State.looping=!State.looping; document.getElementById('btn-loop').classList.toggle('active',State.looping); updateStatus(State.looping?'Loop on':'Loop off'); }
+};
+
+function updateTimecode() { document.getElementById('timecode').textContent=formatTimecode(State.playhead); document.getElementById('viewer-info').textContent=`${State.project.width}×${State.project.height} | ${formatTimecode(State.playhead)}`; }
+function updatePlayhead() { document.getElementById('tl-playhead-line').style.left=(State.playhead*State.zoom*Timeline.pxPerSec)+'px'; }
+function formatTimecode(frames) {
+  const fps=State.project.fps; const f=Math.floor(frames); const fr=f%Math.ceil(fps);
+  const s=Math.floor(f/fps)%60; const m=Math.floor(f/fps/60)%60; const h=Math.floor(f/fps/3600);
+  return [h,m,s,fr].map(x=>String(x).padStart(2,'0')).join(':');
+}
+
+// ==================== TIMELINE ====================
+const Timeline = {
+  pxPerSec: 5,
+  zoomIn() { this.pxPerSec=Math.min(this.pxPerSec*1.5,80); refreshTimeline(); },
+  zoomOut() { this.pxPerSec=Math.max(this.pxPerSec/1.5,1); refreshTimeline(); },
+  fitView() { this.pxPerSec=5; refreshTimeline(); },
+  toggleSnap() { State.snap=!State.snap; document.getElementById('btn-snap').classList.toggle('active',State.snap); updateStatus(State.snap?'Snap on':'Snap off'); }
+};
+
+function refreshTimeline() {
+  const labelsEl = document.getElementById('tl-tracks-left');
+  const contentEl = document.getElementById('tl-content');
+  if(!labelsEl||!contentEl) return;
+  const trackCount = Math.max(3,State.tracks.length);
+  const trackDefs = State.tracks.length ? State.tracks : [
+    {id:1,name:'Video 1',type:'Video',muted:false,solo:false,locked:false},
+    {id:2,name:'Video 2',type:'Video',muted:false,solo:false,locked:false},
+    {id:3,name:'Audio 1',type:'Audio',muted:false,solo:false,locked:false}
+  ];
+  labelsEl.innerHTML = trackDefs.map(t=>`
+    <div class="tl-track-label">
+      <span style="font-size:9px;color:var(--text3);width:8px">${t.type==='Video'?'V':'A'}</span>
+      <span class="tl-track-name">${t.name}</span>
+      <div class="tl-track-icons">
+        <div class="tl-mute" title="Mute">M</div>
+        <div class="tl-solo" title="Solo">S</div>
+        <div class="tl-lock" title="Lock">L</div>
+      </div>
+    </div>`).join('');
+  const totalW = Math.max(800, State.project.duration * Timeline.pxPerSec);
+  contentEl.style.width = totalW+'px';
+  contentEl.style.minHeight = (trackDefs.length*33)+'px';
+  const clipColors = ['#1a3a5c','#1a4a2a','#4a1a1a','#3a1a4a','#1a3a4a','#3a3a1a'];
+  contentEl.innerHTML = trackDefs.map((t,ti)=>`
+    <div class="tl-row" style="width:${totalW}px">
+      ${State.clips.filter(c=>c.track===ti).map(c=>`
+        <div class="tl-clip ${State.selectedClip?.id===c.id?'selected':''}" style="left:${c.start*Timeline.pxPerSec}px;width:${c.duration*Timeline.pxPerSec}px;background:${clipColors[ti%clipColors.length]}" onclick="selectClip(${c.id})">
+          <div class="tl-clip-inner">${c.name}</div>
+        </div>`).join('')}
+    </div>`).join('');
+  drawRuler();
+  updateStatus(`${State.clips.length} clips | ${trackDefs.length} tracks`);
+  document.getElementById('status-clips').textContent=State.clips.length+' clips';
+}
+
+function drawRuler() {
+  const canvas = document.getElementById('tl-ruler-canvas');
+  if(!canvas) return;
+  const container = document.getElementById('tl-tracks-right');
+  const w = container?.offsetWidth||800;
+  canvas.width=w; canvas.height=28;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,w,28);
+  ctx.fillStyle='#1c1c1c'; ctx.fillRect(0,0,w,28);
+  ctx.strokeStyle='#333'; ctx.fillStyle='#777'; ctx.font='9px Open Sans';
+  const step = Timeline.pxPerSec > 20 ? 1 : Timeline.pxPerSec > 5 ? 5 : 30;
+  for(let f=0;f<State.project.duration;f+=step){
+    const x = f*Timeline.pxPerSec; if(x>w) break;
+    ctx.beginPath(); ctx.moveTo(x,18); ctx.lineTo(x,28); ctx.strokeStyle='#333'; ctx.stroke();
+    if(x>20) ctx.fillText(formatTimecode(f).slice(3),x+2,14);
+  }
+}
+
+function selectClip(id) {
+  State.selectedClip = State.clips.find(c=>c.id===id);
+  document.getElementById('no-selection').style.display='none';
+  document.getElementById('clip-properties').style.display='block';
+  refreshTimeline();
+}
+
+// ==================== EFFECTS LIST ====================
+function buildEffectsList(containerId) {
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = Object.entries(allEffectsData).map(([cat,effects])=>`
+    <div class="fx-cat">
+      <div class="fx-cat-hdr" onclick="toggleFxCat(this)">${cat} <span>▾</span></div>
+      <div class="fx-list">
+        ${effects.map(name=>`
+          <div class="fx-effect" draggable="true" ondragstart="event.dataTransfer.setData('effect',${JSON.stringify(name)})">
+            <span>${name}</span>
+            <div class="add-btn" onclick="VideoEffects.add(${JSON.stringify(name)})">+</div>
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleFxCat(hdr) { const list = hdr.nextElementSibling; list.style.display = list.style.display==='none'?'':'none'; }
+function filterEffects(query, side) {
+  const id = side==='left' ? 'fx-list-left' : 'fx-list-right';
+  const el = document.getElementById(id);
+  if(!query) { buildEffectsList(id); return; }
+  const q=query.toLowerCase();
+  const matches = Object.entries(allEffectsData).flatMap(([cat,effs])=>effs.filter(e=>e.toLowerCase().includes(q)).map(e=>({cat,name:e})));
+  el.innerHTML = matches.map(({cat,name})=>`
+    <div class="fx-effect" draggable="true">
+      <span>${name}</span>
+      <span class="afx-cat-badge">${cat}</span>
+      <div class="add-btn" onclick="VideoEffects.add(${JSON.stringify(name)})">+</div>
+    </div>`).join('');
+}
+
+// ==================== TAB SWITCHING ====================
+function switchLeftTab(tab, el) {
+  document.getElementById('media-tab').style.display = tab==='media'?'flex':'none';
+  document.getElementById('effects-tab').style.display = tab==='effects'?'flex':'none';
+  document.querySelectorAll('#left-panel .ptab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  if(tab==='effects') buildEffectsList('fx-list-left');
+}
+function switchRightTab(tab, el) {
+  document.getElementById('props-tab').style.display = tab==='props'?'flex':'none';
+  document.getElementById('effects-tab-right').style.display = tab==='effects'?'flex':'none';
+  document.getElementById('keyframes-tab').style.display = tab==='keyframes'?'flex':'none';
+  document.querySelectorAll('#right-panel .ptab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  else { const ids={'props':'rtab-props','effects':'rtab-fx','keyframes':'rtab-kf'}; document.getElementById(ids[tab])?.classList.add('active'); }
+  if(tab==='effects') buildEffectsList('fx-list-right');
+  if(tab==='keyframes') renderKeyframeList();
+}
+
+// ==================== MISC ====================
+function setActiveTool(t) {
+  State.activeTool=t;
+  document.querySelectorAll('.tb-btn[id^="tool-"]').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tool-'+t)?.classList.add('active');
+}
+function toggleSection(hdr) { hdr.classList.toggle('collapsed'); const body=hdr.nextElementSibling; if(body) body.style.display=body.style.display==='none'?'':'none'; }
+function updateStatus(msg) { document.getElementById('status-msg').textContent=msg; }
+function closeMenus() { document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('open')); }
+function cycleZoom() { updateStatus('Zoom: Fit'); }
+function toggleSafeArea() { State.safeArea=!State.safeArea; document.getElementById('safe-title').style.display=State.safeArea?'block':'none'; }
+function toggleGrid() { State.grid=!State.grid; }
+function setZoom(v) {}
+
+function showModal(title, body, confirmLabel, onConfirm) {
+  const mc = document.getElementById('modal-content');
+  mc.innerHTML=`<h3>${title}</h3>${body}<div class="modal-btns"><div class="btn btn-ghost" onclick="closeModal()">Cancel</div><div class="btn btn-primary" onclick="${onConfirm?'_modalConfirm()':'closeModal()'}">${confirmLabel||'OK'}</div></div>`;
+  window._modalConfirm = onConfirm;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+
+function renderMediaBin() {
+  const el=document.getElementById('media-bin');
+  if(!State.media.length){el.innerHTML='';return;}
+  const icons={video:'🎬',audio:'🎵',image:'🖼'};
+  el.innerHTML=State.media.map(m=>`
+    <div class="media-item" onclick="addToTimeline(${JSON.stringify(m.id)})" title="${m.name}">
+      <div class="media-thumb"><span class="media-icon">${icons[m.kind]||'📄'}</span></div>
+      <div class="media-info">
+        <div class="media-name">${m.name}</div>
+        <div class="media-meta">${m.kind} · ${Math.floor(m.duration)}s</div>
+      </div>
+    </div>`).join('');
+}
+
+function addToTimeline(mediaId) {
+  const m=State.media.find(x=>x.id==mediaId); if(!m) return;
+  const clip={id:Date.now(),mediaId:m.id,name:m.name,start:State.playhead,duration:m.duration,track:0};
+  State.clips.push(clip);
+  refreshTimeline();
+  History.push({label:'Add Clip: '+m.name});
+  updateStatus('Added to timeline: '+m.name);
+}
+
+// ==================== MENU INTERACTIONS ====================
+document.querySelectorAll('.menu-item>span').forEach(span=>{
+  span.addEventListener('click',e=>{
+    const mi=span.parentElement;
+    const wasOpen=mi.classList.contains('open');
+    closeMenus();
+    if(!wasOpen) mi.classList.add('open');
+    e.stopPropagation();
+  });
+});
+document.addEventListener('click', closeMenus);
+
+// ==================== TIMELINE RESIZE ====================
+const resizeHandle = document.getElementById('timeline-resize');
+if(resizeHandle){
+  let resizing=false,startY,startH;
+  resizeHandle.addEventListener('mousedown',e=>{resizing=true;startY=e.clientY;startH=document.getElementById('timeline').offsetHeight;e.preventDefault();});
+  document.addEventListener('mousemove',e=>{if(!resizing)return;const delta=startY-e.clientY;document.getElementById('timeline').style.height=Math.max(80,startH+delta)+'px';drawRuler();});
+  document.addEventListener('mouseup',()=>{resizing=false;});
+}
+
+// ==================== DROP ZONE ====================
+const dz=document.getElementById('drop-zone');
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{
+    e.preventDefault();dz.classList.remove('drag-over');
+    Array.from(e.dataTransfer.files).forEach(f=>{
+      const item={id:Date.now()+Math.random(),name:f.name,size:f.size,type:f.type,url:URL.createObjectURL(f),duration:120+Math.random()*300,kind:f.type.startsWith('video')?'video':f.type.startsWith('audio')?'audio':'image'};
+      State.media.push(item);renderMediaBin();updateStatus('Imported: '+f.name);
+    });
+  });
+}
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT') return;
+  if(e.ctrlKey||e.metaKey){
+    if(e.key==='z'){e.preventDefault();EditMenu.undo();}
+    if(e.key==='y'){e.preventDefault();EditMenu.redo();}
+    if(e.key==='c'){e.preventDefault();EditMenu.copy();}
+    if(e.key==='v'){e.preventDefault();EditMenu.paste();}
+    if(e.key==='x'){e.preventDefault();EditMenu.cut();}
+    if(e.key==='s'){e.preventDefault();FileMenu.saveProject();}
+    if(e.key==='i'){e.preventDefault();MediaTools.uploadMedia();}
+    if(e.key==='m'){e.preventDefault();MediaTools.exportMedia();}
+    if(e.key==='n'){e.preventDefault();FileMenu.newProject();}
+    if(e.key==='o'){e.preventDefault();FileMenu.openProject();}
+  } else {
+    if(e.key===' '){e.preventDefault();Transport.togglePlay();}
+    if(e.key==='s'){EditMenu.split();}
+    if(e.key==='v'){setActiveTool('select');}
+    if(e.key==='r'){setActiveTool('razor');}
+    if(e.key==='h'){setActiveTool('hand');}
+    if(e.key==='Home'){Transport.goStart();}
+    if(e.key==='End'){Transport.goEnd();}
+    if(e.key==='ArrowLeft'){Transport.stepBack();}
+    if(e.key==='ArrowRight'){Transport.stepForward();}
+  }
+});
+
+// ==================== VIEWER CANVAS ====================
+function drawViewer() {
+  const canvas=document.getElementById('viewer-canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,640,360);
+  const grad=ctx.createLinearGradient(0,0,640,360);
+  grad.addColorStop(0,'#0a0a14'); grad.addColorStop(1,'#14140a');
+  ctx.fillStyle=grad; ctx.fillRect(0,0,640,360);
+  ctx.fillStyle='rgba(232,160,32,0.03)';
+  for(let i=0;i<640;i+=40) { ctx.fillRect(i,0,1,360); }
+  for(let i=0;i<360;i+=40) { ctx.fillRect(0,i,640,1); }
+  ctx.fillStyle='rgba(232,160,32,0.15)'; ctx.font='14px Open Sans';
+  ctx.textAlign='center'; ctx.fillText('NARINA 2.5.4',320,175);
+  ctx.fillStyle='rgba(232,160,32,0.06)'; ctx.font='11px Open Sans';
+  ctx.fillText('Import media or add clips to begin',320,200);
+}
+
+// ==================== INIT ====================
+window.addEventListener('load',()=>{
+  drawViewer();
+  refreshTimeline();
+  updateTimecode();
+  setActiveTool('select');
+  buildEffectsList('fx-list-left');
+  window.dispatchEvent(new Event('resize'));
+  updateStatus('Narina 2.5.4 ready');
+});
+window.addEventListener('resize',()=>{ drawRuler(); });
+</script>
+</body>
+</html>
