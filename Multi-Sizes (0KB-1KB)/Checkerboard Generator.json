@@ -1,0 +1,16 @@
+{
+  "name": "My Filter",
+  "effects": [
+    {
+      "name": "Checkerboard",
+      "enabled": true,
+      "params": {
+        "Width": 50,
+        "Height": 50,
+        "Color 1": "#000000",
+        "Color 2": "#ffffff"
+      }
+    }
+  ],
+  "version": "1.0"
+}

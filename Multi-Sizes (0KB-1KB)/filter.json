@@ -1,0 +1,13 @@
+{
+  "name": "Studio Filter",
+  "effects": [],
+  "layers": [
+    {
+      "name": "Background",
+      "type": "color",
+      "effects": []
+    }
+  ],
+  "version": "1.0",
+  "created": "2026-04-21T16:06:40.121Z"
+}

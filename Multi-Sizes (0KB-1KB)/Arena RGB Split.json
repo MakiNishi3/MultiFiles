@@ -1,0 +1,14 @@
+{
+  "name": "Arena RGB Split",
+  "effects": [
+    {
+      "name": "Arena RGB Split",
+      "enabled": true,
+      "params": {
+        "Red X&Y": 50,
+        "Green X&Y": 50,
+      }
+    }
+  ],
+  "version": "1.0"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "My Filter",
+  "effects": [
+    {
+      "name": "Arena Shear",
+      "enabled": true,
+      "params": {
+        "X Shear": 0.96,
+        "Y Shear": 1.14
+      }
+    }
+  ],
+  "version": "1.0"
+}

@@ -1,0 +1,71 @@
+{
+  "plugins": [
+    {
+      "name": "GLFX Lens Blue",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "lensblur": {
+          "params": {
+            "radius": 15.0,
+            "brightness": 1.2,
+            "angle": 0.0
+          },
+          "shaders": {
+            "fragment": "precision highp float; uniform sampler2D texture; uniform float radius; uniform float brightness; varying vec2 uv; void main(){ vec4 color=vec4(0.0); float total=0.0; for(float x=-10.0;x<=10.0;x++){ for(float y=-10.0;y<=10.0;y++){ vec2 offset=vec2(x,y)/512.0*radius; float weight=1.0-length(vec2(x,y))/10.0; color+=texture2D(texture,uv+offset)*weight; total+=weight; }} gl_FragColor=color/total*brightness; }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Tilt Shift",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "tiltshift": {
+          "params": {
+            "blurRadius": 10.0,
+            "gradientRadius": 200.0,
+            "start": 0.3,
+            "end": 0.7
+          },
+          "shaders": {
+            "fragment": "precision highp float; uniform sampler2D texture; uniform float blurRadius; uniform float gradientRadius; uniform float start; uniform float end; varying vec2 uv; void main(){ float factor=smoothstep(start,end,uv.y)*smoothstep(end,start,uv.y); vec4 color=vec4(0.0); float total=0.0; for(float i=-10.0;i<=10.0;i++){ float percent=i/10.0; float weight=1.0-abs(percent); vec2 offset=vec2(percent*blurRadius/512.0*factor,0.0); color+=texture2D(texture,uv+offset)*weight; total+=weight; } gl_FragColor=color/total; }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Triangle Blur",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "triangleblur": {
+          "params": {
+            "radius": 8.0
+          },
+          "shaders": {
+            "fragment": "precision highp float; uniform sampler2D texture; uniform float radius; varying vec2 uv; void main(){ vec4 color=vec4(0.0); float total=0.0; for(float x=-10.0;x<=10.0;x++){ float weight=1.0-abs(x)/10.0; vec2 offset=vec2(x/512.0*radius,0.0); color+=texture2D(texture,uv+offset)*weight; total+=weight; } gl_FragColor=color/total; }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Zoom Blur",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "zoomblur": {
+          "params": {
+            "centerX": 0.5,
+            "centerY": 0.5,
+            "strength": 0.3
+          },
+          "shaders": {
+            "fragment": "precision highp float; uniform sampler2D texture; uniform float centerX; uniform float centerY; uniform float strength; varying vec2 uv; void main(){ vec2 center=vec2(centerX,centerY); vec4 color=vec4(0.0); float total=0.0; for(float i=0.0;i<=20.0;i++){ float percent=i/20.0; float weight=1.0-percent; vec2 offset=(uv-center)*percent*strength; color+=texture2D(texture,uv-offset)*weight; total+=weight; } gl_FragColor=color/total; }"
+          }
+        }
+      }
+    }
+  ]
+}

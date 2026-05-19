@@ -1,0 +1,83 @@
+{
+  "plugins": [
+    {
+      "name": "GLFX Perspective",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "type": "perspective",
+          "params": {
+            "topLeft": [0.0, 0.0],
+            "topRight": [1.0, 0.0],
+            "bottomLeft": [0.0, 1.0],
+            "bottomRight": [1.0, 1.0]
+          },
+          "shaders": {
+            "vertex": "attribute vec2 position; varying vec2 texCoord; void main(){ texCoord = position * 0.5 + 0.5; gl_Position = vec4(position,0.0,1.0); }",
+            "fragment": "precision mediump float; uniform sampler2D texture; varying vec2 texCoord; uniform vec2 topLeft; uniform vec2 topRight; uniform vec2 bottomLeft; uniform vec2 bottomRight; vec2 bilerp(vec2 a, vec2 b, vec2 c, vec2 d, vec2 t){ return mix(mix(a,b,t.x), mix(c,d,t.x), t.y);} void main(){ vec2 coord = bilerp(topLeft, topRight, bottomLeft, bottomRight, texCoord); gl_FragColor = texture2D(texture, coord); }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Matrix Warp",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "type": "matrixwarp",
+          "params": {
+            "matrix": [
+              1.0, 0.0, 0.0,
+              0.0, 1.0, 0.0,
+              0.0, 0.0, 1.0
+            ]
+          },
+          "shaders": {
+            "vertex": "attribute vec2 position; varying vec2 texCoord; void main(){ texCoord = position * 0.5 + 0.5; gl_Position = vec4(position,0.0,1.0); }",
+            "fragment": "precision mediump float; uniform sampler2D texture; uniform mat3 matrix; varying vec2 texCoord; void main(){ vec3 coord = matrix * vec3(texCoord,1.0); gl_FragColor = texture2D(texture, coord.xy); }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Pinch/Bulge",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "type": "bulgepinch",
+          "params": {
+            "center": [0.5, 0.5],
+            "radius": 0.5,
+            "strength": 0.5
+          },
+          "shaders": {
+            "vertex": "attribute vec2 position; varying vec2 texCoord; void main(){ texCoord = position * 0.5 + 0.5; gl_Position = vec4(position,0.0,1.0); }",
+            "fragment": "precision mediump float; uniform sampler2D texture; varying vec2 texCoord; uniform vec2 center; uniform float radius; uniform float strength; void main(){ vec2 coord = texCoord - center; float dist = length(coord); if(dist < radius){ float percent = dist / radius; float factor = mix(1.0, pow(percent, 1.0 - strength), strength); coord *= factor; } gl_FragColor = texture2D(texture, coord + center); }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Swirl",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "type": "swirl",
+          "params": {
+            "center": [0.5, 0.5],
+            "radius": 0.5,
+            "angle": 3.1415926
+          },
+          "shaders": {
+            "vertex": "attribute vec2 position; varying vec2 texCoord; void main(){ texCoord = position * 0.5 + 0.5; gl_Position = vec4(position,0.0,1.0); }",
+            "fragment": "precision mediump float; uniform sampler2D texture; varying vec2 texCoord; uniform vec2 center; uniform float radius; uniform float angle; void main(){ vec2 coord = texCoord - center; float dist = length(coord); if(dist < radius){ float percent = (radius - dist) / radius; float theta = percent * percent * angle; float s = sin(theta); float c = cos(theta); coord = vec2(coord.x * c - coord.y * s, coord.x * s + coord.y * c); } gl_FragColor = texture2D(texture, coord + center); }"
+          }
+        }
+      ]
+    }
+  ]
+}

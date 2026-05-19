@@ -1,0 +1,16 @@
+{
+  "name": "Checkerboard Generator",
+  "effects": [
+    {
+      "name": "Ripple",
+      "enabled": true,
+      "params": {
+        "Frequency": 0.5,
+        "Slice Speed": 10,
+        "Slice Width": 20,
+        "Amplitude": 10
+      }
+    }
+  ],
+  "version": "1.0"
+}

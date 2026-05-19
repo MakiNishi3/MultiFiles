@@ -1,0 +1,82 @@
+{
+  "plugins": [
+    {
+      "name": "GLFX Ink",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "ink": {
+          "params": {
+            "strength": { "type": "float", "default": 0.5, "min": 0.0, "max": 1.0 },
+            "threshold": { "type": "float", "default": 0.3, "min": 0.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; varying vec2 vTexCoord; uniform sampler2D uTexture; uniform float strength; uniform float threshold; void main(){ vec4 color=texture2D(uTexture,vTexCoord); float luminance=dot(color.rgb,vec3(0.299,0.587,0.114)); float edge=smoothstep(threshold,1.0,luminance); gl_FragColor=vec4(vec3(edge*strength),color.a); }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Dot Screen",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "dotscreen": {
+          "params": {
+            "angle": { "type": "float", "default": 1.57, "min": 0.0, "max": 6.28 },
+            "scale": { "type": "float", "default": 1.0, "min": 0.1, "max": 10.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; varying vec2 vTexCoord; uniform sampler2D uTexture; uniform float angle; uniform float scale; float pattern(){ float s=sin(angle),c=cos(angle); vec2 tex=vec2(c*vTexCoord.x - s*vTexCoord.y, s*vTexCoord.x + c*vTexCoord.y)*scale; return (sin(tex.x)*sin(tex.y))*4.0; } void main(){ vec4 color=texture2D(uTexture,vTexCoord); float avg=(color.r+color.g+color.b)/3.0; float p=pattern(); gl_FragColor=vec4(vec3(avg*10.0-5.0+p),color.a); }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Color Halftone",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "colorhalftone": {
+          "params": {
+            "angle": { "type": "float", "default": 0.5, "min": 0.0, "max": 6.28 },
+            "size": { "type": "float", "default": 4.0, "min": 1.0, "max": 20.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; varying vec2 vTexCoord; uniform sampler2D uTexture; uniform float angle; uniform float size; float pattern(vec2 uv,float a){ float s=sin(a),c=cos(a); vec2 tex=vec2(c*uv.x - s*uv.y, s*uv.x + c*uv.y)*size; return (sin(tex.x)*sin(tex.y))*4.0; } void main(){ vec4 color=texture2D(uTexture,vTexCoord); float r=pattern(vTexCoord,angle); float g=pattern(vTexCoord,angle+1.0); float b=pattern(vTexCoord,angle+2.0); gl_FragColor=vec4(color.r*r,color.g*g,color.b*b,color.a); }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Edge Work",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "edgework": {
+          "params": {
+            "radius": { "type": "float", "default": 1.0, "min": 0.0, "max": 10.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; varying vec2 vTexCoord; uniform sampler2D uTexture; uniform float radius; void main(){ vec2 texel=vec2(radius)/vec2(512.0,512.0); vec3 center=texture2D(uTexture,vTexCoord).rgb; vec3 right=texture2D(uTexture,vTexCoord+vec2(texel.x,0.0)).rgb; vec3 bottom=texture2D(uTexture,vTexCoord+vec2(0.0,texel.y)).rgb; float edge=length(center-right)+length(center-bottom); gl_FragColor=vec4(vec3(edge),1.0); }"
+          }
+        }
+      }
+    },
+    {
+      "name": "GLFX Hexagonal Pixelate",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": {
+        "hexagonalpixelate": {
+          "params": {
+            "scale": { "type": "float", "default": 20.0, "min": 1.0, "max": 100.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; varying vec2 vTexCoord; uniform sampler2D uTexture; uniform float scale; void main(){ vec2 uv=vTexCoord*scale; uv=vec2(floor(uv.x+0.5),floor(uv.y+0.5)); vec2 coord=uv/scale; gl_FragColor=texture2D(uTexture,coord); }"
+          }
+        }
+      }
+    }
+  ]
+}

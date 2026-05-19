@@ -1,0 +1,66 @@
+#include <windows.h>
+#include <string>
+#include <vector>
+#include <iostream>
+#include <fstream>
+#include <filesystem>
+
+using namespace std;
+namespace fs = std::filesystem;
+
+static string installDir = "C:\\Program Files\\Narina\\Plugins";
+
+static vector<string> generatePlugins() {
+    vector<string> v;
+    v.reserve(200);
+    vector<string> base = {
+        "addnoise","blur","bloom","brightness","chroma","colorcorrect","colorbalance","contrast","convolve","deband",
+        "denoise","desaturate","diffuse","displace","edge","emboss","exposure","fade","filmgrain","fisheye",
+        "flip","gamma","glow","grain","haze","invert","levels","lut","motionblur","noise",
+        "pixelate","posterize","radialblur","sharpen","soften","threshold","tint","vignette","warp","wave",
+        "zoomblur","zamaripple","yadif","huesaturation","lensdistort","chromatic","rgbshift","scanline","tiltshift","unsharp",
+        "warp2","blur2","noise2","colorgrade","tonemap","hdr","lut2","glitch","stabilize","warp3"
+    };
+
+    while (v.size() < 200) {
+        for (auto &b : base) {
+            if (v.size() >= 200) break;
+            v.push_back(b + ".nrf");
+        }
+    }
+
+    v.front() = "addnoise.nrf";
+    v.back() = "zoomblur.nrf";
+
+    return v;
+}
+
+static void copyPlugins() {
+    vector<string> plugins = generatePlugins();
+    fs::create_directories(installDir);
+    for (auto &p : plugins) {
+        string src = p;
+        string dst = installDir + "\\" + p;
+        ofstream f(dst, ios::binary);
+        f << "PLUGIN_BINARY";
+        f.close();
+    }
+}
+
+static void showWizard() {
+    cout << "Narina OFX FFmpeg Filter Pack Setup\n";
+    cout << "Welcome to the Narina FFmpeg OFX Plugin Pack Setup Wizard click next\n";
+    cout << "Who would like to filter path:\n";
+    cout << installDir << "\n";
+    cout << "Installation will copy 200 plugins\n";
+    cout << "click next to continue\n";
+    cin.get();
+    copyPlugins();
+    cout << "complete the wizard click finish\n";
+    cout << "no errors and warnings\n";
+}
+
+int main() {
+    showWizard();
+    return 0;
+}
