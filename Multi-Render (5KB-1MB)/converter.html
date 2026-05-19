@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binary Packager</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --border: #1e1e2e;
+    --accent: #5b6af0;
+    --accent2: #a78bfa;
+    --text: #e2e2f0;
+    --muted: #6b6b8a;
+    --success: #34d399;
+    --danger: #f87171;
+    --card: #16161f;
+  }
+  body {
+    font-family: sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, #e2e2f0, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.875rem;
+    margin-bottom: 48px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    width: 100%;
+    max-width: 560px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface);
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); background: rgba(91,106,240,0.06); }
+  .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .drop-label { font-size: 0.95rem; color: var(--text); margin-bottom: 4px; }
+  .drop-hint { font-size: 0.78rem; color: var(--muted); }
+  .file-info {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    gap: 12px;
+    align-items: center;
+  }
+  .file-info.visible { display: flex; }
+  .file-icon { font-size: 1.5rem; }
+  .file-details { flex: 1; min-width: 0; }
+  .file-name { font-size: 0.875rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-size { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .badge-ok { background: rgba(52,211,153,0.15); color: var(--success); font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 99px; }
+  .badge-err { background: rgba(248,113,113,0.15); color: var(--danger); font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 99px; }
+  .section-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 18px;
+    border-radius: 10px;
+    font-family: sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.18s;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+  .btn-exe {
+    background: linear-gradient(135deg, #1e1e2e, #252538);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-exe:not(:disabled):hover { border-color: var(--accent); color: var(--accent2); background: rgba(91,106,240,0.08); }
+  .btn-dmg {
+    background: linear-gradient(135deg, #1e1e2e, #252538);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-dmg:not(:disabled):hover { border-color: #a78bfa; color: var(--accent2); background: rgba(167,139,250,0.08); }
+  .btn-appimage {
+    background: linear-gradient(135deg, #1e1e2e, #252538);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-appimage:not(:disabled):hover { border-color: #34d399; color: var(--success); background: rgba(52,211,153,0.08); }
+  .btn-binary {
+    background: linear-gradient(135deg, #1e1e2e, #252538);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .btn-binary:not(:disabled):hover { border-color: #fbbf24; color: #fbbf24; background: rgba(251,191,36,0.08); }
+  .btn-full { grid-column: 1 / -1; }
+  .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    padding: 10px 14px;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .status-bar.visible { display: flex; }
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .progress-wrap {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .progress-wrap.visible { display: flex; }
+  .progress-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); }
+  .progress-bar-bg {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+  .divider { border: none; border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<h1>Binary Packager</h1>
+<p class="subtitle">Upload any file and export it as a platform binary</p>
+<div class="card">
+  <div>
+    <div class="section-label">Source file</div>
+    <div class="dropzone" id="dropzone">
+      <input type="file" id="fileInput" accept="*/*">
+      <div class="drop-icon">📦</div>
+      <div class="drop-label">Drop file here or click to browse</div>
+      <div class="drop-hint">Any file type · 1 MB – 1000 MB</div>
+    </div>
+    <div class="file-info" id="fileInfo">
+      <div class="file-icon">🗂️</div>
+      <div class="file-details">
+        <div class="file-name" id="fileName">—</div>
+        <div class="file-size" id="fileSize">—</div>
+      </div>
+      <span class="badge-ok" id="badgeOk">✓ Ready</span>
+      <span class="badge-err" id="badgeErr" style="display:none">✗ Too large</span>
+    </div>
+  </div>
+  <hr class="divider">
+  <div>
+    <div class="section-label">Download as</div>
+    <div class="btn-grid">
+      <button class="btn btn-exe" id="btnExe" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Windows .exe
+      </button>
+      <button class="btn btn-dmg" id="btnDmg" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>
+        macOS .dmg
+      </button>
+      <button class="btn btn-appimage" id="btnAppImage" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4.03 3-9 3S3 13.66 3 12"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/></svg>
+        Linux .AppImage
+      </button>
+      <button class="btn btn-binary" id="btnBin" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        Raw binary
+      </button>
+    </div>
+  </div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-row"><span id="progressLabel">Preparing…</span><span id="progressPct">0%</span></div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+  </div>
+  <div class="status-bar" id="statusBar">
+    <div class="spinner"></div>
+    <span id="statusMsg">Working…</span>
+  </div>
+</div>
+<script>
+(function(){
+  const fileInput = document.getElementById('fileInput');
+  const dropzone  = document.getElementById('dropzone');
+  const fileInfo  = document.getElementById('fileInfo');
+  const fileName  = document.getElementById('fileName');
+  const fileSize  = document.getElementById('fileSize');
+  const badgeOk   = document.getElementById('badgeOk');
+  const badgeErr  = document.getElementById('badgeErr');
+  const btnExe    = document.getElementById('btnExe');
+  const btnDmg    = document.getElementById('btnDmg');
+  const btnAppImage = document.getElementById('btnAppImage');
+  const btnBin    = document.getElementById('btnBin');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressLabel = document.getElementById('progressLabel');
+  const progressPct   = document.getElementById('progressPct');
+  const progressFill  = document.getElementById('progressFill');
+  const statusBar = document.getElementById('statusBar');
+  const statusMsg = document.getElementById('statusMsg');
+
+  const MAX = 1000 * 1024 * 1024;
+  const MIN = 1 * 1024 * 1024;
+  let currentFile = null;
+
+  function fmtSize(b) {
+    if (b >= 1073741824) return (b/1073741824).toFixed(2)+' GB';
+    if (b >= 1048576)    return (b/1048576).toFixed(2)+' MB';
+    if (b >= 1024)       return (b/1024).toFixed(1)+' KB';
+    return b+' B';
+  }
+
+  function setProgress(pct, label) {
+    progressWrap.classList.add('visible');
+    progressFill.style.width = pct+'%';
+    progressPct.textContent  = Math.round(pct)+'%';
+    progressLabel.textContent = label;
+  }
+  function hideProgress() { progressWrap.classList.remove('visible'); }
+
+  function setStatus(msg) {
+    statusBar.classList.add('visible');
+    statusMsg.textContent = msg;
+  }
+  function hideStatus() { statusBar.classList.remove('visible'); }
+
+  function handleFile(file) {
+    currentFile = file;
+    fileInfo.classList.add('visible');
+    fileName.textContent = file.name;
+    fileSize.textContent = fmtSize(file.size);
+    const valid = file.size >= MIN && file.size <= MAX;
+    badgeOk.style.display  = valid ? '' : 'none';
+    badgeErr.style.display = valid ? 'none' : '';
+    [btnExe, btnDmg, btnAppImage, btnBin].forEach(b => b.disabled = !valid);
+    hideProgress();
+    hideStatus();
+  }
+
+  fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag');
+    if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  function buildAndDownload(ext, mime, transform) {
+    if (!currentFile) return;
+    [btnExe, btnDmg, btnAppImage, btnBin].forEach(b => b.disabled = true);
+    setStatus('Reading file…');
+    setProgress(0, 'Reading…');
+
+    const reader = new FileReader();
+    reader.onprogress = e => {
+      if (e.lengthComputable) setProgress((e.loaded/e.total)*60, 'Reading…');
+    };
+    reader.onload = function(ev) {
+      setProgress(60, 'Building binary…');
+      setStatus('Building binary…');
+
+      const srcBytes = new Uint8Array(ev.target.result);
+
+      setTimeout(() => {
+        const payload = transform(srcBytes, currentFile.name, ext);
+        setProgress(90, 'Creating download…');
+        setStatus('Creating download…');
+
+        setTimeout(() => {
+          const blob = new Blob([payload], { type: mime });
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement('a');
+          a.href     = url;
+          a.download = currentFile.name.replace(/\.[^.]+$/, '') + ext;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          setProgress(100, 'Done!');
+          hideStatus();
+          setTimeout(() => {
+            hideProgress();
+            [btnExe, btnDmg, btnAppImage, btnBin].forEach(b => b.disabled = false);
+          }, 1200);
+        }, 80);
+      }, 60);
+    };
+    reader.onerror = function() {
+      hideStatus(); hideProgress();
+      [btnExe, btnDmg, btnAppImage, btnBin].forEach(b => b.disabled = false);
+    };
+    reader.readAsArrayBuffer(currentFile);
+  }
+
+  function peHeader(payloadSize) {
+    const h = new Uint8Array(512);
+    // MZ signature
+    h[0]=0x4D; h[1]=0x5A;
+    // Bytes on last page
+    h[2]=0x90; h[3]=0x00;
+    // Pages in file
+    h[4]=0x03; h[5]=0x00;
+    // Relocations
+    h[6]=0x00; h[7]=0x00;
+    // Header paragraphs
+    h[8]=0x04; h[9]=0x00;
+    // Min allocation
+    h[10]=0x00; h[11]=0x00;
+    // Max allocation
+    h[12]=0xFF; h[13]=0xFF;
+    // Initial SS
+    h[14]=0x00; h[15]=0x00;
+    // Initial SP
+    h[16]=0xB8; h[17]=0x00;
+    // Checksum
+    h[18]=0x00; h[19]=0x00;
+    // Initial IP
+    h[20]=0x00; h[21]=0x00;
+    // Initial CS
+    h[22]=0x00; h[23]=0x00;
+    // Offset of relocation table
+    h[24]=0x40; h[25]=0x00;
+    // Overlay number
+    h[26]=0x00; h[27]=0x00;
+    // e_lfanew at 0x3C = 0x80
+    h[0x3C]=0x80; h[0x3D]=0x00;
+    // PE signature at 0x80
+    h[0x80]=0x50; h[0x81]=0x45; h[0x82]=0x00; h[0x83]=0x00;
+    // Machine: x86-64 (0x8664)
+    h[0x84]=0x64; h[0x85]=0x86;
+    // Number of sections: 1
+    h[0x86]=0x01; h[0x87]=0x00;
+    return h;
+  }
+
+  function dmgHeader(payloadSize) {
+    const h = new Uint8Array(512);
+    // koly block signature "koly"
+    h[0]=0x6B; h[1]=0x6F; h[2]=0x6C; h[3]=0x79;
+    // version
+    h[4]=0x00; h[5]=0x00; h[6]=0x00; h[7]=0x04;
+    // header size
+    h[8]=0x00; h[9]=0x00; h[10]=0x02; h[11]=0x00;
+    // flags
+    h[12]=0x00; h[13]=0x00; h[14]=0x00; h[15]=0x01;
+    // write: big-endian 64-bit size at offset 16
+    const sz = payloadSize + 512;
+    h[16]=0; h[17]=0; h[18]=0; h[19]=0;
+    h[20]=(sz>>>24)&0xFF; h[21]=(sz>>>16)&0xFF; h[22]=(sz>>>8)&0xFF; h[23]=sz&0xFF;
+    return h;
+  }
+
+  function appimageHeader(payloadSize) {
+    const h = new Uint8Array(512);
+    // ELF magic
+    h[0]=0x7F; h[1]=0x45; h[2]=0x4C; h[3]=0x46;
+    // 64-bit
+    h[4]=0x02;
+    // little-endian
+    h[5]=0x01;
+    // version 1
+    h[6]=0x01;
+    // OS/ABI: 0 = System V
+    h[7]=0x00;
+    // AppImage type 2 magic at offset 8
+    h[8]=0x41; h[9]=0x49; // "AI"
+    h[10]=0x02; // type 2
+    // e_type: ET_EXEC = 2
+    h[16]=0x02; h[17]=0x00;
+    // e_machine: x86-64 = 0x3E
+    h[18]=0x3E; h[19]=0x00;
+    // e_version: 1
+    h[20]=0x01; h[21]=0x00; h[22]=0x00; h[23]=0x00;
+    return h;
+  }
+
+  function rawBinaryHeader(payloadSize) {
+    const h = new Uint8Array(64);
+    // Simple magic: BINPKG
+    h[0]=0x42; h[1]=0x49; h[2]=0x4E; h[3]=0x50; h[4]=0x4B; h[5]=0x47;
+    // version
+    h[6]=0x01; h[7]=0x00;
+    // payload size as little-endian 64-bit
+    let s = payloadSize;
+    for(let i=0;i<8;i++){ h[8+i]=s&0xFF; s=Math.floor(s/256); }
+    return h;
+  }
+
+  function wrapPayload(headerFn, srcBytes) {
+    const header = headerFn(srcBytes.length);
+    const out = new Uint8Array(header.length + srcBytes.length);
+    out.set(header, 0);
+    out.set(srcBytes, header.length);
+    return out;
+  }
+
+  btnExe.addEventListener('click', () => {
+    buildAndDownload('.exe', 'application/vnd.microsoft.portable-executable', (src) => wrapPayload(peHeader, src));
+  });
+  btnDmg.addEventListener('click', () => {
+    buildAndDownload('.dmg', 'application/x-apple-diskimage', (src) => wrapPayload(dmgHeader, src));
+  });
+  btnAppImage.addEventListener('click', () => {
+    buildAndDownload('.AppImage', 'application/x-executable', (src) => wrapPayload(appimageHeader, src));
+  });
+  btnBin.addEventListener('click', () => {
+    buildAndDownload('.bin', 'application/octet-stream', (src) => wrapPayload(rawBinaryHeader, src));
+  });
+})();
+</script>
+</body>
+</html>

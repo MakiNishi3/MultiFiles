@@ -1,0 +1,151 @@
+{
+  "plugins": [
+    {
+      "name": "GLFX Brightness/Contrast",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "brightnesscontrast",
+          "params": {
+            "brightness": { "type": "float", "default": 0.0, "min": -1.0, "max": 1.0 },
+            "contrast": { "type": "float", "default": 0.0, "min": -1.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float brightness; uniform float contrast; varying vec2 uv; void main(){ vec4 color = texture2D(tex, uv); color.rgb += brightness; if (contrast > 0.0) { color.rgb = (color.rgb - 0.5) / (1.0 - contrast) + 0.5; } else { color.rgb = (color.rgb - 0.5) * (1.0 + contrast) + 0.5; } gl_FragColor = color; }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Denoise",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "denoise",
+          "params": {
+            "strength": { "type": "float", "default": 0.5, "min": 0.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float strength; varying vec2 uv; void main(){ vec4 sum = vec4(0.0); float total = 0.0; for(int x=-2;x<=2;x++){ for(int y=-2;y<=2;y++){ float weight = 1.0 - length(vec2(x,y))/3.0; vec2 offset = vec2(x,y)/512.0; sum += texture2D(tex, uv+offset)*weight; total += weight; }} gl_FragColor = mix(texture2D(tex, uv), sum/total, strength); }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Hue/Saturation",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "huesaturation",
+          "params": {
+            "hue": { "type": "float", "default": 0.0, "min": -3.14, "max": 3.14 },
+            "saturation": { "type": "float", "default": 0.0, "min": -1.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float hue; uniform float saturation; varying vec2 uv; const vec3 lum = vec3(0.299,0.587,0.114); void main(){ vec4 c = texture2D(tex, uv); float angle = hue; float s = sin(angle), co = cos(angle); mat3 rot = mat3( vec3(0.299+0.701*co+0.168*s,0.587-0.587*co+0.330*s,0.114-0.114*co-0.497*s), vec3(0.299-0.299*co-0.328*s,0.587+0.413*co+0.035*s,0.114-0.114*co+0.292*s), vec3(0.299-0.3*co+1.25*s,0.587-0.588*co-1.05*s,0.114+0.886*co-0.203*s)); c.rgb = rot * c.rgb; float l = dot(c.rgb, lum); c.rgb = mix(vec3(l), c.rgb, 1.0 + saturation); gl_FragColor = c; }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Noise",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "noise",
+          "params": {
+            "amount": { "type": "float", "default": 0.05, "min": 0.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float amount; varying vec2 uv; float rand(vec2 co){ return fract(sin(dot(co.xy,vec2(12.9898,78.233)))*43758.5453); } void main(){ vec4 color = texture2D(tex, uv); float n = rand(uv) - 0.5; color.rgb += n * amount; gl_FragColor = color; }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Sepia",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "sepia",
+          "params": {
+            "amount": { "type": "float", "default": 1.0, "min": 0.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float amount; varying vec2 uv; void main(){ vec4 c = texture2D(tex, uv); vec3 sep = vec3(dot(c.rgb, vec3(0.393,0.769,0.189)), dot(c.rgb, vec3(0.349,0.686,0.168)), dot(c.rgb, vec3(0.272,0.534,0.131))); c.rgb = mix(c.rgb, sep, amount); gl_FragColor = c; }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Curves",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "curves",
+          "params": {
+            "gamma": { "type": "float", "default": 1.0, "min": 0.1, "max": 3.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float gamma; varying vec2 uv; void main(){ vec4 c = texture2D(tex, uv); c.rgb = pow(c.rgb, vec3(1.0/gamma)); gl_FragColor = c; }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Unsharp Mask",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "unsharpmask",
+          "params": {
+            "strength": { "type": "float", "default": 0.5, "min": 0.0, "max": 2.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float strength; varying vec2 uv; void main(){ vec4 color = texture2D(tex, uv); vec4 blur = vec4(0.0); for(int x=-1;x<=1;x++){ for(int y=-1;y<=1;y++){ blur += texture2D(tex, uv + vec2(x,y)/512.0); }} blur /= 9.0; gl_FragColor = mix(blur, color, 1.0 + strength); }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Vibrance",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "vibrance",
+          "params": {
+            "amount": { "type": "float", "default": 0.5, "min": -1.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float amount; varying vec2 uv; void main(){ vec4 c = texture2D(tex, uv); float avg = (c.r + c.g + c.b) / 3.0; float mx = max(max(c.r,c.g),c.b); float amt = (mx - avg) * (-amount * 3.0); c.rgb = mix(c.rgb, vec3(mx), amt); gl_FragColor = c; }"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GLFX Vignette",
+      "author": "Evan Wallace",
+      "version": "1.1.1",
+      "effects": [
+        {
+          "name": "vignette",
+          "params": {
+            "size": { "type": "float", "default": 0.5, "min": 0.0, "max": 1.0 },
+            "amount": { "type": "float", "default": 0.5, "min": 0.0, "max": 1.0 }
+          },
+          "shaders": {
+            "fragment": "precision mediump float; uniform sampler2D tex; uniform float size; uniform float amount; varying vec2 uv; void main(){ vec4 c = texture2D(tex, uv); float dist = distance(uv, vec2(0.5)); float vig = smoothstep(size, 0.8, dist); c.rgb *= 1.0 - vig * amount; gl_FragColor = c; }"
+          }
+        }
+      ]
+    }
+  ]
+}

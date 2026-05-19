@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrdinalNum.js — Test Suite</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
+<script src="https://raw.githubusercontent.com/MakiNishi3/OrdinalNum.js/refs/heads/gh-pages/OrdinalNum.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;
+  --panel:#12121a;
+  --border:#1e1e30;
+  --accent:#7b5ea7;
+  --accent2:#a07fd4;
+  --text:#e8e4f0;
+  --muted:#6a6480;
+  --out:#1a1a28;
+  --green:#5dbf8a;
+  --red:#cf6679;
+  --yellow:#d4a85f;
+  --green-bg:#0d2018;
+  --red-bg:#200d10;
+}
+body{font-family:'Consolas',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+header{border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;gap:20px;background:var(--panel)}
+header h1{font-size:1.1rem;letter-spacing:.12em;color:var(--accent2);text-transform:uppercase}
+header nav{margin-left:auto;display:flex;gap:2px}
+header nav a{color:var(--muted);text-decoration:none;font-size:.8rem;padding:6px 14px;border:1px solid transparent;letter-spacing:.06em;transition:all .15s}
+header nav a:hover,header nav a.active{color:var(--accent2);border-color:var(--border);background:var(--out)}
+.badge{font-size:.65rem;background:var(--accent);color:#fff;padding:2px 7px;border-radius:2px;margin-left:8px;letter-spacing:.08em}
+.toolbar{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 32px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar button{background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.78rem;padding:7px 18px;cursor:pointer;letter-spacing:.06em;transition:all .15s}
+.toolbar button:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.toolbar button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.toolbar button.primary:hover{background:var(--accent2)}
+.stats{margin-left:auto;font-size:.78rem;display:flex;gap:20px}
+.stats .s-pass{color:var(--green)}
+.stats .s-fail{color:var(--red)}
+.stats .s-total{color:var(--muted)}
+.stats .s-time{color:var(--yellow)}
+main{flex:1;padding:24px 32px;overflow-y:auto}
+.group{margin-bottom:28px}
+.group-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;cursor:pointer;padding:8px 0;border-bottom:1px solid var(--border)}
+.group-header h2{font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2)}
+.group-badge{font-size:.65rem;padding:2px 8px;background:var(--out);border:1px solid var(--border);color:var(--muted)}
+.group-badge.all-pass{border-color:var(--green);color:var(--green);background:var(--green-bg)}
+.group-badge.has-fail{border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.test-row{display:flex;align-items:flex-start;gap:0;border-bottom:1px solid var(--border);padding:0}
+.test-row:last-child{border-bottom:none}
+.test-status{width:28px;padding:9px 0;text-align:center;font-size:.8rem;flex-shrink:0}
+.test-status.pass{color:var(--green)}
+.test-status.fail{color:var(--red)}
+.test-status.skip{color:var(--muted)}
+.test-body{flex:1;padding:9px 8px}
+.test-name{font-size:.78rem;color:var(--text);margin-bottom:4px}
+.test-code{font-size:.74rem;color:var(--muted);margin-bottom:3px}
+.test-expected{font-size:.74rem}
+.test-expected .e-label{color:var(--muted)}
+.test-expected .e-val{color:var(--green)}
+.test-expected .e-got{color:var(--red)}
+.test-time{font-size:.68rem;color:var(--muted);padding:9px 8px;flex-shrink:0}
+.progress-bar{height:3px;background:var(--border);margin-bottom:0}
+.progress-fill{height:3px;background:var(--accent);width:0;transition:width .3s}
+.custom-panel{background:var(--panel);border:1px solid var(--border);padding:16px;margin-bottom:20px}
+.custom-panel label{display:block;font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.custom-panel textarea{width:100%;background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.8rem;padding:8px;resize:vertical;outline:none;height:80px}
+.custom-panel textarea:focus{border-color:var(--accent)}
+.custom-panel .cust-out{margin-top:8px;font-size:.8rem;padding:8px;background:var(--out);border:1px solid var(--border);min-height:36px;color:var(--green)}
+.custom-panel .cust-out.err{color:var(--red)}
+</style>
+</head>
+<body>
+<header>
+  <h1>OrdinalNum.js <span class="badge">TESTS</span></h1>
+  <nav>
+    <a href="index.html">Calculator</a>
+    <a href="docs.html">Docs</a>
+    <a href="test.html" class="active">Tests</a>
+  </nav>
+</header>
+<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+<div class="toolbar">
+  <button class="primary" onclick="runAll()">▶ Run All</button>
+  <button onclick="runGroup('arithmetic')">Arithmetic</button>
+  <button onclick="runGroup('comparison')">Comparison</button>
+  <button onclick="runGroup('constructors')">Constructors</button>
+  <button onclick="runGroup('cnf')">CNF</button>
+  <button onclick="runGroup('veblen')">Veblen</button>
+  <button onclick="runGroup('buchholz')">Buchholz</button>
+  <button onclick="runGroup('edge')">Edge Cases</button>
+  <div class="stats">
+    <span class="s-pass" id="statPass">✓ 0</span>
+    <span class="s-fail" id="statFail">✗ 0</span>
+    <span class="s-total" id="statTotal">/ 0</span>
+    <span class="s-time" id="statTime"></span>
+  </div>
+</div>
+<main id="mainArea">
+  <div class="custom-panel">
+    <label>Custom Test Expression</label>
+    <textarea id="customExpr" placeholder="e.g. OrdinalLib.omega().add(1).toString()"></textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button style="background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.78rem;padding:6px 16px;cursor:pointer" onclick="runCustom()">Evaluate</button>
+    </div>
+    <div class="cust-out" id="customOut">—</div>
+  </div>
+</main>
+<script>
+var TESTS = [
+  {group:'constructors', name:'OrdinalNum(0) is zero', code:'new OrdinalLib.OrdinalNum(0).toString()', expect:'0'},
+  {group:'constructors', name:'OrdinalNum(1) is one', code:'new OrdinalLib.OrdinalNum(1).toString()', expect:'1'},
+  {group:'constructors', name:'OrdinalNum(42) finite', code:'new OrdinalLib.OrdinalNum(42).toString()', expect:'42'},
+  {group:'constructors', name:'OrdinalNum from string', code:'new OrdinalLib.OrdinalNum("100").toString()', expect:'100'},
+  {group:'constructors', name:'OrdinalNum() default is 0', code:'new OrdinalLib.OrdinalNum().toString()', expect:'0'},
+  {group:'constructors', name:'ZERO constant', code:'OrdinalLib.OrdinalNum.ZERO.toString()', expect:'0'},
+  {group:'constructors', name:'ONE constant', code:'OrdinalLib.OrdinalNum.ONE.toString()', expect:'1'},
+  {group:'constructors', name:'omega() constructs', code:'OrdinalLib.omega().toString()', expect:'ω'},
+  {group:'constructors', name:'epsilon(0) constructs', code:'OrdinalLib.epsilon(0).toString()', expect:'ε_0'},
+  {group:'constructors', name:'epsilon(1) constructs', code:'OrdinalLib.epsilon(1).toString()', expect:'ε_1'},
+  {group:'constructors', name:'zeta(0) constructs', code:'OrdinalLib.zeta(0).toString()', expect:'ζ_0'},
+  {group:'constructors', name:'gamma(0) constructs', code:'OrdinalLib.gamma(0).toString()', expect:'φ(ω^ω,0)'},
+  {group:'constructors', name:'svoOrdinal constructs', code:'OrdinalLib.svoOrdinal().toString()', expect:'SVO'},
+  {group:'constructors', name:'ph(0,omega) == omega', code:'OrdinalLib.ph(new OrdinalLib.OrdinalNum(0), OrdinalLib.omega()).toString()', expect:'ω'},
+  {group:'constructors', name:'ph(1,0) == epsilon(0)', code:'OrdinalLib.ph(new OrdinalLib.OrdinalNum(1), new OrdinalLib.OrdinalNum(0)).toString()', expect:'ε_0'},
+
+  {group:'arithmetic', name:'0 + 0 = 0', code:'new OrdinalLib.OrdinalNum(0).add(0).toString()', expect:'0'},
+  {group:'arithmetic', name:'1 + 1 = 2', code:'new OrdinalLib.OrdinalNum(1).add(1).toString()', expect:'2'},
+  {group:'arithmetic', name:'10 + 5 = 15', code:'new OrdinalLib.OrdinalNum(10).add(5).toString()', expect:'15'},
+  {group:'arithmetic', name:'omega + 1', code:'OrdinalLib.omega().add(1).toString()', expect:'ω+1'},
+  {group:'arithmetic', name:'omega + omega', code:'OrdinalLib.omega().add(OrdinalLib.omega()).toString()', expect:'ω·2'},
+  {group:'arithmetic', name:'1 + omega = omega (left absorb)', code:'new OrdinalLib.OrdinalNum(1).add(OrdinalLib.omega()).toString()', expect:'ω'},
+  {group:'arithmetic', name:'omega * 1 = omega', code:'OrdinalLib.omega().mul(1).toString()', expect:'ω'},
+  {group:'arithmetic', name:'omega * 2', code:'OrdinalLib.omega().mul(2).toString()', expect:'ω·2'},
+  {group:'arithmetic', name:'2 * omega = omega (left absorb)', code:'new OrdinalLib.OrdinalNum(2).mul(OrdinalLib.omega()).toString()', expect:'ω'},
+  {group:'arithmetic', name:'omega * omega', code:'OrdinalLib.omega().mul(OrdinalLib.omega()).toString()', expect:'ω^2'},
+  {group:'arithmetic', name:'omega ^ 2', code:'OrdinalLib.omega().pow(2).toString()', expect:'ω^2'},
+  {group:'arithmetic', name:'omega ^ omega', code:'OrdinalLib.omega().pow(OrdinalLib.omega()).toString()', expect:'ω^ω'},
+  {group:'arithmetic', name:'omega ^ 0 = 1', code:'OrdinalLib.omega().pow(0).toString()', expect:'1'},
+  {group:'arithmetic', name:'0 ^ omega = 0', code:'new OrdinalLib.OrdinalNum(0).pow(OrdinalLib.omega()).toString()', expect:'0'},
+  {group:'arithmetic', name:'epsilon(0) + omega', code:'OrdinalLib.epsilon(0).add(OrdinalLib.omega()).toString()', expect:'ε_0+ω'},
+  {group:'arithmetic', name:'epsilon(0) + 1', code:'OrdinalLib.epsilon(0).add(1).toString()', expect:'ε_0+1'},
+  {group:'arithmetic', name:'omega + epsilon(0) = epsilon(0) (left absorb)', code:'OrdinalLib.omega().add(OrdinalLib.epsilon(0)).toString()', expect:'ε_0'},
+
+  {group:'comparison', name:'0 < 1', code:'new OrdinalLib.OrdinalNum(0).lessThan(1)', expect:'true'},
+  {group:'comparison', name:'1 > 0', code:'new OrdinalLib.OrdinalNum(1).greaterThan(0)', expect:'true'},
+  {group:'comparison', name:'1 equals 1', code:'new OrdinalLib.OrdinalNum(1).equals(1)', expect:'true'},
+  {group:'comparison', name:'0 equals 0', code:'new OrdinalLib.OrdinalNum(0).equals(0)', expect:'true'},
+  {group:'comparison', name:'omega > 1000', code:'OrdinalLib.omega().greaterThan(1000)', expect:'true'},
+  {group:'comparison', name:'omega < epsilon(0)', code:'OrdinalLib.omega().lessThan(OrdinalLib.epsilon(0))', expect:'true'},
+  {group:'comparison', name:'epsilon(0) < epsilon(1)', code:'OrdinalLib.epsilon(0).lessThan(OrdinalLib.epsilon(1))', expect:'true'},
+  {group:'comparison', name:'epsilon(0) < zeta(0)', code:'OrdinalLib.epsilon(0).lessThan(OrdinalLib.zeta(0))', expect:'true'},
+  {group:'comparison', name:'SVO > everything else', code:'OrdinalLib.svoOrdinal().greaterThan(OrdinalLib.gamma(0))', expect:'true'},
+  {group:'comparison', name:'omega.compare(omega) = 0', code:'OrdinalLib.omega().compare(OrdinalLib.omega())', expect:'0'},
+  {group:'comparison', name:'compare returns -1 for less', code:'new OrdinalLib.OrdinalNum(1).compare(OrdinalLib.omega())', expect:'-1'},
+  {group:'comparison', name:'compare returns 1 for greater', code:'OrdinalLib.omega().compare(new OrdinalLib.OrdinalNum(1))', expect:'1'},
+
+  {group:'cnf', name:'omega^omega + omega', code:'OrdinalLib.omega().pow(OrdinalLib.omega()).add(OrdinalLib.omega()).toString()', expect:'ω^ω+ω'},
+  {group:'cnf', name:'omega^2 + omega + 1', code:'OrdinalLib.omega().pow(2).add(OrdinalLib.omega()).add(1).toString()', expect:'ω^2+ω+1'},
+  {group:'cnf', name:'omega*3 toString', code:'OrdinalLib.omega().mul(3).toString()', expect:'ω·3'},
+  {group:'cnf', name:'omega^3 toString', code:'OrdinalLib.omega().pow(3).toString()', expect:'ω^3'},
+  {group:'cnf', name:'CNF addition keeps leading terms', code:'OrdinalLib.omega().pow(2).add(1).greaterThan(OrdinalLib.omega().add(1000))', expect:'true'},
+  {group:'cnf', name:'omega^omega is limit ordinal', code:'OrdinalLib.omega().pow(OrdinalLib.omega()).greaterThan(OrdinalLib.omega().pow(100))', expect:'true'},
+
+  {group:'veblen', name:'ph(1,0) toString', code:'OrdinalLib.ph(new OrdinalLib.OrdinalNum(1), new OrdinalLib.OrdinalNum(0)).toString()', expect:'ε_0'},
+  {group:'veblen', name:'ph(2,0) == zeta(0)', code:'OrdinalLib.ph(new OrdinalLib.OrdinalNum(2), new OrdinalLib.OrdinalNum(0)).toString()', expect:'ζ_0'},
+  {group:'veblen', name:'epsilon(0) < zeta(0) < gamma(0)', code:'OrdinalLib.epsilon(0).lessThan(OrdinalLib.zeta(0)) && OrdinalLib.zeta(0).lessThan(OrdinalLib.gamma(0))', expect:'true'},
+  {group:'veblen', name:'gamma(0) < SVO', code:'OrdinalLib.gamma(0).lessThan(OrdinalLib.svoOrdinal())', expect:'true'},
+  {group:'veblen', name:'psi(0,omega) constructs', code:'OrdinalLib.psi(new OrdinalLib.OrdinalNum(0), OrdinalLib.omega()).toString()', expect:'ψ_0(ω)'},
+
+  {group:'buchholz', name:'toBuccholz omega', code:'OrdinalLib.toBuccholz(OrdinalLib.omega())', expect:'psi_0(psi_0(1)^1)'},
+  {group:'buchholz', name:'toBuccholz 0', code:'OrdinalLib.toBuccholz(new OrdinalLib.OrdinalNum(0))', expect:'0'},
+  {group:'buchholz', name:'toBuccholz finite 5', code:'OrdinalLib.toBuccholz(new OrdinalLib.OrdinalNum(5))', expect:'5'},
+  {group:'buchholz', name:'fromBuccholz("0") == 0', code:'OrdinalLib.fromBuccholz("0").toString()', expect:'0'},
+  {group:'buchholz', name:'fromBuccholz("SVO") == SVO', code:'OrdinalLib.fromBuccholz("SVO").toString()', expect:'SVO'},
+  {group:'buchholz', name:'roundtrip omega', code:'OrdinalLib.fromBuccholz(OrdinalLib.toBuccholz(OrdinalLib.omega())).toString()', expect:'ω'},
+  {group:'buchholz', name:'roundtrip epsilon(0)', code:'OrdinalLib.fromBuccholz(OrdinalLib.toBuccholz(OrdinalLib.epsilon(0))).toString()', expect:'ε_0'},
+  {group:'buchholz', name:'roundtrip zeta(0)', code:'OrdinalLib.fromBuccholz(OrdinalLib.toBuccholz(OrdinalLib.zeta(0))).toString()', expect:'ζ_0'},
+  {group:'buchholz', name:'psi roundtrip', code:'OrdinalLib.psi(new OrdinalLib.OrdinalNum(0), OrdinalLib.omega()).toString()', expect:'ψ_0(ω)'},
+
+  {group:'edge', name:'add identity left', code:'OrdinalLib.omega().add(0).toString()', expect:'ω'},
+  {group:'edge', name:'add identity right', code:'new OrdinalLib.OrdinalNum(0).add(OrdinalLib.omega()).toString()', expect:'ω'},
+  {group:'edge', name:'mul identity', code:'OrdinalLib.omega().mul(1).toString()', expect:'ω'},
+  {group:'edge', name:'mul by zero', code:'OrdinalLib.omega().mul(0).toString()', expect:'0'},
+  {group:'edge', name:'pow by zero = 1', code:'OrdinalLib.epsilon(0).pow(0).toString()', expect:'1'},
+  {group:'edge', name:'pow by 1 = self', code:'OrdinalLib.epsilon(0).pow(1).toString()', expect:'ε_0'},
+  {group:'edge', name:'SVO equals SVO', code:'OrdinalLib.svoOrdinal().equals(OrdinalLib.svoOrdinal())', expect:'true'},
+  {group:'edge', name:'copy constructor', code:'new OrdinalLib.OrdinalNum(OrdinalLib.omega()).toString()', expect:'ω'},
+  {group:'edge', name:'OrdinalNumError is Error', code:'new OrdinalLib.OrdinalNumError("x") instanceof Error', expect:'true'},
+];
+
+var results = [];
+
+function runAll(){
+  results = [];
+  var t0 = performance.now();
+  TESTS.forEach(function(t,i){ results.push(runTest(t,i)); });
+  var elapsed = (performance.now()-t0).toFixed(1);
+  renderResults();
+  updateStats(elapsed);
+}
+
+function runGroup(g){
+  var groupTests = TESTS.map(function(t,i){return {t:t,i:i};}).filter(function(x){return x.t.group===g;});
+  groupTests.forEach(function(x){
+    while(results.length<=x.i) results.push(null);
+    results[x.i] = runTest(x.t, x.i);
+  });
+  renderResults();
+  updateStats(null);
+}
+
+function runTest(t, idx){
+  var t0 = performance.now();
+  try{
+    var got = String(eval('(function(OrdinalLib){return ('+t.code+');})(OrdinalLib)'));
+    var pass = got === t.expect;
+    return {pass:pass, got:got, expect:t.expect, time:(performance.now()-t0).toFixed(2), idx:idx, t:t};
+  } catch(e){
+    return {pass:false, got:'ERROR: '+e.message, expect:t.expect, time:(performance.now()-t0).toFixed(2), idx:idx, t:t};
+  }
+}
+
+function renderResults(){
+  var groups = {};
+  TESTS.forEach(function(t,i){
+    if(!groups[t.group]) groups[t.group]=[];
+    groups[t.group].push({t:t,i:i,r:results[i]||null});
+  });
+
+  var mainArea = document.getElementById('mainArea');
+  var customPanel = mainArea.querySelector('.custom-panel');
+
+  var html = '';
+  Object.keys(groups).forEach(function(g){
+    var items = groups[g];
+    var done = items.filter(function(x){return x.r;});
+    var passed = done.filter(function(x){return x.r && x.r.pass;});
+    var failed = done.filter(function(x){return x.r && !x.r.pass;});
+    var badgeCls = done.length===0?'':failed.length>0?'has-fail':'all-pass';
+    var badgeTxt = done.length===0?'pending':(passed.length+'/'+items.length+' pass');
+    html += '<div class="group" id="group-'+g+'">';
+    html += '<div class="group-header"><h2>'+esc(g)+'</h2><span class="group-badge '+badgeCls+'">'+badgeTxt+'</span></div>';
+    items.forEach(function(x){
+      var r = x.r;
+      var statusCls = !r?'skip':r.pass?'pass':'fail';
+      var statusChar = !r?'—':r.pass?'✓':'✗';
+      html += '<div class="test-row">';
+      html += '<div class="test-status '+statusCls+'">'+statusChar+'</div>';
+      html += '<div class="test-body">';
+      html += '<div class="test-name">'+esc(x.t.name)+'</div>';
+      html += '<div class="test-code">'+esc(x.t.code)+'</div>';
+      if(r){
+        html += '<div class="test-expected">';
+        html += '<span class="e-label">expected </span><span class="e-val">'+esc(r.expect)+'</span>';
+        if(!r.pass) html += ' <span class="e-label">  got </span><span class="e-got">'+esc(r.got)+'</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+      if(r) html += '<div class="test-time">'+r.time+'ms</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  mainArea.innerHTML = '';
+  mainArea.appendChild(customPanel);
+  mainArea.insertAdjacentHTML('beforeend', html);
+
+  var total = results.filter(Boolean).length;
+  var pct = TESTS.length ? (total/TESTS.length)*100 : 0;
+  document.getElementById('progressFill').style.width = pct+'%';
+}
+
+function updateStats(elapsed){
+  var done = results.filter(Boolean);
+  var pass = done.filter(function(r){return r.pass;}).length;
+  var fail = done.length - pass;
+  document.getElementById('statPass').textContent = '✓ '+pass;
+  document.getElementById('statFail').textContent = '✗ '+fail;
+  document.getElementById('statTotal').textContent = '/ '+TESTS.length;
+  if(elapsed!==null) document.getElementById('statTime').textContent = elapsed+'ms';
+}
+
+function runCustom(){
+  var expr = document.getElementById('customExpr').value.trim();
+  var outEl = document.getElementById('customOut');
+  if(!expr){ outEl.textContent='—'; outEl.className='cust-out'; return; }
+  try{
+    var r = eval('(function(OrdinalLib){return ('+expr+');})(OrdinalLib)');
+    outEl.textContent = '→ ' + (r && typeof r.toString==='function' ? r.toString() : String(r));
+    outEl.className = 'cust-out';
+  } catch(e){
+    outEl.textContent = 'Error: '+e.message;
+    outEl.className = 'cust-out err';
+  }
+}
+
+document.getElementById('customExpr').addEventListener('keydown', function(e){
+  if(e.key==='Enter' && e.ctrlKey) runCustom();
+});
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+window.addEventListener('load', function(){ runAll(); });
+</script>
+</body>
+</html>

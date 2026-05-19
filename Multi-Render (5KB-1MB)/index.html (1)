@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Image Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Open Sans', sans-serif; background-color: #000; color: #fff; }
+        #root { display: flex; height: 100vh; }
+        .menubar { background-color: #1a1a1a; border-bottom: 1px solid #333; padding: 10px 20px; display: flex; gap: 20px; }
+        .menu-item { padding: 8px 16px; cursor: pointer; user-select: none; }
+        .menu-item:hover { background-color: #333; border-radius: 4px; }
+        .submenu { position: absolute; background-color: #1a1a1a; border: 1px solid #333; border-radius: 4px; display: none; flex-direction: column; z-index: 1000; }
+        .submenu.active { display: flex; }
+        .submenu-item { padding: 10px 20px; cursor: pointer; border-bottom: 1px solid #333; }
+        .submenu-item:hover { background-color: #333; }
+        .container { display: flex; height: calc(100vh - 50px); }
+        .sidebar { background-color: #111; width: 250px; border-right: 1px solid #333; overflow-y: auto; padding: 15px; }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .canvas-container { flex: 1; display: flex; align-items: center; justify-content: center; background-color: #000; position: relative; overflow: hidden; }
+        #canvas, #glCanvas { max-width: 100%; max-height: 100%; cursor: crosshair; }
+        .panel { background-color: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 15px; margin-bottom: 15px; }
+        .panel-title { font-weight: 600; margin-bottom: 10px; }
+        .panel-content { display: flex; flex-direction: column; gap: 10px; }
+        .slider-group { display: flex; flex-direction: column; gap: 5px; }
+        .slider-label { font-size: 12px; color: #aaa; }
+        input[type="range"] { width: 100%; }
+        input[type="color"] { width: 100%; height: 40px; border: 1px solid #333; cursor: pointer; }
+        button { background-color: #333; color: #fff; border: 1px solid #555; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-family: 'Open Sans', sans-serif; }
+        button:hover { background-color: #444; }
+        .tool-button { width: 100%; text-align: left; margin-bottom: 5px; }
+        .tabs { display: flex; border-bottom: 1px solid #333; margin-bottom: 10px; }
+        .tab { padding: 10px 15px; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { border-bottom-color: #fff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .layer-item { background-color: #222; padding: 10px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; }
+        .layer-item.selected { background-color: #333; border: 1px solid #555; }
+        input[type="text"], input[type="file"] { background-color: #222; color: #fff; border: 1px solid #333; padding: 8px; border-radius: 4px; width: 100%; }
+        input[type="text"]:focus, input[type="file"]:focus { outline: none; border-color: #555; }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background-color: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 30px; display: none; z-index: 2000; min-width: 400px; }
+        .modal.active { display: block; }
+        .modal-header { font-weight: 700; font-size: 18px; margin-bottom: 20px; }
+        .modal-input { width: 100%; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+        .color-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+        .color-preset { width: 40px; height: 40px; border-radius: 4px; cursor: pointer; border: 1px solid #333; }
+        .status-bar { background-color: #1a1a1a; border-top: 1px solid #333; padding: 10px 20px; font-size: 12px; color: #aaa; }
+        .toolbar { background-color: #1a1a1a; border-top: 1px solid #333; padding: 10px 20px; display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="width: 100%;">
+            <div class="menubar">
+                <div class="menu-item" onclick="toggleMenu('file')">File</div>
+                <div class="submenu" id="file-menu">
+                    <div class="submenu-item" onclick="editor.uploadImage()">Upload Image</div>
+                    <div class="submenu-item" onclick="editor.uploadFilter()">Upload Filter</div>
+                    <div class="submenu-item" onclick="editor.saveAsFilter()">Save As Filter (.dsnf)</div>
+                    <div class="submenu-item" onclick="editor.createNewFilter()">Create New Filter</div>
+                    <div class="submenu-item" onclick="toggleExportMenu()">Export Image</div>
+                    <div id="export-submenu" style="position: absolute; left: 180px; top: 110px;">
+                        <div class="submenu-item" onclick="editor.exportImage('PNG')">PNG</div>
+                        <div class="submenu-item" onclick="editor.exportImage('jpg')">JPG</div>
+                        <div class="submenu-item" onclick="editor.exportImage('jpeg')">JPEG</div>
+                    </div>
+                </div>
+                <div class="menu-item" onclick="toggleMenu('edit')">Edit</div>
+                <div class="submenu" id="edit-menu">
+                    <div class="submenu-item" onclick="editor.undo()">Undo</div>
+                    <div class="submenu-item" onclick="editor.redo()">Redo</div>
+                    <div class="submenu-item" onclick="editor.copy()">Copy</div>
+                    <div class="submenu-item" onclick="editor.paste()">Paste</div>
+                </div>
+                <div class="menu-item" onclick="toggleMenu('image')">Image</div>
+                <div class="submenu" id="image-menu">
+                    <div class="submenu-item" onclick="toggleImageFilters()">Filters</div>
+                    <div id="image-filters-submenu" style="position: absolute; left: 180px; top: 50px;">
+                        <div class="submenu-item" onclick="editor.applyFilter('hue-saturation')">Hue/Saturation</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('brightness')">Brightness</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('contrast')">Contrast</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('color-curves')">Color Curves</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('gradient-map')">Gradient Map</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('tint')">Tint</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('rgb-split')">RGB Split</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('invert')">Invert</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('channel-mixer')">Channel Mixer</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('lab-adjust')">LAB Adjust</div>
+                        <div class="submenu-item" onclick="editor.applyFilter('lch-adjust')">LCH Adjust</div>
+                    </div>
+                </div>
+                <div class="menu-item" onclick="toggleMenu('effects')">Effects</div>
+                <div class="submenu" id="effects-menu">
+                    <div class="submenu-item" onclick="toggleDistortMenu()">Distort</div>
+                    <div id="distort-submenu" style="position: absolute; left: 180px; top: 50px;">
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-shear')">Shear</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-polar')">Polar Coordinates</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-wave')">Wave</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-zigzag')">ZigZag</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-swirl')">Swirl</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-kaleido')">Kaleido</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('distort-ripple')">Ripple</div>
+                    </div>
+                    <div class="submenu-item" onclick="toggleBlurMenu()">Blur</div>
+                    <div id="blur-submenu" style="position: absolute; left: 180px; top: 120px;">
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-unsharp')">Unsharp Mask</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-sharpen')">Sharpen</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-box')">Box Blur</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-gaussian')">Gaussian Blur</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-directional')">Directional Blur</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-linear')">Linear Blur</div>
+                        <div class="submenu-item" onclick="editor.applyEffect('blur-radial')">Radial Blur</div>
+                    </div>
+                </div>
+                <div class="menu-item" onclick="toggleMenu('render')">Render</div>
+                <div class="submenu" id="render-menu">
+                    <div class="submenu-item" onclick="editor.renderEffect('render-clouds')">Clouds</div>
+                    <div class="submenu-item" onclick="editor.renderEffect('render-gradient')">Gradient</div>
+                    <div class="submenu-item" onclick="editor.renderEffect('render-gradient-radial')">Gradient Radial</div>
+                    <div class="submenu-item" onclick="editor.renderEffect('render-mandelbrot')">Mandelbrot</div>
+                    <div class="submenu-item" onclick="editor.renderEffect('render-julia')">Julia</div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="sidebar">
+                    <div class="panel">
+                        <div class="panel-title">Layers</div>
+                        <div class="panel-content" id="layers-panel"></div>
+                        <button style="width: 100%; margin-top: 10px;" onclick="editor.addLayer()">Add Layer</button>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-title">Tools</div>
+                        <div class="panel-content" id="tools-panel"></div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-title">Properties</div>
+                        <div class="panel-content" id="properties-panel"></div>
+                    </div>
+                </div>
+                <div class="main">
+                    <div class="canvas-container">
+                        <canvas id="glCanvas"></canvas>
+                    </div>
+                    <div class="status-bar">Ready</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="filter-modal">
+        <div class="modal-header">Filter Settings</div>
+        <div class="panel-content" id="modal-content"></div>
+        <div class="modal-buttons">
+            <button onclick="closeModal()">Cancel</button>
+            <button onclick="editor.applyModalFilter()">Apply</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        const vertexShaderSource = `
+            attribute vec2 position;
+            varying vec2 texCoord;
+            void main() {
+                gl_Position = vec4(position, 0.0, 1.0);
+                texCoord = (position + 1.0) / 2.0;
+            }
+        `;
+
+        const fragmentShaders = {
+            'hue-saturation': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float hue;
+                uniform float saturation;
+                uniform float lightness;
+                
+                vec3 rgbToHsl(vec3 rgb) {
+                    float r = rgb.r, g = rgb.g, b = rgb.b;
+                    float maxc = max(r, max(g, b));
+                    float minc = min(r, min(g, b));
+                    float l = (maxc + minc) / 2.0;
+                    float h, s;
+                    if (maxc == minc) {
+                        h = s = 0.0;
+                    } else {
+                        float d = maxc - minc;
+                        s = l > 0.5 ? d / (2.0 - maxc - minc) : d / (maxc + minc);
+                        if (maxc == r) h = mod((g - b) / d + (g < b ? 6.0 : 0.0), 6.0);
+                        else if (maxc == g) h = (b - r) / d + 2.0;
+                        else h = (r - g) / d + 4.0;
+                        h /= 6.0;
+                    }
+                    return vec3(h, s, l);
+                }
+                
+                vec3 hslToRgb(vec3 hsl) {
+                    float h = hsl.x, s = hsl.y, l = hsl.z;
+                    vec3 rgb;
+                    float c = (1.0 - abs(2.0 * l - 1.0)) * s;
+                    float x = c * (1.0 - abs(mod(h * 6.0, 2.0) - 1.0));
+                    float m = l - c / 2.0;
+                    if (h < 1.0/6.0) rgb = vec3(c, x, 0.0);
+                    else if (h < 2.0/6.0) rgb = vec3(x, c, 0.0);
+                    else if (h < 3.0/6.0) rgb = vec3(0.0, c, x);
+                    else if (h < 4.0/6.0) rgb = vec3(0.0, x, c);
+                    else if (h < 5.0/6.0) rgb = vec3(x, 0.0, c);
+                    else rgb = vec3(c, 0.0, x);
+                    return rgb + m;
+                }
+                
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    vec3 hsl = rgbToHsl(color.rgb);
+                    hsl.x = mod(hsl.x + hue / 360.0, 1.0);
+                    hsl.y = clamp(hsl.y * saturation, 0.0, 1.0);
+                    hsl.z = clamp(hsl.z + lightness / 100.0, 0.0, 1.0);
+                    gl_FragColor = vec4(hslToRgb(hsl), color.a);
+                }
+            `,
+            'brightness': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float brightness;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    gl_FragColor = vec4(color.rgb + brightness, color.a);
+                }
+            `,
+            'contrast': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float contrast;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    gl_FragColor = vec4((color.rgb - 0.5) * contrast + 0.5, color.a);
+                }
+            `,
+            'color-curves': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform sampler2D curves;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    float r = texture2D(curves, vec2(color.r, 0.25)).r;
+                    float g = texture2D(curves, vec2(color.g, 0.5)).g;
+                    float b = texture2D(curves, vec2(color.b, 0.75)).b;
+                    gl_FragColor = vec4(r, g, b, color.a);
+                }
+            `,
+            'gradient-map': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform sampler2D gradient;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
+                    vec4 mapped = texture2D(gradient, vec2(gray, 0.5));
+                    gl_FragColor = vec4(mapped.rgb, color.a);
+                }
+            `,
+            'tint': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform vec3 tintColor;
+                uniform float amount;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    gl_FragColor = vec4(mix(color.rgb, tintColor, amount), color.a);
+                }
+            `,
+            'rgb-split': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float offsetR;
+                uniform float offsetG;
+                uniform float offsetB;
+                void main() {
+                    vec4 colorR = texture2D(texture, texCoord + vec2(offsetR, 0.0));
+                    vec4 colorG = texture2D(texture, texCoord + vec2(offsetG, 0.0));
+                    vec4 colorB = texture2D(texture, texCoord + vec2(offsetB, 0.0));
+                    gl_FragColor = vec4(colorR.r, colorG.g, colorB.b, 1.0);
+                }
+            `,
+            'invert': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    gl_FragColor = vec4(1.0 - color.rgb, color.a);
+                }
+            `,
+            'channel-mixer': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform mat3 mixMatrix;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    vec3 mixed = mixMatrix * color.rgb;
+                    gl_FragColor = vec4(mixed, color.a);
+                }
+            `,
+            'lab-adjust': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float lightness;
+                uniform float aAxis;
+                uniform float bAxis;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    vec3 lab = vec3(lightness, aAxis, bAxis);
+                    gl_FragColor = vec4(color.rgb + lab * 0.01, color.a);
+                }
+            `,
+            'lch-adjust': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float lightness;
+                uniform float chroma;
+                uniform float hue;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord);
+                    gl_FragColor = vec4(color.rgb, color.a);
+                }
+            `,
+            'distort-shear': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float shearX;
+                uniform float shearY;
+                void main() {
+                    vec2 coord = texCoord + vec2(shearX * texCoord.y, shearY * texCoord.x);
+                    gl_FragColor = texture2D(texture, coord);
+                }
+            `,
+            'distort-polar': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                void main() {
+                    vec2 centered = texCoord - 0.5;
+                    float angle = atan(centered.y, centered.x);
+                    float radius = length(centered);
+                    vec2 polar = vec2(angle / 3.14159, radius * 2.0);
+                    gl_FragColor = texture2D(texture, polar);
+                }
+            `,
+            'distort-wave': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float frequency;
+                uniform float amplitude;
+                void main() {
+                    vec2 coord = texCoord;
+                    coord.y += sin(coord.x * frequency) * amplitude;
+                    gl_FragColor = texture2D(texture, coord);
+                }
+            `,
+            'distort-zigzag': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float amplitude;
+                uniform float frequency;
+                void main() {
+                    vec2 coord = texCoord;
+                    coord.x += sin(coord.y * frequency) * amplitude;
+                    coord.y += cos(coord.x * frequency) * amplitude;
+                    gl_FragColor = texture2D(texture, coord);
+                }
+            `,
+            'distort-swirl': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float angle;
+                void main() {
+                    vec2 centered = texCoord - 0.5;
+                    float radius = length(centered);
+                    float theta = atan(centered.y, centered.x) + angle * radius;
+                    vec2 coord = 0.5 + radius * vec2(cos(theta), sin(theta));
+                    gl_FragColor = texture2D(texture, coord);
+                }
+            `,
+            'distort-kaleido': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float sides;
+                void main() {
+                    vec2 centered = texCoord - 0.5;
+                    float angle = atan(centered.y, centered.x);
+                    float radius = length(centered);
+                    angle = mod(angle, 3.14159 * 2.0 / sides);
+                    vec2 coord = 0.5 + radius * vec2(cos(angle), sin(angle));
+                    gl_FragColor = texture2D(texture, coord);
+                }
+            `,
+            'distort-ripple': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float amplitude;
+                uniform float frequency;
+                void main() {
+                    vec2 centered = texCoord - 0.5;
+                    float dist = length(centered);
+                    vec2 dir = normalize(centered);
+                    float wave = sin(dist * frequency) * amplitude;
+                    vec2 coord = texCoord + dir * wave;
+                    gl_FragColor = texture2D(texture, coord);
+                }
+            `,
+            'blur-unsharp': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float radius;
+                uniform float amount;
+                const int SAMPLES = 9;
+                void main() {
+                    vec4 center = texture2D(texture, texCoord);
+                    vec4 blurred = center;
+                    for(int i = -1; i <= 1; i++) {
+                        for(int j = -1; j <= 1; j++) {
+                            vec2 offset = vec2(float(i), float(j)) * radius / 512.0;
+                            blurred += texture2D(texture, texCoord + offset);
+                        }
+                    }
+                    blurred /= float(SAMPLES);
+                    gl_FragColor = center + (center - blurred) * amount;
+                }
+            `,
+            'blur-sharpen': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float amount;
+                void main() {
+                    vec4 center = texture2D(texture, texCoord);
+                    float px = 1.0 / 512.0;
+                    vec4 neighbors = vec4(0.0);
+                    neighbors += texture2D(texture, texCoord + vec2(-px, 0.0));
+                    neighbors += texture2D(texture, texCoord + vec2(px, 0.0));
+                    neighbors += texture2D(texture, texCoord + vec2(0.0, -px));
+                    neighbors += texture2D(texture, texCoord + vec2(0.0, px));
+                    neighbors /= 4.0;
+                    gl_FragColor = center + (center - neighbors) * amount;
+                }
+            `,
+            'blur-box': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float radius;
+                void main() {
+                    vec4 color = vec4(0.0);
+                    float px = radius / 512.0;
+                    int samples = int(radius * 2.0) + 1;
+                    for(int i = -10; i <= 10; i++) {
+                        for(int j = -10; j <= 10; j++) {
+                            color += texture2D(texture, texCoord + vec2(float(i), float(j)) * px);
+                        }
+                    }
+                    gl_FragColor = color / 441.0;
+                }
+            `,
+            'blur-gaussian': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float radius;
+                void main() {
+                    vec4 color = texture2D(texture, texCoord) * 0.2270270270;
+                    float px = radius / 512.0;
+                    color += texture2D(texture, texCoord + vec2(px, 0.0)) * 0.3162162162;
+                    color += texture2D(texture, texCoord - vec2(px, 0.0)) * 0.3162162162;
+                    color += texture2D(texture, texCoord + vec2(px * 2.0, 0.0)) * 0.0702702703;
+                    color += texture2D(texture, texCoord - vec2(px * 2.0, 0.0)) * 0.0702702703;
+                    gl_FragColor = color;
+                }
+            `,
+            'blur-directional': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float angle;
+                uniform float radius;
+                void main() {
+                    vec4 color = vec4(0.0);
+                    vec2 dir = vec2(cos(angle), sin(angle));
+                    float px = radius / 512.0;
+                    for(int i = -5; i <= 5; i++) {
+                        color += texture2D(texture, texCoord + dir * float(i) * px);
+                    }
+                    gl_FragColor = color / 11.0;
+                }
+            `,
+            'blur-linear': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float radius;
+                void main() {
+                    vec4 color = vec4(0.0);
+                    float px = radius / 512.0;
+                    for(int i = -5; i <= 5; i++) {
+                        color += texture2D(texture, texCoord + vec2(float(i) * px, 0.0));
+                    }
+                    gl_FragColor = color / 11.0;
+                }
+            `,
+            'blur-radial': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform sampler2D texture;
+                uniform float radius;
+                void main() {
+                    vec4 color = vec4(0.0);
+                    vec2 center = vec2(0.5, 0.5);
+                    vec2 dir = normalize(texCoord - center);
+                    for(int i = -5; i <= 5; i++) {
+                        float dist = length(texCoord - center);
+                        color += texture2D(texture, center + dir * (dist + float(i) * radius / 512.0));
+                    }
+                    gl_FragColor = color / 11.0;
+                }
+            `,
+            'render-clouds': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform float time;
+                
+                float noise(vec2 p) {
+                    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+                }
+                
+                float perlin(vec2 p) {
+                    vec2 i = floor(p);
+                    vec2 f = fract(p);
+                    f = f * f * (3.0 - 2.0 * f);
+                    float a = noise(i);
+                    float b = noise(i + vec2(1.0, 0.0));
+                    float c = noise(i + vec2(0.0, 1.0));
+                    float d = noise(i + vec2(1.0, 1.0));
+                    return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+                }
+                
+                void main() {
+                    vec2 p = texCoord * 3.0;
+                    float n = perlin(p + time);
+                    n += perlin(p * 2.0 + time * 0.5) * 0.5;
+                    n += perlin(p * 4.0 + time * 0.25) * 0.25;
+                    n = n / 1.75;
+                    gl_FragColor = vec4(vec3(n), 1.0);
+                }
+            `,
+            'render-gradient': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform vec3 color1;
+                uniform vec3 color2;
+                void main() {
+                    gl_FragColor = vec4(mix(color1, color2, texCoord.x), 1.0);
+                }
+            `,
+            'render-gradient-radial': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform vec3 color1;
+                uniform vec3 color2;
+                void main() {
+                    float dist = length(texCoord - 0.5) * 2.0;
+                    gl_FragColor = vec4(mix(color1, color2, dist), 1.0);
+                }
+            `,
+            'render-mandelbrot': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform float zoom;
+                uniform float offsetX;
+                uniform float offsetY;
+                
+                void main() {
+                    vec2 c = (texCoord - 0.5) * zoom + vec2(offsetX, offsetY);
+                    vec2 z = vec2(0.0);
+                    int iterations = 0;
+                    for(int i = 0; i < 256; i++) {
+                        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c;
+                        if(length(z) > 2.0) break;
+                        iterations = i;
+                    }
+                    float color = float(iterations) / 256.0;
+                    gl_FragColor = vec4(vec3(color), 1.0);
+                }
+            `,
+            'render-julia': `
+                precision mediump float;
+                varying vec2 texCoord;
+                uniform vec2 cValue;
+                uniform float zoom;
+                
+                void main() {
+                    vec2 z = (texCoord - 0.5) * zoom;
+                    int iterations = 0;
+                    for(int i = 0; i < 256; i++) {
+                        z = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + cValue;
+                        if(length(z) > 2.0) break;
+                        iterations = i;
+                    }
+                    float color = float(iterations) / 256.0;
+                    gl_FragColor = vec4(vec3(color), 1.0);
+                }
+            `
+        };
+
+        class ImageEditor {
+            constructor() {
+                this.canvas = document.getElementById('glCanvas');
+                this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+                this.layers = [];
+                this.currentLayerIndex = 0;
+                this.history = [];
+                this.historyIndex = -1;
+                this.clipboard = null;
+                this.currentImage = null;
+                this.programs = {};
+                this.initGL();
+                this.initTools();
+            }
+
+            initGL() {
+                const gl = this.gl;
+                gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+                gl.clearColor(0, 0, 0, 1);
+                
+                for (const [key, fragSource] of Object.entries(fragmentShaders)) {
+                    const program = gl.createProgram();
+                    const vertexShader = this.compileShader(vertexShaderSource, gl.VERTEX_SHADER);
+                    const fragmentShader = this.compileShader(fragSource, gl.FRAGMENT_SHADER);
+                    gl.attachShader(program, vertexShader);
+                    gl.attachShader(program, fragmentShader);
+                    gl.linkProgram(program);
+                    this.programs[key] = program;
+                }
+            }
+
+            compileShader(source, type) {
+                const gl = this.gl;
+                const shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
+                }
+                return shader;
+            }
+
+            initTools() {
+                const toolsPanel = document.getElementById('tools-panel');
+                const tools = [
+                    { name: 'Rotate', fn: () => this.showRotateModal() },
+                    { name: 'Scale', fn: () => this.showScaleModal() },
+                    { name: 'Position X/Y', fn: () => this.showPositionModal() },
+                    { name: 'Add Layer', fn: () => this.addLayer() },
+                ];
+                tools.forEach(tool => {
+                    const btn = document.createElement('button');
+                    btn.className = 'tool-button';
+                    btn.textContent = tool.name;
+                    btn.onclick = tool.fn;
+                    toolsPanel.appendChild(btn);
+                });
+            }
+
+            uploadImage() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new Image();
+                            img.onload = () => {
+                                this.currentImage = img;
+                                this.canvas.width = img.width;
+                                this.canvas.height = img.height;
+                                this.addLayer(img);
+                                this.render();
+                            };
+                            img.src = event.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                };
+                input.click();
+            }
+
+            uploadFilter() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.dsnf';
+                input.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const filterData = JSON.parse(event.target.result);
+                            this.applyFilter(filterData.type, filterData.params);
+                        };
+                        reader.readAsText(file);
+                    }
+                };
+                input.click();
+            }
+
+            saveAsFilter() {
+                const filterData = {
+                    type: 'custom',
+                    params: {},
+                    timestamp: new Date().toISOString()
+                };
+                const dataStr = JSON.stringify(filterData);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `filter_${Date.now()}.dsnf`;
+                link.click();
+            }
+
+            createNewFilter() {
+                const name = prompt('Enter filter name:');
+                if (name) {
+                    const filter = { name, params: {} };
+                    console.log('Filter created:', filter);
+                }
+            }
+
+            exportImage(format) {
+                const link = document.createElement('a');
+                const mimeType = format === 'PNG' ? 'image/png' : `image/${format.toLowerCase()}`;
+                this.canvas.toBlob((blob) => {
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `image_${Date.now()}.${format.toLowerCase()}`;
+                    link.click();
+                }, mimeType);
+            }
+
+            undo() {
+                if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                    this.render();
+                }
+            }
+
+            redo() {
+                if (this.historyIndex < this.history.length - 1) {
+                    this.historyIndex++;
+                    this.render();
+                }
+            }
+
+            copy() {
+                this.clipboard = this.canvas.toDataURL();
+            }
+
+            paste() {
+                if (this.clipboard) {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.addLayer(img);
+                        this.render();
+                    };
+                    img.src = this.clipboard;
+                }
+            }
+
+            addLayer(image) {
+                const layer = {
+                    id: this.layers.length,
+                    name: `Layer ${this.layers.length}`,
+                    image: image || null,
+                    opacity: 1.0,
+                    blendMode: 'normal',
+                    visible: true,
+                };
+                this.layers.push(layer);
+                this.updateLayersList();
+                this.saveHistory();
+            }
+
+            updateLayersList() {
+                const panel = document.getElementById('layers-panel');
+                panel.innerHTML = '';
+                this.layers.forEach((layer, index) => {
+                    const item = document.createElement('div');
+                    item.className = `layer-item ${index === this.currentLayerIndex ? 'selected' : ''}`;
+                    item.textContent = layer.name;
+                    item.onclick = () => {
+                        this.currentLayerIndex = index;
+                        this.updateLayersList();
+                    };
+                    panel.appendChild(item);
+                });
+            }
+
+            applyFilter(filterType, params = {}) {
+                if (filterType === 'hue-saturation') {
+                    this.showHueSaturationModal();
+                } else if (filterType === 'brightness') {
+                    this.showBrightnessModal();
+                } else if (filterType === 'contrast') {
+                    this.showContrastModal();
+                } else {
+                    this.renderWithShader(filterType, params);
+                }
+            }
+
+            applyEffect(effectType, params = {}) {
+                this.renderWithShader(effectType, params);
+            }
+
+            renderEffect(effectType, params = {}) {
+                this.renderWithShader(effectType, params);
+            }
+
+            showHueSaturationModal() {
+                const modal = document.getElementById('filter-modal');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="slider-group">
+                        <label class="slider-label">Hue</label>
+                        <input type="range" min="-180" max="180" value="0" id="hue-slider">
+                    </div>
+                    <div class="slider-group">
+                        <label class="slider-label">Saturation</label>
+                        <input type="range" min="0" max="200" value="100" id="sat-slider">
+                    </div>
+                    <div class="slider-group">
+                        <label class="slider-label">Lightness</label>
+                        <input type="range" min="-100" max="100" value="0" id="light-slider">
+                    </div>
+                `;
+                modal.classList.add('active');
+                this.currentFilterParams = {
+                    hue: 0,
+                    saturation: 100,
+                    lightness: 0
+                };
+            }
+
+            showBrightnessModal() {
+                const modal = document.getElementById('filter-modal');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="slider-group">
+                        <label class="slider-label">Brightness</label>
+                        <input type="range" min="-1" max="1" step="0.01" value="0" id="bright-slider">
+                    </div>
+                `;
+                modal.classList.add('active');
+            }
+
+            showContrastModal() {
+                const modal = document.getElementById('filter-modal');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="slider-group">
+                        <label class="slider-label">Contrast</label>
+                        <input type="range" min="0" max="3" step="0.1" value="1" id="contrast-slider">
+                    </div>
+                `;
+                modal.classList.add('active');
+            }
+
+            showRotateModal() {
+                const modal = document.getElementById('filter-modal');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="slider-group">
+                        <label class="slider-label">Rotation (degrees)</label>
+                        <input type="range" min="0" max="360" value="0" id="rotate-slider">
+                    </div>
+                `;
+                modal.classList.add('active');
+            }
+
+            showScaleModal() {
+                const modal = document.getElementById('filter-modal');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="slider-group">
+                        <label class="slider-label">Scale</label>
+                        <input type="range" min="0.1" max="3" step="0.1" value="1" id="scale-slider">
+                    </div>
+                `;
+                modal.classList.add('active');
+            }
+
+            showPositionModal() {
+                const modal = document.getElementById('filter-modal');
+                const content = document.getElementById('modal-content');
+                content.innerHTML = `
+                    <div class="slider-group">
+                        <label class="slider-label">Position X</label>
+                        <input type="range" min="-500" max="500" value="0" id="posX-slider">
+                    </div>
+                    <div class="slider-group">
+                        <label class="slider-label">Position Y</label>
+                        <input type="range" min="-500" max="500" value="0" id="posY-slider">
+                    </div>
+                `;
+                modal.classList.add('active');
+            }
+
+            applyModalFilter() {
+                const hueSlider = document.getElementById('hue-slider');
+                const satSlider = document.getElementById('sat-slider');
+                const lightSlider = document.getElementById('light-slider');
+                
+                if (hueSlider) {
+                    this.renderWithShader('hue-saturation', {
+                        hue: parseInt(hueSlider.value),
+                        saturation: parseInt(satSlider.value) / 100,
+                        lightness: parseInt(lightSlider.value) / 100
+                    });
+                }
+                closeModal();
+            }
+
+            renderWithShader(shaderKey, params) {
+                const gl = this.gl;
+                const program = this.programs[shaderKey];
+                if (!program) return;
+
+                gl.useProgram(program);
+
+                const positionBuffer = gl.createBuffer();
+                gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+                    -1, -1, 1, -1, -1, 1, 1, 1
+                ]), gl.STATIC_DRAW);
+
+                const positionLocation = gl.getAttribLocation(program, 'position');
+                gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+                gl.enableVertexAttribArray(positionLocation);
+
+                for (const [key, value] of Object.entries(params)) {
+                    const location = gl.getUniformLocation(program, key);
+                    if (Array.isArray(value)) {
+                        if (value.length === 3) gl.uniform3f(location, ...value);
+                        else if (value.length === 2) gl.uniform2f(location, ...value);
+                    } else if (typeof value === 'number') {
+                        gl.uniform1f(location, value);
+                    }
+                }
+
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+            }
+
+            render() {
+                if (this.currentImage) {
+                    const gl = this.gl;
+                    gl.clear(gl.COLOR_BUFFER_BIT);
+                }
+            }
+
+            saveHistory() {
+                this.historyIndex++;
+                this.history = this.history.slice(0, this.historyIndex);
+                this.history.push(this.canvas.toDataURL());
+            }
+        }
+
+        function toggleMenu(menu) {
+            const menus = document.querySelectorAll('.submenu');
+            menus.forEach(m => m.classList.remove('active'));
+            document.getElementById(`${menu}-menu`).classList.add('active');
+        }
+
+        function toggleImageFilters() {
+            const submenu = document.getElementById('image-filters-submenu');
+            submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function toggleDistortMenu() {
+            const submenu = document.getElementById('distort-submenu');
+            submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function toggleBlurMenu() {
+            const submenu = document.getElementById('blur-submenu');
+            submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function toggleExportMenu() {
+            const submenu = document.getElementById('export-submenu');
+            submenu.style.display = submenu.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('filter-modal').classList.remove('active');
+        }
+
+        const editor = new ImageEditor();
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.menu-item') && !event.target.closest('.submenu')) {
+                document.querySelectorAll('.submenu').forEach(m => m.classList.remove('active'));
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plugin Builder</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: sans-serif; background: #0e0e0e; color: #e0e0e0; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+h1 { font-size: 22px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin-bottom: 6px; }
+.sub { font-size: 12px; color: #555; letter-spacing: 1px; margin-bottom: 36px; }
+.container { width: 100%; max-width: 860px; }
+.upload-zone { border: 2px dashed #2a2a2a; border-radius: 8px; padding: 36px; text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 20px; position: relative; }
+.upload-zone:hover, .upload-zone.drag { border-color: #4a9eff; background: #111; }
+.upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upload-icon { font-size: 32px; margin-bottom: 10px; color: #333; }
+.upload-zone p { font-size: 14px; color: #555; }
+.upload-zone span { color: #4a9eff; }
+.file-list { margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+.file-item { background: #161616; border: 1px solid #222; border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 13px; }
+.file-item .fname { color: #ccc; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item .fsize { color: #555; margin: 0 14px; white-space: nowrap; font-size: 12px; }
+.file-item .ftype { background: #1e2a3a; color: #4a9eff; border-radius: 4px; padding: 2px 7px; font-size: 11px; margin-right: 10px; font-weight: 600; letter-spacing: 0.5px; }
+.file-item .rem { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; padding: 0 4px; transition: color 0.15s; }
+.file-item .rem:hover { color: #e05555; }
+.plugin-info { background: #161616; border: 1px solid #222; border-radius: 8px; padding: 22px; margin-bottom: 24px; }
+.plugin-info h2 { font-size: 13px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #666; margin-bottom: 16px; }
+.field-row { display: flex; gap: 14px; margin-bottom: 12px; flex-wrap: wrap; }
+.field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
+.field label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.8px; }
+.field input, .field select, .field textarea { background: #111; border: 1px solid #252525; border-radius: 5px; color: #ddd; font-family: sans-serif; font-size: 13px; padding: 8px 10px; outline: none; transition: border-color 0.15s; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: #4a9eff; }
+.field textarea { resize: vertical; min-height: 60px; }
+.field select option { background: #1a1a1a; }
+.size-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.size-row label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 0.8px; min-width: 90px; }
+.size-row input[type=range] { flex: 1; min-width: 120px; accent-color: #4a9eff; }
+.size-val { font-size: 13px; color: #4a9eff; min-width: 80px; text-align: right; font-weight: 600; }
+.download-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.dl-btn { background: #141414; border: 1px solid #252525; border-radius: 7px; padding: 16px 18px; cursor: pointer; display: flex; flex-direction: column; gap: 5px; transition: border-color 0.15s, background 0.15s; text-align: left; }
+.dl-btn:hover { border-color: #4a9eff; background: #111; }
+.dl-btn .ext { font-size: 13px; font-weight: 700; letter-spacing: 1px; color: #fff; }
+.dl-btn .dl-desc { font-size: 11px; color: #555; }
+.dl-btn .dl-ico { font-size: 20px; margin-bottom: 4px; }
+.dl-btn.pdf .ext { color: #ff6b6b; }
+.dl-btn.bf8 .ext { color: #ffd166; }
+.dl-btn.aex .ext { color: #a29bfe; }
+.dl-btn.ofx .ext { color: #55efc4; }
+.status-bar { font-size: 12px; color: #555; text-align: center; padding: 10px; border-top: 1px solid #1a1a1a; margin-top: 10px; }
+.badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; letter-spacing: 0.5px; }
+.badge.cpp { background: #1a2a3a; color: #4a9eff; }
+.badge.h { background: #1a2a1a; color: #55efc4; }
+.empty { font-size: 13px; color: #333; text-align: center; padding: 20px 0; }
+</style>
+</head>
+<body>
+
+<h1>Plugin Builder</h1>
+<p class="sub">Upload C++ source &amp; headers · Configure · Download plugin binary</p>
+
+<div class="container">
+
+  <div class="upload-zone" id="dropZone">
+    <input type="file" id="fileInput" multiple accept=".cpp,.h,.hpp,.cxx,.cc,.hh">
+    <div class="upload-icon">⬆</div>
+    <p>Drop <span>.cpp</span> and <span>.h</span> files here, or <span>click to browse</span></p>
+  </div>
+
+  <div class="badge-row" id="badgeRow"></div>
+  <div class="file-list" id="fileList"></div>
+
+  <div class="plugin-info">
+    <h2>Plugin Configuration</h2>
+    <div class="field-row">
+      <div class="field">
+        <label>Plugin Name</label>
+        <input type="text" id="pluginName" placeholder="MyPlugin" value="MyPlugin">
+      </div>
+      <div class="field">
+        <label>Version</label>
+        <input type="text" id="pluginVer" placeholder="1.0.0" value="1.0.0">
+      </div>
+      <div class="field">
+        <label>Author</label>
+        <input type="text" id="pluginAuthor" placeholder="Author Name">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Plugin Type</label>
+        <select id="pluginType">
+          <option>Filter</option>
+          <option>Effect</option>
+          <option>Generator</option>
+          <option>Analyzer</option>
+          <option>Utility</option>
+          <option>Render</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Target Platform</label>
+        <select id="pluginPlatform">
+          <option>Windows x64</option>
+          <option>Windows x86</option>
+          <option>macOS arm64</option>
+          <option>macOS x64</option>
+          <option>Linux x64</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Build Mode</label>
+        <select id="buildMode">
+          <option>Release</option>
+          <option>Debug</option>
+          <option>RelWithDebInfo</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Description</label>
+        <textarea id="pluginDesc" placeholder="Plugin description..."></textarea>
+      </div>
+    </div>
+
+    <div class="size-row">
+      <label>Output Size</label>
+      <input type="range" id="sizeSlider" min="-3" max="3" step="0.001" value="0">
+      <span class="size-val" id="sizeVal">1.000 MB</span>
+    </div>
+
+  </div>
+
+  <div class="download-grid">
+    <button class="dl-btn pdf" onclick="downloadAs('pdf')">
+      <div class="dl-ico">📄</div>
+      <div class="ext">.PDF</div>
+      <div class="dl-desc">Portable Document</div>
+    </button>
+    <button class="dl-btn bf8" onclick="downloadAs('8bf')">
+      <div class="dl-ico">🔌</div>
+      <div class="ext">.8BF</div>
+      <div class="dl-desc">Photoshop Filter Plugin</div>
+    </button>
+    <button class="dl-btn aex" onclick="downloadAs('aex')">
+      <div class="dl-ico">🎬</div>
+      <div class="ext">.AEX</div>
+      <div class="dl-desc">After Effects Plugin</div>
+    </button>
+    <button class="dl-btn ofx" onclick="downloadAs('ofx')">
+      <div class="dl-ico">🎞</div>
+      <div class="ext">.OFX</div>
+      <div class="dl-desc">OpenFX Plugin</div>
+    </button>
+  </div>
+
+  <div class="status-bar" id="statusBar">Ready — upload files and configure your plugin</div>
+
+</div>
+
+<script>
+const files = [];
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const badgeRow = document.getElementById('badgeRow');
+const statusBar = document.getElementById('statusBar');
+const sizeSlider = document.getElementById('sizeSlider');
+const sizeVal = document.getElementById('sizeVal');
+
+function sliderToMB(v) {
+  return Math.pow(10, parseFloat(v));
+}
+
+sizeSlider.addEventListener('input', () => {
+  const mb = sliderToMB(sizeSlider.value);
+  sizeVal.textContent = mb >= 1000 ? '1000.000 MB' : (mb < 0.001 ? '0.001 MB' : mb.toFixed(3) + ' MB');
+});
+
+sizeSlider.min = Math.log10(0.001);
+sizeSlider.max = Math.log10(1000);
+sizeSlider.value = 0;
+sizeVal.textContent = '1.000 MB';
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+function handleFiles(incoming) {
+  for (const f of incoming) {
+    if (!files.find(x => x.name === f.name && x.size === f.size)) {
+      files.push(f);
+    }
+  }
+  renderFiles();
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(2) + ' MB';
+}
+
+function getExt(name) {
+  return name.split('.').pop().toLowerCase();
+}
+
+function renderFiles() {
+  fileList.innerHTML = '';
+  badgeRow.innerHTML = '';
+  if (!files.length) { fileList.innerHTML = '<div class="empty">No files uploaded yet</div>'; updateStatus(); return; }
+  const cppCount = files.filter(f => ['cpp','cxx','cc'].includes(getExt(f.name))).length;
+  const hCount = files.filter(f => ['h','hpp','hh'].includes(getExt(f.name))).length;
+  if (cppCount) badgeRow.innerHTML += `<span class="badge cpp">${cppCount} .cpp source${cppCount>1?'s':''}</span>`;
+  if (hCount) badgeRow.innerHTML += `<span class="badge h">${hCount} header${hCount>1?'s':''}</span>`;
+  files.forEach((f, i) => {
+    const ext = getExt(f.name);
+    const typeLabel = ['cpp','cxx','cc'].includes(ext) ? 'CPP' : 'H';
+    const el = document.createElement('div');
+    el.className = 'file-item';
+    el.innerHTML = `<span class="fname">${f.name}</span><span class="fsize">${fmtSize(f.size)}</span><span class="ftype">${typeLabel}</span><button class="rem" title="Remove" onclick="removeFile(${i})">✕</button>`;
+    fileList.appendChild(el);
+  });
+  updateStatus();
+}
+
+function removeFile(i) {
+  files.splice(i, 1);
+  renderFiles();
+}
+
+function updateStatus() {
+  if (!files.length) { statusBar.textContent = 'Ready — upload files and configure your plugin'; return; }
+  statusBar.textContent = `${files.length} file${files.length>1?'s':''} loaded · ${files.reduce((a,f)=>a+f.size,0) > 0 ? fmtSize(files.reduce((a,f)=>a+f.size,0)) : ''} total source`;
+}
+
+renderFiles();
+
+function buildBinaryBlob(targetMB) {
+  const name = document.getElementById('pluginName').value || 'MyPlugin';
+  const ver = document.getElementById('pluginVer').value || '1.0.0';
+  const author = document.getElementById('pluginAuthor').value || '';
+  const type = document.getElementById('pluginType').value;
+  const platform = document.getElementById('pluginPlatform').value;
+  const mode = document.getElementById('buildMode').value;
+  const desc = document.getElementById('pluginDesc').value || '';
+
+  const metaStr = [
+    'PLUGIN_BUILDER_BINARY',
+    'Name=' + name,
+    'Version=' + ver,
+    'Author=' + author,
+    'Type=' + type,
+    'Platform=' + platform,
+    'BuildMode=' + mode,
+    'Description=' + desc,
+    'SourceFiles=' + files.map(f=>f.name).join(','),
+    'GeneratedAt=' + new Date().toISOString(),
+  ].join('\n') + '\n\x00';
+
+  const enc = new TextEncoder();
+  const metaBytes = enc.encode(metaStr);
+
+  const targetBytes = Math.round(targetMB * 1024 * 1024);
+  const padLen = Math.max(0, targetBytes - metaBytes.length);
+  const buf = new Uint8Array(targetBytes);
+  buf.set(metaBytes, 0);
+
+  const seed = name.split('').reduce((a,c)=>a+c.charCodeAt(0),0) ^ 0xDEADBEEF;
+  let rng = seed >>> 0;
+  for (let i = metaBytes.length; i < buf.length; i++) {
+    rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5;
+    buf[i] = rng & 0xff;
+  }
+
+  return buf;
+}
+
+function downloadAs(ext) {
+  const mb = sliderToMB(sizeSlider.value);
+  const clampedMB = Math.min(1000, Math.max(0.001, mb));
+  const name = (document.getElementById('pluginName').value || 'MyPlugin').replace(/\s+/g,'_');
+  const ver = (document.getElementById('pluginVer').value || '1.0.0').replace(/\s+/g,'_');
+
+  const mimeMap = {
+    pdf: 'application/pdf',
+    '8bf': 'application/octet-stream',
+    aex: 'application/octet-stream',
+    ofx: 'application/octet-stream',
+  };
+
+  const buf = buildBinaryBlob(clampedMB);
+
+  if (ext === 'pdf') {
+    const header = `%PDF-1.4\n1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << >> >>\nendobj\n4 0 obj\n<< /Length 44 >>\nstream\nBT /F1 12 Tf 100 700 Td (${name} v${ver}) Tj ET\nendstream\nendobj\nxref\n0 5\n0000000000 65535 f\n0000000009 00000 n\n0000000058 00000 n\n0000000115 00000 n\n0000000266 00000 n\ntrailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n360\n%%EOF\n`;
+    const enc = new TextEncoder();
+    const hdrBytes = enc.encode(header);
+    const targetBytes = Math.round(clampedMB * 1024 * 1024);
+    const full = new Uint8Array(Math.max(hdrBytes.length, targetBytes));
+    full.set(hdrBytes, 0);
+    let rng = 0x12345678;
+    for (let i = hdrBytes.length; i < full.length; i++) {
+      rng ^= rng << 13; rng ^= rng >> 17; rng ^= rng << 5; full[i] = rng & 0xff;
+    }
+    triggerDownload(full, name + '_v' + ver + '.pdf', 'application/pdf');
+  } else {
+    triggerDownload(buf, name + '_v' + ver + '.' + ext, 'application/octet-stream');
+  }
+
+  statusBar.textContent = `Downloaded ${name}_v${ver}.${ext} · ${clampedMB.toFixed(3)} MB`;
+}
+
+function triggerDownload(uint8arr, filename, mime) {
+  const blob = new Blob([uint8arr], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+</script>
+</body>
+</html>

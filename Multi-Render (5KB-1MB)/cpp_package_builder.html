@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPP Package Builder</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e11;
+    --surface: #18181e;
+    --surface2: #22222c;
+    --border: #2e2e3a;
+    --accent: #5b6aff;
+    --accent2: #00e5a0;
+    --text: #e8e8f0;
+    --muted: #6e6e88;
+    --danger: #ff5b5b;
+    --warn: #ffb347;
+  }
+
+  body {
+    font-family: sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: .85rem;
+    margin-bottom: 32px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 720px;
+    margin-bottom: 20px;
+  }
+
+  .card h2 {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 36px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    position: relative;
+  }
+
+  .drop-zone:hover, .drop-zone.over {
+    border-color: var(--accent);
+    background: rgba(91,106,255,.06);
+  }
+
+  .drop-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .drop-icon {
+    font-size: 2.2rem;
+    margin-bottom: 10px;
+  }
+
+  .drop-label {
+    font-size: .9rem;
+    color: var(--muted);
+  }
+
+  .drop-label span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .file-list {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .file-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: .78rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .file-tag .ext-badge {
+    font-size: .65rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--accent);
+    color: #fff;
+    text-transform: uppercase;
+  }
+
+  .file-tag .ext-badge.h { background: var(--accent2); color: #000; }
+
+  .file-tag .rm {
+    cursor: pointer;
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1;
+  }
+
+  .file-tag .rm:hover { color: var(--danger); }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .field {
+    flex: 1;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: .75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+
+  .field input, .field select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: sans-serif;
+    font-size: .88rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color .2s;
+    width: 100%;
+  }
+
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+
+  .field select option { background: var(--surface2); }
+
+  .size-row { display: flex; gap: 8px; align-items: flex-end; }
+
+  .size-row .field:first-child { flex: 2; }
+
+  .size-display {
+    font-size: .8rem;
+    color: var(--accent2);
+    margin-top: 4px;
+  }
+
+  .func-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .func-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .func-item input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: sans-serif;
+    font-size: .82rem;
+    padding: 7px 10px;
+    outline: none;
+  }
+
+  .func-item input:focus { border-color: var(--accent); }
+
+  .btn-sm {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: .8rem;
+    cursor: pointer;
+    font-family: sans-serif;
+    transition: .15s;
+    white-space: nowrap;
+  }
+
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-add {
+    margin-top: 8px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--muted);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: .82rem;
+    cursor: pointer;
+    font-family: sans-serif;
+    transition: .15s;
+    width: 100%;
+  }
+
+  .btn-add:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .dl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+  }
+
+  .dl-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    border: 1px solid;
+    font-family: sans-serif;
+    font-size: .84rem;
+    font-weight: 600;
+    transition: transform .15s, box-shadow .15s;
+    text-align: left;
+  }
+
+  .dl-btn:active { transform: scale(.97); }
+
+  .dl-btn .dl-meta {
+    font-size: .68rem;
+    font-weight: 400;
+    opacity: .7;
+    margin-top: 2px;
+  }
+
+  .dl-btn .dl-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+  .dl-btn.vdf   { background: rgba(91,106,255,.12); border-color: rgba(91,106,255,.4); color: #8fa0ff; }
+  .dl-btn.exe   { background: rgba(0,229,160,.1);  border-color: rgba(0,229,160,.4); color: #00e5a0; }
+  .dl-btn.dmg   { background: rgba(255,183,71,.1); border-color: rgba(255,183,71,.4); color: #ffb347; }
+  .dl-btn.dll   { background: rgba(255,91,91,.1);  border-color: rgba(255,91,91,.4); color: #ff7b7b; }
+  .dl-btn.tar   { background: rgba(180,120,255,.1);border-color: rgba(180,120,255,.4);color: #c49aff; }
+
+  .dl-btn:hover.vdf { box-shadow: 0 0 18px rgba(91,106,255,.25); }
+  .dl-btn:hover.exe { box-shadow: 0 0 18px rgba(0,229,160,.2); }
+  .dl-btn:hover.dmg { box-shadow: 0 0 18px rgba(255,183,71,.2); }
+  .dl-btn:hover.dll { box-shadow: 0 0 18px rgba(255,91,91,.2); }
+  .dl-btn:hover.tar { box-shadow: 0 0 18px rgba(180,120,255,.2); }
+
+  .progress-bar-wrap {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 12px;
+  }
+
+  .progress-bar {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    width: 0%;
+    transition: width .05s linear;
+  }
+
+  .dl-status {
+    font-size: .75rem;
+    color: var(--muted);
+    margin-top: 6px;
+    min-height: 18px;
+  }
+
+  .toggle-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .toggle-chip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: .78rem;
+    cursor: pointer;
+    user-select: none;
+    transition: .15s;
+    color: var(--muted);
+  }
+
+  .toggle-chip.on {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(91,106,255,.1);
+  }
+
+  .sep { width: 100%; height: 1px; background: var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<h1>CPP Package Builder</h1>
+<p class="subtitle">Upload .cpp / .h files · configure metadata · download binary blobs</p>
+
+<div class="card">
+  <h2>Source Files</h2>
+  <div class="drop-zone" id="dropZone">
+    <input type="file" id="fileInput" multiple accept=".cpp,.h,.hpp,.cxx,.cc">
+    <div class="drop-icon">📂</div>
+    <div class="drop-label">Drop <span>.cpp</span> and <span>.h</span> files here or click to browse</div>
+  </div>
+  <div class="file-list" id="fileList"></div>
+</div>
+
+<div class="card">
+  <h2>Package Metadata</h2>
+  <div class="row">
+    <div class="field">
+      <label>Package Name</label>
+      <input type="text" id="pkgName" placeholder="MyLibrary" value="MyLibrary">
+    </div>
+    <div class="field">
+      <label>Version</label>
+      <input type="text" id="pkgVersion" placeholder="1.0.0" value="1.0.0">
+    </div>
+    <div class="field">
+      <label>Author</label>
+      <input type="text" id="pkgAuthor" placeholder="Author" value="">
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="row">
+    <div class="field">
+      <label>Plugin Name</label>
+      <input type="text" id="pluginName" placeholder="CorePlugin" value="CorePlugin">
+    </div>
+    <div class="field">
+      <label>Plugin Type</label>
+      <select id="pluginType">
+        <option>Shared Library</option>
+        <option>Static Library</option>
+        <option>Executable</option>
+        <option>Driver</option>
+        <option>Extension</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Output Size</h2>
+  <div class="size-row">
+    <div class="field">
+      <label>Size Value</label>
+      <input type="number" id="sizeVal" value="5" min="0.00001" step="any">
+    </div>
+    <div class="field">
+      <label>Unit</label>
+      <select id="sizeUnit">
+        <option value="0.00001">0.00001 MB (≈10 B)</option>
+        <option value="0.001">0.001 MB (≈1 KB)</option>
+        <option value="0.01">0.01 MB (≈10 KB)</option>
+        <option value="0.1">0.1 MB (≈100 KB)</option>
+        <option value="1" selected>MB</option>
+        <option value="1024">GB (×1024 MB)</option>
+      </select>
+    </div>
+  </div>
+  <div class="size-display" id="sizeDisplay">5.00 MB · 5,242,880 bytes</div>
+</div>
+
+<div class="card">
+  <h2>Exported Functions</h2>
+  <div class="func-list" id="funcList">
+    <div class="func-item">
+      <input type="text" placeholder="void Init()" value="void Init()">
+      <button class="btn-sm" onclick="removeFunc(this)">✕</button>
+    </div>
+    <div class="func-item">
+      <input type="text" placeholder="int Process(const char*)" value="int Process(const char*)">
+      <button class="btn-sm" onclick="removeFunc(this)">✕</button>
+    </div>
+  </div>
+  <button class="btn-add" onclick="addFunc()">+ Add Function</button>
+</div>
+
+<div class="card">
+  <h2>Build Flags</h2>
+  <div class="toggle-row" id="flagsRow">
+    <div class="toggle-chip on" onclick="toggleChip(this)">-O2</div>
+    <div class="toggle-chip on" onclick="toggleChip(this)">-std=c++17</div>
+    <div class="toggle-chip" onclick="toggleChip(this)">-Wall</div>
+    <div class="toggle-chip" onclick="toggleChip(this)">-DNDEBUG</div>
+    <div class="toggle-chip" onclick="toggleChip(this)">-fPIC</div>
+    <div class="toggle-chip" onclick="toggleChip(this)">-march=native</div>
+    <div class="toggle-chip" onclick="toggleChip(this)">-g</div>
+    <div class="toggle-chip" onclick="toggleChip(this)">-static</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Download Binaries</h2>
+  <div class="dl-grid">
+    <button class="dl-btn vdf" onclick="download('vdf')">
+      <div>
+        <div>VDF Package</div>
+        <div class="dl-meta">Valve Data Format</div>
+      </div>
+      <span class="dl-icon">📦</span>
+    </button>
+    <button class="dl-btn exe" onclick="download('exe')">
+      <div>
+        <div>Windows EXE</div>
+        <div class="dl-meta">PE32+ Executable</div>
+      </div>
+      <span class="dl-icon">⚙️</span>
+    </button>
+    <button class="dl-btn dmg" onclick="download('dmg')">
+      <div>
+        <div>macOS DMG</div>
+        <div class="dl-meta">Disk Image</div>
+      </div>
+      <span class="dl-icon">🍎</span>
+    </button>
+    <button class="dl-btn dll" onclick="download('dll')">
+      <div>
+        <div>Windows DLL</div>
+        <div class="dl-meta">Dynamic Library</div>
+      </div>
+      <span class="dl-icon">🔧</span>
+    </button>
+    <button class="dl-btn tar" onclick="download('tar.gz')">
+      <div>
+        <div>Linux tar.gz</div>
+        <div class="dl-meta">Compressed Archive</div>
+      </div>
+      <span class="dl-icon">🐧</span>
+    </button>
+  </div>
+  <div class="progress-bar-wrap" id="pbWrap" style="display:none">
+    <div class="progress-bar" id="pb"></div>
+  </div>
+  <div class="dl-status" id="dlStatus"></div>
+</div>
+
+<script>
+const files = [];
+
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const sizeVal = document.getElementById('sizeVal');
+const sizeUnit = document.getElementById('sizeUnit');
+const sizeDisplay = document.getElementById('sizeDisplay');
+const pb = document.getElementById('pb');
+const pbWrap = document.getElementById('pbWrap');
+const dlStatus = document.getElementById('dlStatus');
+
+function formatBytes(b) {
+  if (b < 1024) return b.toFixed(0) + ' B';
+  if (b < 1048576) return (b/1024).toFixed(2) + ' KB';
+  if (b < 1073741824) return (b/1048576).toFixed(2) + ' MB';
+  return (b/1073741824).toFixed(3) + ' GB';
+}
+
+function getTargetBytes() {
+  const v = parseFloat(sizeVal.value) || 0.00001;
+  const u = parseFloat(sizeUnit.value) || 1;
+  return Math.round(v * u * 1048576);
+}
+
+function updateSizeDisplay() {
+  const bytes = getTargetBytes();
+  const mb = bytes / 1048576;
+  sizeDisplay.textContent = mb.toFixed(5).replace(/\.?0+$/, '') + ' MB · ' + bytes.toLocaleString() + ' bytes';
+}
+
+sizeVal.addEventListener('input', updateSizeDisplay);
+sizeUnit.addEventListener('change', updateSizeDisplay);
+updateSizeDisplay();
+
+function addFileTag(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  const tag = document.createElement('div');
+  tag.className = 'file-tag';
+  tag.innerHTML = `<span class="ext-badge ${ext}">${ext}</span>${name}<span class="rm" onclick="this.parentElement.remove()">✕</span>`;
+  fileList.appendChild(tag);
+}
+
+function handleFiles(list) {
+  Array.from(list).forEach(f => {
+    const n = f.name;
+    if (/\.(cpp|h|hpp|cxx|cc)$/i.test(n)) { files.push(f); addFileTag(n); }
+  });
+}
+
+fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('over'); handleFiles(e.dataTransfer.files); });
+
+function addFunc() {
+  const li = document.createElement('div');
+  li.className = 'func-item';
+  li.innerHTML = `<input type="text" placeholder="void MyFunc()"><button class="btn-sm" onclick="removeFunc(this)">✕</button>`;
+  document.getElementById('funcList').appendChild(li);
+}
+
+function removeFunc(btn) { btn.parentElement.remove(); }
+function toggleChip(el) { el.classList.toggle('on'); }
+
+function getFunctions() {
+  return Array.from(document.querySelectorAll('#funcList input')).map(i => i.value).filter(Boolean);
+}
+
+function getFlags() {
+  return Array.from(document.querySelectorAll('#flagsRow .toggle-chip.on')).map(c => c.textContent);
+}
+
+function buildHeader(ext) {
+  const pkg = document.getElementById('pkgName').value || 'Package';
+  const ver = document.getElementById('pkgVersion').value || '1.0.0';
+  const author = document.getElementById('pkgAuthor').value || 'Unknown';
+  const plugin = document.getElementById('pluginName').value || 'Plugin';
+  const ptype = document.getElementById('pluginType').value;
+  const funcs = getFunctions();
+  const flags = getFlags();
+  const srcNames = files.map(f => f.name).join(', ') || 'no sources';
+  const now = new Date().toISOString();
+
+  return [
+    `CPPBUILD`,
+    `Package: ${pkg}`,
+    `Version: ${ver}`,
+    `Author: ${author}`,
+    `Plugin: ${plugin}`,
+    `PluginType: ${ptype}`,
+    `Format: ${ext.toUpperCase()}`,
+    `Built: ${now}`,
+    `Sources: ${srcNames}`,
+    `Flags: ${flags.join(' ')}`,
+    `Exports: ${funcs.length}`,
+    ...funcs.map((f, i) => `  [${i}] ${f}`),
+    `---END-HEADER---`,
+    ``
+  ].join('\n');
+}
+
+function makeMagic(ext) {
+  const m = {
+    'exe':   [0x4D,0x5A,0x90,0x00,0x03,0x00,0x00,0x00],
+    'dll':   [0x4D,0x5A,0x90,0x00,0x03,0x00,0x00,0x00],
+    'dmg':   [0x78,0x01,0x73,0x0D,0x62,0x62,0x60,0x60],
+    'tar.gz':[0x1F,0x8B,0x08,0x00,0x00,0x00,0x00,0x00],
+    'vdf':   [0x56,0x44,0x46,0x00,0x01,0x00,0x00,0x00],
+  };
+  return new Uint8Array(m[ext] || m['vdf']);
+}
+
+function download(ext) {
+  const targetBytes = getTargetBytes();
+  const pkg = document.getElementById('pkgName').value || 'Package';
+
+  pbWrap.style.display = 'block';
+  pb.style.width = '0%';
+  dlStatus.textContent = 'Building binary blob…';
+
+  setTimeout(() => {
+    try {
+      const header = buildHeader(ext);
+      const enc = new TextEncoder();
+      const headerBytes = enc.encode(header);
+      const magic = makeMagic(ext);
+
+      const overhead = magic.length + headerBytes.length;
+      const padSize = Math.max(0, targetBytes - overhead);
+
+      const CHUNK = 65536;
+      const parts = [magic, headerBytes];
+      let written = 0;
+
+      while (written < padSize) {
+        const chunk = Math.min(CHUNK, padSize - written);
+        const buf = new Uint8Array(chunk);
+        for (let i = 0; i < chunk; i++) buf[i] = (written + i) & 0xFF;
+        parts.push(buf);
+        written += chunk;
+      }
+
+      let total = 0;
+      for (const p of parts) total += p.length;
+      const blob = new Uint8Array(total);
+      let offset = 0;
+      for (const p of parts) { blob.set(p, offset); offset += p.length; }
+
+      const mime = {
+        'exe': 'application/vnd.microsoft.portable-executable',
+        'dll': 'application/x-msdownload',
+        'dmg': 'application/x-apple-diskimage',
+        'tar.gz': 'application/gzip',
+        'vdf': 'application/octet-stream',
+      }[ext] || 'application/octet-stream';
+
+      const url = URL.createObjectURL(new Blob([blob], {type: mime}));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${pkg}-${document.getElementById('pkgVersion').value||'1.0.0'}.${ext}`;
+      document.body.appendChild(a);
+
+      let prog = 0;
+      const tick = setInterval(() => {
+        prog = Math.min(100, prog + 8 + Math.random() * 12);
+        pb.style.width = prog + '%';
+        dlStatus.textContent = `Generating… ${Math.round(prog)}%`;
+        if (prog >= 100) {
+          clearInterval(tick);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          dlStatus.textContent = `Downloaded ${formatBytes(total)} as .${ext}`;
+          setTimeout(() => { pbWrap.style.display = 'none'; pb.style.width = '0%'; }, 3000);
+        }
+      }, 40);
+
+    } catch(e) {
+      pbWrap.style.display = 'none';
+      dlStatus.textContent = '';
+    }
+  }, 0);
+}
+</script>
+</body>
+</html>

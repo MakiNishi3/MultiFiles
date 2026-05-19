@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrdinalNum.js — Calculator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.4.3/decimal.min.js"></script>
+<script src="https://raw.githubusercontent.com/MakiNishi3/OrdinalNum.js/refs/heads/gh-pages/OrdinalNum.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0f;
+  --panel:#12121a;
+  --border:#1e1e30;
+  --accent:#7b5ea7;
+  --accent2:#a07fd4;
+  --text:#e8e4f0;
+  --muted:#6a6480;
+  --out:#1a1a28;
+  --green:#5dbf8a;
+  --red:#cf6679;
+  --yellow:#d4a85f;
+}
+body{font-family:'Consolas',monospace;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+header{border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;gap:20px;background:var(--panel)}
+header h1{font-size:1.1rem;letter-spacing:.12em;color:var(--accent2);text-transform:uppercase}
+header nav{margin-left:auto;display:flex;gap:2px}
+header nav a{color:var(--muted);text-decoration:none;font-size:.8rem;padding:6px 14px;border:1px solid transparent;letter-spacing:.06em;transition:all .15s}
+header nav a:hover,header nav a.active{color:var(--accent2);border-color:var(--border);background:var(--out)}
+.badge{font-size:.65rem;background:var(--accent);color:#fff;padding:2px 7px;border-radius:2px;margin-left:8px;letter-spacing:.08em}
+main{flex:1;display:grid;grid-template-columns:320px 1fr;gap:0;height:calc(100vh - 57px)}
+.sidebar{border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+.sidebar-section{padding:16px 20px;border-bottom:1px solid var(--border)}
+.sidebar-section label{display:block;font-size:.7rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.sidebar-section select,.sidebar-section input{width:100%;background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.85rem;padding:7px 10px;outline:none;transition:border-color .15s}
+.sidebar-section select:focus,.sidebar-section input:focus{border-color:var(--accent)}
+.btn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:16px 20px}
+.btn-grid button{background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.78rem;padding:9px 4px;cursor:pointer;transition:all .15s;letter-spacing:.04em}
+.btn-grid button:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-grid button.wide{grid-column:span 2}
+.btn-grid button.full{grid-column:span 3}
+.btn-grid button.op{color:var(--accent2)}
+.quick{padding:0 20px 16px}
+.quick label{display:block;font-size:.7rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.quick-btns{display:flex;flex-direction:column;gap:4px}
+.quick-btns button{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Consolas',monospace;font-size:.78rem;padding:7px 10px;cursor:pointer;text-align:left;transition:all .15s}
+.quick-btns button:hover{color:var(--accent2);border-color:var(--accent)}
+.content{display:flex;flex-direction:column;padding:24px;gap:16px;overflow-y:auto}
+.expr-row{display:flex;gap:8px}
+.expr-row input{flex:1;background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.95rem;padding:10px 14px;outline:none;transition:border-color .15s}
+.expr-row input:focus{border-color:var(--accent)}
+.expr-row button{background:var(--accent);border:none;color:#fff;font-family:'Consolas',monospace;font-size:.85rem;padding:10px 20px;cursor:pointer;letter-spacing:.06em;transition:background .15s}
+.expr-row button:hover{background:var(--accent2)}
+.output-box{background:var(--out);border:1px solid var(--border);padding:16px;min-height:80px;position:relative}
+.output-box .label{font-size:.65rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.output-box .result{font-size:1.1rem;color:var(--green);word-break:break-all;line-height:1.6}
+.output-box .result.err{color:var(--red)}
+.output-box .result.warn{color:var(--yellow)}
+.history-wrap{flex:1;display:flex;flex-direction:column;gap:0;overflow:hidden}
+.history-wrap .label{font-size:.65rem;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.history{border:1px solid var(--border);overflow-y:auto;flex:1;background:var(--out)}
+.history-item{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;cursor:pointer;transition:background .1s}
+.history-item:hover{background:var(--panel)}
+.history-item .expr-txt{color:var(--muted);font-size:.78rem;word-break:break-all}
+.history-item .res-txt{color:var(--green);font-size:.8rem;text-align:right;word-break:break-all;flex-shrink:0;max-width:55%}
+.history-item .res-txt.err{color:var(--red)}
+.empty-hist{padding:20px;color:var(--muted);font-size:.8rem;text-align:center}
+.op-panel{display:flex;gap:8px;flex-wrap:wrap}
+.op-panel button{background:var(--out);border:1px solid var(--border);color:var(--accent2);font-family:'Consolas',monospace;font-size:.8rem;padding:6px 14px;cursor:pointer;transition:all .15s}
+.op-panel button:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two-col input{background:var(--out);border:1px solid var(--border);color:var(--text);font-family:'Consolas',monospace;font-size:.85rem;padding:7px 10px;outline:none;transition:border-color .15s}
+.two-col input:focus{border-color:var(--accent)}
+.compare-out{background:var(--out);border:1px solid var(--border);padding:12px 16px;font-size:.9rem;color:var(--yellow);min-height:42px}
+.footer-nav{background:var(--panel);border-top:1px solid var(--border);padding:10px 24px;display:flex;gap:16px}
+.footer-nav a{color:var(--muted);text-decoration:none;font-size:.75rem;letter-spacing:.06em;transition:color .15s}
+.footer-nav a:hover{color:var(--accent2)}
+</style>
+</head>
+<body>
+<header>
+  <h1>OrdinalNum.js <span class="badge">CALC</span></h1>
+  <nav>
+    <a href="index.html" class="active">Calculator</a>
+    <a href="docs.html">Docs</a>
+    <a href="test.html">Tests</a>
+  </nav>
+</header>
+<main>
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <label>Insert Symbol</label>
+      <select id="symbolSel" onchange="insertSymbol(this)">
+        <option value="">— pick a symbol —</option>
+        <option value="OrdinalLib.omega()">ω (omega)</option>
+        <option value="OrdinalLib.epsilon(0)">ε₀ (epsilon_0)</option>
+        <option value="OrdinalLib.epsilon(1)">ε₁ (epsilon_1)</option>
+        <option value="OrdinalLib.zeta(0)">ζ₀ (zeta_0)</option>
+        <option value="OrdinalLib.gamma(0)">Γ₀ (gamma_0)</option>
+        <option value="OrdinalLib.ph(new OrdinalLib.OrdinalNum(1), OrdinalLib.omega())">φ(1,ω)</option>
+        <option value="OrdinalLib.psi(new OrdinalLib.OrdinalNum(0), OrdinalLib.omega())">ψ₀(ω)</option>
+        <option value="OrdinalLib.svoOrdinal()">SVO</option>
+      </select>
+    </div>
+    <div class="sidebar-section">
+      <label>Mode</label>
+      <select id="modeOp">
+        <option value="eval">Evaluate expression</option>
+        <option value="compare">Compare two ordinals</option>
+        <option value="buchholz">Buchholz roundtrip</option>
+      </select>
+    </div>
+    <div class="btn-grid">
+      <button onclick="ins('new OrdinalLib.OrdinalNum(')">new ON(</button>
+      <button onclick="ins('OrdinalLib.omega()')">ω</button>
+      <button onclick="ins('OrdinalLib.epsilon(0)')">ε₀</button>
+      <button onclick="ins('.add(')">+</button>
+      <button onclick="ins('.mul(')">×</button>
+      <button onclick="ins('.pow(')">^</button>
+      <button onclick="ins('OrdinalLib.zeta(0)')">ζ₀</button>
+      <button onclick="ins('OrdinalLib.gamma(0)')">Γ₀</button>
+      <button onclick="ins('OrdinalLib.psi(')">ψ(</button>
+      <button onclick="ins('OrdinalLib.ph(')">φ(</button>
+      <button onclick="ins('OrdinalLib.svoOrdinal()')">SVO</button>
+      <button onclick="ins(')')">)</button>
+      <button onclick="ins('.toString()')">str</button>
+      <button onclick="ins('OrdinalLib.toBuccholz(')">toBuch</button>
+      <button onclick="ins('OrdinalLib.fromBuccholz(')">frBuch</button>
+      <button onclick="clearInput()" class="full op">CLEAR</button>
+    </div>
+    <div class="quick">
+      <label>Quick Examples</label>
+      <div class="quick-btns">
+        <button onclick="setExpr(`OrdinalLib.omega().add(1)`)">ω + 1</button>
+        <button onclick="setExpr(`OrdinalLib.omega().mul(OrdinalLib.omega())`)">ω × ω</button>
+        <button onclick="setExpr(`OrdinalLib.omega().pow(OrdinalLib.omega())`)">ω ^ ω</button>
+        <button onclick="setExpr(`OrdinalLib.epsilon(0).add(OrdinalLib.omega())`)">ε₀ + ω</button>
+        <button onclick="setExpr(`OrdinalLib.psi(new OrdinalLib.OrdinalNum(0), OrdinalLib.omega())`)">ψ₀(ω)</button>
+        <button onclick="setExpr(`OrdinalLib.toBuccholz(OrdinalLib.gamma(0))`)">toBuchholz(Γ₀)</button>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="expr-row">
+      <input id="exprInput" type="text" placeholder="e.g. OrdinalLib.omega().add(OrdinalLib.epsilon(0))" spellcheck="false" onkeydown="if(event.key==='Enter')evaluate()">
+      <button onclick="evaluate()">EVAL</button>
+    </div>
+    <div id="compareRow" style="display:none;flex-direction:column;gap:8px">
+      <div class="two-col">
+        <input id="cmpA" type="text" placeholder="Ordinal A" spellcheck="false">
+        <input id="cmpB" type="text" placeholder="Ordinal B" spellcheck="false">
+      </div>
+      <div class="op-panel">
+        <button onclick="doCompare('lt')">A &lt; B ?</button>
+        <button onclick="doCompare('gt')">A &gt; B ?</button>
+        <button onclick="doCompare('eq')">A = B ?</button>
+        <button onclick="doCompare('cmp')">compare()</button>
+      </div>
+      <div class="compare-out" id="cmpOut">—</div>
+    </div>
+    <div id="buchRow" style="display:none;flex-direction:column;gap:8px">
+      <div class="expr-row">
+        <input id="buchInput" type="text" placeholder='Buchholz string: e.g. psi_0(psi_0(1)+1)' spellcheck="false">
+        <button onclick="doBuchholz()">PARSE</button>
+      </div>
+    </div>
+    <div class="output-box">
+      <div class="label">Result</div>
+      <div class="result" id="resultOut">—</div>
+    </div>
+    <div class="history-wrap">
+      <div class="label">History</div>
+      <div class="history" id="history"><div class="empty-hist">no evaluations yet</div></div>
+    </div>
+  </div>
+</main>
+<div class="footer-nav">
+  <a href="index.html">Calculator</a>
+  <a href="docs.html">Documentation</a>
+  <a href="test.html">Test Suite</a>
+</div>
+<script>
+var history_items = [];
+var exprEl = document.getElementById('exprInput');
+var resultEl = document.getElementById('resultOut');
+var histEl = document.getElementById('history');
+var modeEl = document.getElementById('modeOp');
+
+modeEl.addEventListener('change', function(){
+  var m = this.value;
+  document.getElementById('compareRow').style.display = m === 'compare' ? 'flex' : 'none';
+  document.getElementById('buchRow').style.display = m === 'buchholz' ? 'flex' : 'none';
+  document.querySelector('.expr-row').style.display = m === 'eval' ? 'flex' : 'none';
+});
+
+function ins(s){ exprEl.focus(); var st=exprEl.selectionStart,en=exprEl.selectionEnd,v=exprEl.value; exprEl.value=v.slice(0,st)+s+v.slice(en); exprEl.selectionStart=exprEl.selectionEnd=st+s.length; }
+function clearInput(){ exprEl.value=''; resultEl.textContent='—'; resultEl.className='result'; }
+function setExpr(s){ exprEl.value=s; evaluate(); }
+function insertSymbol(sel){ if(sel.value){ ins(sel.value); sel.value=''; } }
+
+function evaluate(){
+  var expr = exprEl.value.trim();
+  if(!expr){ resultEl.textContent='—'; return; }
+  try{
+    var r = eval('(function(OrdinalLib){return '+expr+';})(OrdinalLib)');
+    var str = (r && typeof r.toString==='function') ? r.toString() : String(r);
+    resultEl.textContent = str;
+    resultEl.className = 'result';
+    addHistory(expr, str, false);
+  } catch(e){
+    resultEl.textContent = 'Error: '+e.message;
+    resultEl.className = 'result err';
+    addHistory(expr, e.message, true);
+  }
+}
+
+function doCompare(op){
+  var aStr = document.getElementById('cmpA').value.trim();
+  var bStr = document.getElementById('cmpB').value.trim();
+  var out = document.getElementById('cmpOut');
+  try{
+    var a = eval('(function(OrdinalLib){return '+aStr+';})(OrdinalLib)');
+    var b = eval('(function(OrdinalLib){return '+bStr+';})(OrdinalLib)');
+    var res;
+    if(op==='lt') res = 'A < B: ' + a.lessThan(b);
+    else if(op==='gt') res = 'A > B: ' + a.greaterThan(b);
+    else if(op==='eq') res = 'A = B: ' + a.equals(b);
+    else res = 'compare(A,B) = ' + a.compare(b);
+    out.textContent = res;
+    resultEl.textContent = res; resultEl.className='result';
+  } catch(e){ out.textContent='Error: '+e.message; resultEl.textContent='Error: '+e.message; resultEl.className='result err'; }
+}
+
+function doBuchholz(){
+  var s = document.getElementById('buchInput').value.trim();
+  try{
+    var o = OrdinalLib.fromBuccholz(s);
+    var str = o.toString();
+    resultEl.textContent = 'parsed → ' + str + '  |  re-serialized → ' + OrdinalLib.toBuccholz(o);
+    resultEl.className='result';
+  } catch(e){ resultEl.textContent='Error: '+e.message; resultEl.className='result err'; }
+}
+
+function addHistory(expr, res, isErr){
+  history_items.unshift({expr:expr,res:res,isErr:isErr});
+  if(history_items.length>50) history_items.pop();
+  renderHistory();
+}
+
+function renderHistory(){
+  if(!history_items.length){ histEl.innerHTML='<div class="empty-hist">no evaluations yet</div>'; return; }
+  histEl.innerHTML = history_items.map(function(h,i){
+    return '<div class="history-item" onclick="restoreExpr('+i+')"><span class="expr-txt">'+esc(h.expr)+'</span><span class="res-txt'+(h.isErr?' err':'')+'">'+esc(h.res)+'</span></div>';
+  }).join('');
+}
+
+function restoreExpr(i){ exprEl.value = history_items[i].expr; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

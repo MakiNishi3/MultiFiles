@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LooTube - Share your world</title>
+<link rel="icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Lexend:wght@100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--green:#00a550;
+--green-dark:#007a3d;
+--green-light:#e6f7ef;
+--green-mid:#00c060;
+--white:#ffffff;
+--gray-100:#f9f9f9;
+--gray-200:#f2f2f2;
+--gray-300:#e5e5e5;
+--gray-400:#cccccc;
+--gray-500:#aaaaaa;
+--gray-600:#717171;
+--gray-700:#444444;
+--gray-800:#212121;
+--sidebar-w:240px;
+--header-h:56px;
+}
+body{font-family:'Roboto',sans-serif;background:#fff;color:#222;min-height:100vh}
+a{text-decoration:none;color:inherit}
+
+/* HEADER */
+header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:#fff;border-bottom:1px solid var(--gray-300);display:flex;align-items:center;justify-content:space-between;padding:0 16px;z-index:100;gap:8px}
+.header-left{display:flex;align-items:center;gap:16px}
+.hamburger{background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;display:flex;flex-direction:column;gap:5px;transition:background .15s}
+.hamburger:hover{background:var(--gray-200)}
+.hamburger span{display:block;width:18px;height:2px;background:var(--gray-700);border-radius:2px}
+.logo-wrap{display:flex;align-items:center;gap:4px;text-decoration:none}
+.logo-img{width:30px;height:30px;border-radius:6px}
+h1.logo-text{font-family:'Archivo Black',sans-serif;font-size:20px;color:var(--green);letter-spacing:-0.5px}
+h1.logo-text span{color:var(--gray-800)}
+
+.search-bar{flex:1;max-width:640px;display:flex;align-items:center}
+.search-bar form{display:flex;width:100%}
+.search-bar input{flex:1;padding:8px 16px;border:1px solid var(--gray-400);border-right:none;border-radius:24px 0 0 24px;font-family:'Roboto',sans-serif;font-size:15px;outline:none;background:#fff}
+.search-bar input:focus{border-color:var(--green)}
+.search-bar button{padding:8px 20px;background:var(--gray-200);border:1px solid var(--gray-400);border-radius:0 24px 24px 0;cursor:pointer;display:flex;align-items:center}
+.search-bar button:hover{background:var(--gray-300)}
+.search-bar button svg{width:20px;height:20px;fill:var(--gray-700)}
+
+.header-right{display:flex;align-items:center;gap:8px}
+.icon-btn{background:none;border:none;cursor:pointer;padding:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.icon-btn:hover{background:var(--gray-200)}
+.icon-btn svg{width:22px;height:22px;fill:var(--gray-700)}
+.header-right .sign-in-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--green);border-radius:20px;color:var(--green);font-family:'Roboto',sans-serif;font-weight:500;font-size:14px;cursor:pointer;background:none;transition:background .15s}
+.header-right .sign-in-btn:hover{background:var(--green-light)}
+.header-right .sign-in-btn svg{width:18px;height:18px;fill:var(--green)}
+.avatar-btn{width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-family:'Roboto',sans-serif;position:relative}
+.avatar-btn:hover{opacity:.9}
+
+/* DROPDOWN */
+.dropdown{position:relative;display:inline-block}
+.dropdown-menu{display:none;position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid var(--gray-300);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.12);min-width:200px;z-index:200;overflow:hidden}
+.dropdown:hover .dropdown-menu,.dropdown-menu:hover{display:block}
+.dropdown-menu a,.dropdown-menu button{display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:var(--gray-800);background:none;border:none;width:100%;text-align:left;cursor:pointer;font-family:'Roboto',sans-serif;transition:background .1s}
+.dropdown-menu a:hover,.dropdown-menu button:hover{background:var(--gray-100)}
+.dropdown-menu hr{border:none;border-top:1px solid var(--gray-300);margin:4px 0}
+.dropdown-menu svg{width:18px;height:18px;fill:var(--gray-600)}
+
+/* SIDEBAR */
+.sidebar{position:fixed;top:var(--header-h);left:0;width:var(--sidebar-w);height:calc(100vh - var(--header-h));overflow-y:auto;padding:12px 0;z-index:90;background:#fff;border-right:1px solid var(--gray-300);transition:transform .2s}
+.sidebar.collapsed{transform:translateX(calc(-1 * var(--sidebar-w)))}
+.sidebar-section{padding:8px 0;border-bottom:1px solid var(--gray-300)}
+.sidebar-section:last-child{border-bottom:none}
+.sidebar a{display:flex;align-items:center;gap:18px;padding:10px 18px;font-size:14px;color:var(--gray-800);border-radius:10px;margin:2px 8px;transition:background .1s;font-family:'Roboto',sans-serif}
+.sidebar a:hover{background:var(--gray-100)}
+.sidebar a.active{background:var(--green-light);color:var(--green);font-weight:500}
+.sidebar a svg{width:22px;height:22px;fill:var(--gray-600);flex-shrink:0}
+.sidebar a.active svg{fill:var(--green)}
+.sidebar-label{padding:8px 26px 4px;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--gray-500);text-transform:uppercase}
+
+/* MAIN */
+.main{margin-top:var(--header-h);margin-left:var(--sidebar-w);padding:24px;transition:margin-left .2s}
+.main.expanded{margin-left:0}
+
+/* CHIPS / FILTER */
+.filter-bar{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;margin-bottom:20px;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.chip{padding:6px 14px;border-radius:8px;background:var(--gray-800);color:#fff;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;border:none;font-family:'Roboto',sans-serif;transition:background .15s}
+.chip.active,.chip:hover{background:var(--green)}
+.chip.light{background:var(--gray-200);color:var(--gray-800)}
+.chip.light.active,.chip.light:hover{background:var(--gray-800);color:#fff}
+
+/* VIDEO GRID */
+.video-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px}
+.video-card{cursor:pointer;border-radius:12px;overflow:hidden;transition:transform .15s}
+.video-card:hover{transform:translateY(-2px)}
+.thumb-wrap{position:relative;width:100%;padding-top:56.25%;background:var(--gray-200);border-radius:12px;overflow:hidden}
+.thumb-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--green-light),var(--gray-200))}
+.thumb-placeholder svg{width:48px;height:48px;fill:var(--green);opacity:.4}
+.duration-badge{position:absolute;bottom:6px;right:8px;background:rgba(0,0,0,.8);color:#fff;font-size:11px;font-weight:700;padding:2px 5px;border-radius:4px}
+.video-meta{display:flex;gap:10px;padding:10px 4px 4px}
+.channel-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px}
+.video-info .title{font-size:14px;font-weight:500;color:var(--gray-800);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.video-info .channel-name{font-size:13px;color:var(--gray-600);margin-top:2px}
+.video-info .stats{font-size:12px;color:var(--gray-500)}
+
+/* HERO BANNER */
+.hero{background:linear-gradient(135deg,var(--green-dark),var(--green-mid));border-radius:16px;padding:36px 32px;color:#fff;margin-bottom:28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.hero h2{font-family:'Archivo Black',sans-serif;font-size:28px;line-height:1.2;margin-bottom:8px}
+.hero p{font-size:15px;opacity:.9;max-width:400px}
+.hero .cta-btns{display:flex;gap:12px;margin-top:20px;flex-wrap:wrap}
+.hero .btn-white{padding:10px 22px;background:#fff;color:var(--green-dark);font-weight:700;border-radius:24px;font-size:14px;border:none;cursor:pointer;font-family:'Roboto',sans-serif;transition:opacity .15s}
+.hero .btn-white:hover{opacity:.9}
+.hero .btn-outline{padding:10px 22px;background:transparent;color:#fff;font-weight:700;border-radius:24px;font-size:14px;border:2px solid rgba(255,255,255,.6);cursor:pointer;font-family:'Roboto',sans-serif;transition:border-color .15s}
+.hero .btn-outline:hover{border-color:#fff}
+.hero-icon{width:120px;height:120px;opacity:.25;flex-shrink:0}
+
+/* SECTION TITLE */
+.section-title{font-size:18px;font-weight:700;color:var(--gray-800);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title svg{width:20px;height:20px;fill:var(--green)}
+
+/* FOOTER */
+footer{margin-left:var(--sidebar-w);padding:24px;border-top:1px solid var(--gray-300);font-size:12px;color:var(--gray-500);display:flex;flex-wrap:wrap;gap:16px;align-items:center;transition:margin-left .2s}
+footer.expanded{margin-left:0}
+footer a{color:var(--gray-500)}
+footer a:hover{color:var(--green)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+.sidebar{transform:translateX(calc(-1 * var(--sidebar-w)))}
+.sidebar.mobile-open{transform:translateX(0)}
+.main,.footer{margin-left:0}
+.hero h2{font-size:20px}
+.video-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+}
+
+/* NOTIFICATION DOT */
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:#f00;border-radius:50%;border:2px solid #fff}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--gray-800);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:9999;opacity:0;transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* UP BUTTON */
+.up-btn{position:fixed;bottom:24px;right:24px;width:44px;height:44px;background:var(--green);color:#fff;border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;z-index:50}
+.up-btn.visible{opacity:1}
+.up-btn svg{width:20px;height:20px;fill:#fff}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <button class="hamburger" id="menuToggle" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <a href="index.html" class="logo-wrap">
+      <img src="favicon.ico" alt="LooTube" class="logo-img">
+      <h1 class="logo-text">Loo<span>Tube</span></h1>
+    </a>
+  </div>
+
+  <div class="search-bar">
+    <form onsubmit="return false;">
+      <input type="text" placeholder="Search" aria-label="Search">
+      <button type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" stroke="#717171" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </button>
+    </form>
+  </div>
+
+  <div class="header-right">
+    <button class="icon-btn" title="Notifications" style="position:relative">
+      <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="notif-dot"></span>
+    </button>
+    <div class="dropdown">
+      <a href="upload.html" class="icon-btn" title="Upload">
+        <svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="#444" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+    <a href="login.html" class="sign-in-btn">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Login
+    </a>
+    <div class="dropdown">
+      <button class="avatar-btn" aria-label="Account">L</button>
+      <div class="dropdown-menu">
+        <a href="myaccount.html">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          My Account
+        </a>
+        <a href="channels.html">
+          <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8z" fill="#717171"/></svg>
+          My Channel
+        </a>
+        <a href="accsettings.html">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="#717171" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          Account Settings
+        </a>
+        <hr>
+        <a href="theme.html">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20" fill="#ccc"/></svg>
+          Theme
+        </a>
+        <a href="inbox.html">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Inbox
+        </a>
+        <hr>
+        <a href="logout.html">
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#717171" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Logout
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-section">
+    <a href="index.html" class="active">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Home
+    </a>
+    <a href="videocomment.html">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Videos
+    </a>
+    <a href="channels.html">
+      <svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="m10 8 5 3-5 3V8z"/></svg>
+      Channels
+    </a>
+    <a href="subscriptions.html">
+      <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Subscriptions
+    </a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">You</div>
+    <a href="myaccount.html">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      My Account
+    </a>
+    <a href="upload.html">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4M8 8l4-4 4 4M20 16v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Upload
+    </a>
+    <a href="subscribers.html">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Subscribers
+    </a>
+    <a href="community.html">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Community
+    </a>
+    <a href="inbox.html">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Inbox
+    </a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Account</div>
+    <a href="accsettings.html">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      Account Settings
+    </a>
+    <a href="theme.html">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+      Theme
+    </a>
+    <a href="login.html">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Login
+    </a>
+    <a href="signup.html">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+      Create Account
+    </a>
+    <a href="logout.html">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Logout
+    </a>
+  </div>
+</nav>
+
+<main class="main" id="main">
+  <div class="hero">
+    <div>
+      <h2>Share Your World with LooTube</h2>
+      <p>Upload videos, connect with creators, and discover amazing content from around the globe.</p>
+      <div class="cta-btns">
+        <button class="btn-white" onclick="location.href='upload.html'">Upload Video</button>
+        <button class="btn-outline" onclick="location.href='signup.html'">Create Account</button>
+      </div>
+    </div>
+    <svg class="hero-icon" viewBox="0 0 24 24" fill="white"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+  </div>
+
+  <div class="filter-bar">
+    <button class="chip active">All</button>
+    <button class="chip light">Arts</button>
+    <button class="chip light">How-To & DIY</button>
+    <button class="chip light">People & Blogs</button>
+    <button class="chip light">Film</button>
+    <button class="chip light">Music</button>
+    <button class="chip light">Gaming</button>
+    <button class="chip light">News</button>
+    <button class="chip light">Sports</button>
+    <button class="chip light">Technology</button>
+    <button class="chip light">Travel</button>
+    <button class="chip light">Education</button>
+  </div>
+
+  <div class="section-title">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    Trending Now
+  </div>
+  <div class="video-grid" id="videoGrid"></div>
+</main>
+
+<footer id="footer">
+  <a href="index.html">Home</a>
+  <a href="videocomment.html">Videos</a>
+  <a href="channels.html">Channels</a>
+  <a href="community.html">Community</a>
+  <a href="accsettings.html">Settings</a>
+  <a href="login.html">Login</a>
+  <a href="signup.html">Sign Up</a>
+  <span style="color:var(--gray-400)">|</span>
+  <span>© 2025 LooTube. Share your world.</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+<button class="up-btn" id="upBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+  <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<script>
+const videos=[
+  {title:"How I Built a Tiny House in 30 Days",channel:"BuildWithBen",views:"2.1M",time:"3 days ago",duration:"18:42",cat:"How-To & DIY",color:"#e8f5e9"},
+  {title:"A Day in My Life as a Travel Blogger",channel:"NomadNadia",views:"890K",time:"1 week ago",duration:"12:05",cat:"People & Blogs",color:"#e3f2fd"},
+  {title:"Street Art Tour: Downtown Murals",channel:"ArtWalks",views:"450K",time:"5 days ago",duration:"9:30",cat:"Arts",color:"#fce4ec"},
+  {title:"Easy Pasta Recipes for Beginners",channel:"CookingWithCarla",views:"3.4M",time:"2 weeks ago",duration:"22:15",cat:"How-To & DIY",color:"#fff8e1"},
+  {title:"My Short Film: Lost in Translation",channel:"CineCreator",views:"720K",time:"4 days ago",duration:"14:55",cat:"Film",color:"#f3e5f5"},
+  {title:"Morning Vlog: Coffee & Coding",channel:"DevDiary",views:"310K",time:"6 hours ago",duration:"8:20",cat:"People & Blogs",color:"#e8eaf6"},
+  {title:"Watercolor Basics: Sunset Painting",channel:"PaintingPaula",views:"1.2M",time:"1 month ago",duration:"35:10",cat:"Arts",color:"#fbe9e7"},
+  {title:"Indie Film Review: Top 10 of 2024",channel:"CinephileClub",views:"560K",time:"2 days ago",duration:"20:00",cat:"Film",color:"#e0f7fa"},
+];
+const grid=document.getElementById('videoGrid');
+const initials=n=>n.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const colors=['#00a550','#1976d2','#e53935','#f57c00','#7b1fa2','#00796b','#5d4037','#455a64'];
+videos.forEach((v,i)=>{
+  const c=colors[i%colors.length];
+  grid.innerHTML+=`<a href="videocomment.html" class="video-card">
+    <div class="thumb-wrap">
+      <div class="thumb-placeholder" style="background:${v.color}">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </div>
+      <span class="duration-badge">${v.duration}</span>
+    </div>
+    <div class="video-meta">
+      <div class="channel-avatar" style="background:${c}">${initials(v.channel)}</div>
+      <div class="video-info">
+        <div class="title">${v.title}</div>
+        <div class="channel-name">${v.channel}</div>
+        <div class="stats">${v.views} views · ${v.time}</div>
+      </div>
+    </div>
+  </a>`;
+});
+
+const sidebar=document.getElementById('sidebar');
+const mainEl=document.getElementById('main');
+const footerEl=document.getElementById('footer');
+let open=true;
+document.getElementById('menuToggle').addEventListener('click',()=>{
+  open=!open;
+  sidebar.classList.toggle('collapsed',!open);
+  mainEl.classList.toggle('expanded',!open);
+  footerEl.classList.toggle('expanded',!open);
+});
+
+document.querySelectorAll('.chip').forEach(chip=>{
+  chip.addEventListener('click',function(){
+    document.querySelectorAll('.chip').forEach(c=>{c.classList.remove('active');c.classList.add('light')});
+    this.classList.add('active');this.classList.remove('light');
+  });
+});
+
+window.addEventListener('scroll',()=>{
+  document.getElementById('upBtn').classList.toggle('visible',window.scrollY>400);
+});
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>

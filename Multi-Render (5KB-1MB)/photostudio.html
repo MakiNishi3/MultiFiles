@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhotoStudio</title>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#000;--bg2:#0a0a0a;--bg3:#111;--bg4:#1a1a1a;--bg5:#222;
+--border:#2a2a2a;--border2:#333;
+--text:#fff;--text2:#aaa;--text3:#666;
+--accent:#4a9eff;--accent2:#2d7dd6;
+--danger:#ff4444;--success:#44ff88;
+--panel:180px;--toolbar:36px;
+}
+body{background:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;font-size:12px;overflow:hidden;height:100vh;display:flex;flex-direction:column;user-select:none}
+#menubar{display:flex;align-items:center;height:28px;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 8px;gap:2px;flex-shrink:0;z-index:1000}
+.menu-item{position:relative;padding:4px 10px;cursor:pointer;border-radius:3px;font-size:12px;color:var(--text2)}
+.menu-item:hover{background:var(--bg5);color:var(--text)}
+.menu-item.active{background:var(--bg5);color:var(--text)}
+.dropdown{position:absolute;top:100%;left:0;min-width:200px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none;padding:4px 0}
+.dropdown.open{display:block}
+.dd-item{padding:6px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;color:var(--text2);font-size:12px}
+.dd-item:hover{background:var(--bg5);color:var(--text)}
+.dd-item.disabled{color:var(--text3);pointer-events:none}
+.dd-sep{height:1px;background:var(--border);margin:4px 0}
+.dd-sub{position:relative}
+.dd-sub>.dd-item::after{content:'▶';font-size:9px;color:var(--text3)}
+.dd-sub>.dropdown{top:0;left:100%;display:none}
+.dd-sub:hover>.dropdown{display:block}
+#workspace{display:flex;flex:1;overflow:hidden}
+#left-panel{width:var(--panel);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#tools-bar{display:flex;flex-direction:column;padding:6px;gap:2px;border-bottom:1px solid var(--border)}
+.tool-btn{width:32px;height:32px;background:transparent;border:1px solid transparent;border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:14px;transition:all .15s}
+.tool-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--border2)}
+.tool-btn.active{background:var(--bg5);color:var(--accent);border-color:var(--accent)}
+#canvas-area{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
+#canvas-wrap{position:relative;display:inline-block}
+#main-canvas{display:block;cursor:crosshair}
+#overlay-canvas{position:absolute;top:0;left:0;pointer-events:none}
+#right-panel{width:220px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.panel-section{border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-header{padding:6px 10px;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.panel-header:hover{color:var(--text2)}
+.panel-body{padding:8px}
+.panel-body.collapsed{display:none}
+#layers-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#layers-list{flex:1;overflow-y:auto;padding:4px}
+.layer-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:3px;cursor:pointer;border:1px solid transparent}
+.layer-item:hover{background:var(--bg4)}
+.layer-item.selected{background:var(--bg5);border-color:var(--accent)}
+.layer-thumb{width:24px;height:24px;border-radius:2px;background:var(--bg4);border:1px solid var(--border2);flex-shrink:0;overflow:hidden}
+.layer-thumb canvas{width:100%;height:100%}
+.layer-name{flex:1;font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-vis{width:16px;height:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text3)}
+.layer-vis:hover{color:var(--text)}
+#layers-toolbar{display:flex;gap:2px;padding:4px;border-top:1px solid var(--border)}
+.icon-btn{flex:1;height:22px;background:var(--bg4);border:1px solid var(--border2);border-radius:3px;cursor:pointer;color:var(--text2);font-size:11px;display:flex;align-items:center;justify-content:center}
+.icon-btn:hover{background:var(--bg5);color:var(--text)}
+#statusbar{height:22px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:20px;font-size:11px;color:var(--text3);flex-shrink:0}
+.status-item{display:flex;gap:4px}
+input[type=range]{-webkit-appearance:none;height:3px;background:var(--bg5);border-radius:2px;outline:none;cursor:pointer;width:100%}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer}
+input[type=range]::-webkit-slider-track{background:var(--bg5);border-radius:2px}
+.slider-row{display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
+.slider-label{display:flex;justify-content:space-between;color:var(--text2);font-size:11px}
+.slider-val{color:var(--text);font-weight:600}
+select{background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:3px;font-size:11px;font-family:'Open Sans',sans-serif;outline:none;width:100%;cursor:pointer}
+select:hover{border-color:var(--border2)}
+input[type=color]{width:30px;height:22px;border:1px solid var(--border2);border-radius:3px;cursor:pointer;background:transparent;padding:1px}
+input[type=text],input[type=number]{background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:3px;font-size:11px;font-family:'Open Sans',sans-serif;outline:none}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--accent)}
+.btn{padding:4px 10px;background:var(--bg4);border:1px solid var(--border2);color:var(--text2);border-radius:3px;cursor:pointer;font-size:11px;font-family:'Open Sans',sans-serif}
+.btn:hover{background:var(--bg5);color:var(--text)}
+.btn.primary{background:var(--accent2);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9000;display:flex;align-items:center;justify-content:center;display:none}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:20px;min-width:340px;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,.9)}
+.modal h3{font-size:14px;margin-bottom:14px;font-weight:600}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.col{display:flex;flex-direction:column;gap:4px}
+.label{font-size:11px;color:var(--text2)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg5);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+.effects-list{max-height:260px;overflow-y:auto}
+.effect-item{padding:5px 8px;cursor:pointer;border-radius:3px;color:var(--text2);font-size:11px}
+.effect-item:hover{background:var(--bg5);color:var(--text)}
+.effect-item.selected{background:var(--bg4);color:var(--accent)}
+.cat-header{padding:4px 8px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-top:4px}
+.blend-select{width:100%}
+#color-swatch{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.swatch{width:28px;height:28px;border-radius:3px;border:2px solid var(--border2);cursor:pointer;position:relative}
+#fg-swatch{z-index:1}
+#bg-swatch{margin-left:-10px;margin-top:8px}
+canvas#main-canvas{image-rendering:pixelated}
+</style>
+</head>
+<body>
+<div id="menubar"></div>
+<div id="workspace">
+  <div id="left-panel">
+    <div id="tools-bar"></div>
+    <div style="padding:8px;border-bottom:1px solid var(--border)">
+      <div id="color-swatch">
+        <div class="swatch" id="fg-swatch" title="Foreground Color"></div>
+        <div class="swatch" id="bg-swatch" title="Background Color"></div>
+      </div>
+    </div>
+    <div style="padding:8px">
+      <div class="label" style="margin-bottom:4px">Blend Mode</div>
+      <select id="blend-mode-sel" class="blend-select"></select>
+    </div>
+    <div style="padding:8px">
+      <div class="slider-row">
+        <div class="slider-label"><span>Opacity</span><span class="slider-val" id="opacity-val">100</span></div>
+        <input type="range" id="opacity-slider" min="0" max="100" value="100">
+      </div>
+    </div>
+  </div>
+  <div id="canvas-area">
+    <div id="canvas-wrap">
+      <canvas id="main-canvas" width="800" height="600"></canvas>
+      <canvas id="overlay-canvas" width="800" height="600"></canvas>
+    </div>
+  </div>
+  <div id="right-panel">
+    <div class="panel-section">
+      <div class="panel-header" onclick="togglePanel('props')">Properties <span id="props-arrow">▼</span></div>
+      <div class="panel-body" id="props-body">
+        <div class="slider-row">
+          <div class="slider-label"><span>Size</span><span class="slider-val" id="size-val">20</span></div>
+          <input type="range" id="size-slider" min="1" max="200" value="20">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Hardness</span><span class="slider-val" id="hard-val">80</span></div>
+          <input type="range" id="hard-slider" min="0" max="100" value="80">
+        </div>
+        <div class="slider-row">
+          <div class="slider-label"><span>Flow</span><span class="slider-val" id="flow-val">100</span></div>
+          <input type="range" id="flow-slider" min="1" max="100" value="100">
+        </div>
+      </div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-header" onclick="togglePanel('fx')">Active Effect <span id="fx-arrow">▼</span></div>
+      <div class="panel-body" id="fx-body">
+        <div id="fx-params-container"><div style="color:var(--text3);font-size:11px">No effect selected</div></div>
+      </div>
+    </div>
+    <div id="layers-panel">
+      <div class="panel-header" style="flex-shrink:0">Layers</div>
+      <div id="layers-list"></div>
+      <div id="layers-toolbar">
+        <button class="icon-btn" onclick="addLayer()" title="New Layer">+</button>
+        <button class="icon-btn" onclick="dupLayer()" title="Duplicate">⎘</button>
+        <button class="icon-btn" onclick="mergeDown()" title="Merge Down">↓</button>
+        <button class="icon-btn" onclick="deleteLayer()" title="Delete">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="statusbar">
+  <span class="status-item">Pos: <span id="st-pos">0, 0</span></span>
+  <span class="status-item">Size: <span id="st-size">800 × 600</span></span>
+  <span class="status-item">Layer: <span id="st-layer">-</span></span>
+  <span class="status-item">Zoom: <span id="st-zoom">100%</span></span>
+</div>
+
+<div class="modal-overlay" id="effect-modal">
+  <div class="modal" style="min-width:520px">
+    <h3 id="effect-modal-title">Effect</h3>
+    <div style="display:flex;gap:12px">
+      <div style="width:170px;flex-shrink:0">
+        <input type="text" id="fx-search" placeholder="Search effects…" style="width:100%;margin-bottom:6px">
+        <div class="effects-list" id="effects-list"></div>
+      </div>
+      <div style="flex:1" id="fx-modal-params"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('effect-modal')">Cancel</button>
+      <button class="btn" onclick="previewEffect()">Preview</button>
+      <button class="btn primary" onclick="applyEffect()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="plugin-modal">
+  <div class="modal">
+    <h3 id="plugin-modal-title">Plugin</h3>
+    <div id="plugin-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('plugin-modal')">Cancel</button>
+      <button class="btn primary" id="plugin-modal-ok" onclick="pluginModalOk()">OK</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*" style="display:none">
+<script type="text/babel">
+
+const BLEND_MODES=['normal','multiply','screen','overlay','darken','lighten','color-dodge','color-burn','hard-light','soft-light','difference','exclusion','hue','saturation','color','luminosity'];
+
+const EFFECT_CATEGORIES={
+  'Color Adjustments':['Hue/Saturation','Gradient Map','Contrast','Duotone','Channel Mixer','Tritone','Quadtone','Color Curves','Color Lookup Table','Invert'],
+  'Stylize':['Heatmap','Kaleido','Etching','Clouds','Checkerboard','Linear Gradient','Radial Gradient'],
+  'Distort':['Displace','Melt','Shear','Wave','Swirl','ZigZag','Polar Coordinates'],
+  'Blur':['Gaussian Blur','Box Blur','Linear Blur','Radial Blur','Motion Blur'],
+  'Sharpen':['Sharpen','Unsharp Mask'],
+  'Edge':['Edge Detection','Fourier Transform'],
+  'Color Space':['RGB to HSV','HSV to RGB','YUV to RGB','RGB to YUV','YUV to HSL','HSL to YUV','Pseudocolor - rainbow'],
+};
+
+const EFFECT_PARAMS={
+  'Hue/Saturation':[{n:'Hue',min:-180,max:180,val:0},{n:'Saturation',min:-100,max:100,val:0},{n:'Lightness',min:-100,max:100,val:0}],
+  'Gradient Map':[{n:'Angle',min:0,max:360,val:0}],
+  'Contrast':[{n:'Contrast',min:-100,max:100,val:0},{n:'Brightness',min:-100,max:100,val:0}],
+  'Duotone':[{n:'Shadows R',min:0,max:255,val:0},{n:'Shadows G',min:0,max:255,val:0},{n:'Shadows B',min:0,max:255,val:0},{n:'Highlights R',min:0,max:255,val:255},{n:'Highlights G',min:0,max:255,val:200},{n:'Highlights B',min:0,max:255,val:100}],
+  'Channel Mixer':[{n:'RR',min:-200,max:200,val:100},{n:'RG',min:-200,max:200,val:0},{n:'RB',min:-200,max:200,val:0},{n:'GR',min:-200,max:200,val:0},{n:'GG',min:-200,max:200,val:100},{n:'GB',min:-200,max:200,val:0},{n:'BR',min:-200,max:200,val:0},{n:'BG',min:-200,max:200,val:0},{n:'BB',min:-200,max:200,val:100}],
+  'Tritone':[{n:'Shadow R',min:0,max:255,val:0},{n:'Shadow G',min:0,max:255,val:0},{n:'Shadow B',min:0,max:255,val:100},{n:'Mid R',min:0,max:255,val:0},{n:'Mid G',min:0,max:255,val:200},{n:'Mid B',min:0,max:255,val:100},{n:'Hi R',min:0,max:255,val:255},{n:'Hi G',min:0,max:255,val:255},{n:'Hi B',min:0,max:255,val:255}],
+  'Quadtone':[{n:'Q1 R',min:0,max:255,val:20},{n:'Q1 G',min:0,max:255,val:20},{n:'Q1 B',min:0,max:255,val:50},{n:'Q2 R',min:0,max:255,val:80},{n:'Q2 G',min:0,max:255,val:40},{n:'Q2 B',min:0,max:255,val:120},{n:'Q3 R',min:0,max:255,val:200},{n:'Q3 G',min:0,max:255,val:150},{n:'Q3 B',min:0,max:255,val:80},{n:'Q4 R',min:0,max:255,val:255},{n:'Q4 G',min:0,max:255,val:240},{n:'Q4 B',min:0,max:255,val:200}],
+  'Color Curves':[{n:'R Gamma',min:1,max:300,val:100},{n:'G Gamma',min:1,max:300,val:100},{n:'B Gamma',min:1,max:300,val:100},{n:'R Lift',min:-100,max:100,val:0},{n:'G Lift',min:-100,max:100,val:0},{n:'B Lift',min:-100,max:100,val:0}],
+  'Color Lookup Table':[{n:'Preset',min:0,max:5,val:0,labels:['Identity','Warm','Cool','Sepia','Fade','Vivid']}],
+  'Invert':[{n:'Amount',min:0,max:100,val:100}],
+  'Heatmap':[{n:'Scale',min:1,max:10,val:5}],
+  'Kaleido':[{n:'Segments',min:2,max:16,val:6},{n:'Angle',min:0,max:360,val:0}],
+  'Displace':[{n:'X Amount',min:-100,max:100,val:20},{n:'Y Amount',min:-100,max:100,val:20},{n:'Scale',min:1,max:100,val:20}],
+  'Melt':[{n:'Amount',min:0,max:100,val:30},{n:'Frequency',min:1,max:50,val:10}],
+  'Shear':[{n:'X Shear',min:-100,max:100,val:20},{n:'Y Shear',min:-100,max:100,val:0}],
+  'Wave':[{n:'Amplitude',min:0,max:100,val:20},{n:'Wavelength',min:1,max:200,val:40},{n:'Phase',min:0,max:360,val:0},{n:'Direction',min:0,max:1,val:0,labels:['Horizontal','Vertical']}],
+  'Swirl':[{n:'Angle',min:-360,max:360,val:90},{n:'Radius',min:1,max:100,val:50}],
+  'ZigZag':[{n:'Amount',min:0,max:100,val:20},{n:'Ridges',min:1,max:20,val:5},{n:'Style',min:0,max:1,val:0,labels:['Around center','Out from center']}],
+  'Polar Coordinates':[{n:'Mode',min:0,max:1,val:0,labels:['Rect to Polar','Polar to Rect']}],
+  'Gaussian Blur':[{n:'Radius',min:0,max:50,val:5}],
+  'Box Blur':[{n:'Radius',min:0,max:50,val:5}],
+  'Linear Blur':[{n:'Amount',min:0,max:100,val:20},{n:'Angle',min:0,max:360,val:0}],
+  'Radial Blur':[{n:'Amount',min:0,max:100,val:20},{n:'Center X',min:0,max:100,val:50},{n:'Center Y',min:0,max:100,val:50}],
+  'Motion Blur':[{n:'Distance',min:0,max:100,val:20},{n:'Angle',min:0,max:360,val:0}],
+  'Sharpen':[{n:'Amount',min:0,max:100,val:50}],
+  'Unsharp Mask':[{n:'Amount',min:0,max:200,val:50},{n:'Radius',min:0,max:10,val:2},{n:'Threshold',min:0,max:255,val:0}],
+  'Edge Detection':[{n:'Mode',min:0,max:2,val:0,labels:['Sobel','Laplacian','Canny']}],
+  'Etching':[{n:'Lines',min:1,max:80,val:20},{n:'Angle',min:0,max:180,val:45}],
+  'Fourier Transform':[{n:'Mode',min:0,max:1,val:0,labels:['Forward','Inverse']}],
+  'Clouds':[{n:'Scale',min:1,max:100,val:40},{n:'Octaves',min:1,max:8,val:4},{n:'Persistence',min:0,max:100,val:50}],
+  'Checkerboard':[{n:'Size',min:2,max:200,val:20}],
+  'Linear Gradient':[{n:'Angle',min:0,max:360,val:0},{n:'R1',min:0,max:255,val:0},{n:'G1',min:0,max:255,val:0},{n:'B1',min:0,max:255,val:0},{n:'R2',min:0,max:255,val:255},{n:'G2',min:0,max:255,val:255},{n:'B2',min:0,max:255,val:255}],
+  'Radial Gradient':[{n:'R1',min:0,max:255,val:0},{n:'G1',min:0,max:255,val:0},{n:'B1',min:0,max:255,val:0},{n:'R2',min:0,max:255,val:255},{n:'G2',min:0,max:255,val:255},{n:'B2',min:0,max:255,val:255}],
+  'RGB to HSV':[],
+  'HSV to RGB':[],
+  'YUV to RGB':[],
+  'RGB to YUV':[],
+  'YUV to HSL':[],
+  'HSL to YUV':[],
+  'Pseudocolor - rainbow':[{n:'Cycles',min:1,max:10,val:1}],
+};
+
+const SHADERS={
+  vert:`attribute vec2 a_position;attribute vec2 a_texCoord;varying vec2 v_texCoord;void main(){gl_Position=vec4(a_position,0,1);v_texCoord=a_texCoord;}`,
+  frag:{
+    'Hue/Saturation':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_hue;uniform float u_sat;uniform float u_lum;
+vec3 rgb2hsl(vec3 c){float mx=max(c.r,max(c.g,c.b));float mn=min(c.r,min(c.g,c.b));float h=0.,s=0.,l=(mx+mn)/2.;float d=mx-mn;if(d>0.){s=l>.5?d/(2.-mx-mn):d/(mx+mn);if(mx==c.r)h=(c.g-c.b)/d+(c.g<c.b?6.:0.);else if(mx==c.g)h=(c.b-c.r)/d+2.;else h=(c.r-c.g)/d+4.;h/=6.;}return vec3(h,s,l);}
+float hue2rgb(float p,float q,float t){if(t<0.)t+=1.;if(t>1.)t-=1.;if(t<1./6.)return p+(q-p)*6.*t;if(t<.5)return q;if(t<2./3.)return p+(q-p)*(2./3.-t)*6.;return p;}
+vec3 hsl2rgb(vec3 c){if(c.y==0.)return vec3(c.z);float q=c.z<.5?c.z*(1.+c.y):c.z+c.y-c.z*c.y;float p=2.*c.z-q;return vec3(hue2rgb(p,q,c.x+1./3.),hue2rgb(p,q,c.x),hue2rgb(p,q,c.x-1./3.));}
+void main(){vec4 col=texture2D(u_image,v_texCoord);vec3 hsl=rgb2hsl(col.rgb);hsl.x=mod(hsl.x+u_hue/360.,1.);hsl.y=clamp(hsl.y+u_sat/100.,0.,1.);hsl.z=clamp(hsl.z+u_lum/100.,0.,1.);gl_FragColor=vec4(hsl2rgb(hsl),col.a);}`,
+    'Gradient Map':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_angle;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));float a=u_angle/360.;vec3 col1=vec3(cos(a*6.28)*0.5+0.5,sin(a*6.28)*0.5+0.5,cos(a*3.14+1.)*0.5+0.5);vec3 col2=vec3(1.)-col1;gl_FragColor=vec4(mix(col1,col2,g),c.a);}`,
+    'Contrast':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_contrast;uniform float u_brightness;
+void main(){vec4 c=texture2D(u_image,v_texCoord);vec3 col=c.rgb;col=(col-.5)*(1.+u_contrast/100.)+.5+u_brightness/100.;gl_FragColor=vec4(clamp(col,0.,1.),c.a);}`,
+    'Duotone':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_sr;uniform float u_sg;uniform float u_sb;uniform float u_hr;uniform float u_hg;uniform float u_hb;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));vec3 shadows=vec3(u_sr,u_sg,u_sb)/255.;vec3 highs=vec3(u_hr,u_hg,u_hb)/255.;gl_FragColor=vec4(mix(shadows,highs,g),c.a);}`,
+    'Channel Mixer':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_rr;uniform float u_rg;uniform float u_rb;uniform float u_gr;uniform float u_gg;uniform float u_gb;uniform float u_br;uniform float u_bg;uniform float u_bb;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float r=c.r*u_rr/100.+c.g*u_rg/100.+c.b*u_rb/100.;float g=c.r*u_gr/100.+c.g*u_gg/100.+c.b*u_gb/100.;float b=c.r*u_br/100.+c.g*u_bg/100.+c.b*u_bb/100.;gl_FragColor=vec4(clamp(vec3(r,g,b),0.,1.),c.a);}`,
+    'Tritone':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_sr;uniform float u_sg;uniform float u_sb;uniform float u_mr;uniform float u_mg;uniform float u_mb;uniform float u_hr;uniform float u_hg;uniform float u_hb;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));vec3 s=vec3(u_sr,u_sg,u_sb)/255.;vec3 m=vec3(u_mr,u_mg,u_mb)/255.;vec3 h=vec3(u_hr,u_hg,u_hb)/255.;vec3 col=g<.5?mix(s,m,g*2.):mix(m,h,(g-.5)*2.);gl_FragColor=vec4(col,c.a);}`,
+    'Quadtone':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_q1r;uniform float u_q1g;uniform float u_q1b;uniform float u_q2r;uniform float u_q2g;uniform float u_q2b;uniform float u_q3r;uniform float u_q3g;uniform float u_q3b;uniform float u_q4r;uniform float u_q4g;uniform float u_q4b;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));vec3 q1=vec3(u_q1r,u_q1g,u_q1b)/255.;vec3 q2=vec3(u_q2r,u_q2g,u_q2b)/255.;vec3 q3=vec3(u_q3r,u_q3g,u_q3b)/255.;vec3 q4=vec3(u_q4r,u_q4g,u_q4b)/255.;vec3 col;if(g<.33)col=mix(q1,q2,g*3.);else if(g<.66)col=mix(q2,q3,(g-.33)*3.);else col=mix(q3,q4,(g-.66)*3.);gl_FragColor=vec4(col,c.a);}`,
+    'Color Curves':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_rg;uniform float u_gg;uniform float u_bg;uniform float u_rl;uniform float u_gl;uniform float u_bl;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float r=pow(c.r,100./u_rg)+u_rl/100.;float g2=pow(c.g,100./u_gg)+u_gl/100.;float b=pow(c.b,100./u_bg)+u_bl/100.;gl_FragColor=vec4(clamp(vec3(r,g2,b),0.,1.),c.a);}`,
+    'Color Lookup Table':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_preset;
+void main(){vec4 c=texture2D(u_image,v_texCoord);int p=int(u_preset);vec3 col=c.rgb;if(p==1){col=col*vec3(1.2,.9,.7);}else if(p==2){col=col*vec3(.7,.9,1.2);}else if(p==3){float g=dot(col,vec3(.299,.587,.114));col=vec3(g+.3,g+.1,g-.1);}else if(p==4){col=col*.8+.1;}else if(p==5){col=clamp(col*1.4-.2,0.,1.);}gl_FragColor=vec4(clamp(col,0.,1.),c.a);}`,
+    'Invert':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_amount;void main(){vec4 c=texture2D(u_image,v_texCoord);gl_FragColor=vec4(mix(c.rgb,1.-c.rgb,u_amount/100.),c.a);}`,
+    'Heatmap':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_scale;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));float t=g*u_scale;vec3 col;float r=clamp(1.5-abs(t-1.),0.,1.);float gr=clamp(1.5-abs(t-.5),0.,1.);float b=clamp(1.5-abs(t),0.,1.);gl_FragColor=vec4(r,gr,b,c.a);}`,
+    'Kaleido':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_segments;uniform float u_angle;
+void main(){vec2 uv=v_texCoord-.5;float r=length(uv);float a=atan(uv.y,uv.x)+u_angle/360.*6.28318;float seg=6.28318/u_segments;a=mod(a,seg);if(mod(floor(a/seg*2.),2.)==1.)a=seg-a;vec2 nuv=vec2(cos(a),sin(a))*r+.5;gl_FragColor=texture2D(u_image,nuv);}`,
+    'Displace':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_xa;uniform float u_ya;uniform float u_scale;
+void main(){float sc=u_scale/100.;vec2 d=vec2(sin(v_texCoord.y*20.*sc)*u_xa/1000.,cos(v_texCoord.x*20.*sc)*u_ya/1000.);gl_FragColor=texture2D(u_image,clamp(v_texCoord+d,0.,1.));}`,
+    'Melt':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_amount;uniform float u_frequency;
+void main(){float a=u_amount/100.;float f=u_frequency;vec2 uv=v_texCoord;uv.x+=sin(uv.y*f+uv.y*10.)*a*.05;gl_FragColor=texture2D(u_image,clamp(uv,0.,1.));}`,
+    'Shear':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_xs;uniform float u_ys;
+void main(){vec2 uv=v_texCoord;uv.x+=u_xs/100.*(uv.y-.5);uv.y+=u_ys/100.*(uv.x-.5);gl_FragColor=texture2D(u_image,clamp(uv,0.,1.));}`,
+    'Wave':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_amp;uniform float u_wl;uniform float u_phase;uniform float u_dir;
+void main(){float a=u_amp/100.*.05;float w=u_wl/100.*6.28318;float ph=u_phase/360.*6.28318;vec2 uv=v_texCoord;if(u_dir<.5)uv.y+=sin(uv.x*w+ph)*a;else uv.x+=sin(uv.y*w+ph)*a;gl_FragColor=texture2D(u_image,clamp(uv,0.,1.));}`,
+    'Swirl':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_angle;uniform float u_radius;
+void main(){vec2 uv=v_texCoord-.5;float r=length(uv);float ra=u_radius/100.*.7;float t=u_angle/360.*6.28318*max(0.,(ra-r)/ra);float s=sin(t);float c2=cos(t);vec2 ruv=vec2(uv.x*c2-uv.y*s,uv.x*s+uv.y*c2);gl_FragColor=texture2D(u_image,clamp(ruv+.5,0.,1.));}`,
+    'ZigZag':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_amount;uniform float u_ridges;uniform float u_style;
+void main(){vec2 uv=v_texCoord-.5;float r=length(uv);float a=atan(uv.y,uv.x);float za=u_amount/100.*.05;float t;if(u_style<.5)t=sin(r*u_ridges*6.28318)*za;else t=sin(a*u_ridges)*za*r;vec2 dir=normalize(uv+.001);gl_FragColor=texture2D(u_image,clamp(v_texCoord+dir*t,0.,1.));}`,
+    'Polar Coordinates':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_mode;
+void main(){vec2 uv;if(u_mode<.5){vec2 c=v_texCoord-.5;float r=length(c)*2.;float a=(atan(c.y,c.x)/6.28318+.5);uv=vec2(a,1.-r);}else{float a=(v_texCoord.x)*6.28318;float r=1.-v_texCoord.y;uv=vec2(cos(a)*r+.5,sin(a)*r+.5);}gl_FragColor=texture2D(u_image,clamp(uv,0.,1.));}`,
+    'Gaussian Blur':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_radius;
+void main(){vec4 sum=vec4(0.);float r=u_radius;vec2 px=1./u_resolution;float w=0.;for(int i=-8;i<=8;i++){for(int j=-8;j<=8;j++){float fi=float(i);float fj=float(j);if(abs(fi)<=r&&abs(fj)<=r){float g=exp(-(fi*fi+fj*fj)/(2.*r*r));sum+=texture2D(u_image,v_texCoord+vec2(fi,fj)*px)*g;w+=g;}}}gl_FragColor=sum/w;}`,
+    'Box Blur':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_radius;
+void main(){vec4 sum=vec4(0.);float r=u_radius;vec2 px=1./u_resolution;float cnt=0.;for(int i=-8;i<=8;i++){for(int j=-8;j<=8;j++){if(abs(float(i))<=r&&abs(float(j))<=r){sum+=texture2D(u_image,v_texCoord+vec2(float(i),float(j))*px);cnt++;}}}gl_FragColor=sum/cnt;}`,
+    'Linear Blur':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_amount;uniform float u_angle;
+void main(){float a=u_angle/360.*6.28318;vec2 dir=vec2(cos(a),sin(a));vec2 px=1./u_resolution;vec4 sum=vec4(0.);float amt=u_amount*.5;int steps=8;for(int i=-8;i<=8;i++){float t=float(i)/8.*amt;sum+=texture2D(u_image,clamp(v_texCoord+dir*px*t,0.,1.));}gl_FragColor=sum/17.;}`,
+    'Radial Blur':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_amount;uniform float u_cx;uniform float u_cy;
+void main(){vec2 center=vec2(u_cx/100.,u_cy/100.);vec4 sum=vec4(0.);float a=u_amount/1000.;for(int i=0;i<12;i++){float t=float(i)/12.;vec2 uv=mix(v_texCoord,center,t*a);sum+=texture2D(u_image,clamp(uv,0.,1.));}gl_FragColor=sum/12.;}`,
+    'Motion Blur':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_dist;uniform float u_angle;
+void main(){float a=u_angle/360.*6.28318;vec2 dir=vec2(cos(a),-sin(a));vec2 px=dir/u_resolution*u_dist;vec4 sum=vec4(0.);for(int i=0;i<12;i++){float t=float(i)/11.;sum+=texture2D(u_image,clamp(v_texCoord+px*(t-.5),0.,1.));}gl_FragColor=sum/12.;}`,
+    'Sharpen':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_amount;
+void main(){vec2 px=1./u_resolution;vec4 c=texture2D(u_image,v_texCoord);vec4 n=texture2D(u_image,v_texCoord+vec2(0.,px.y));vec4 s2=texture2D(u_image,v_texCoord-vec2(0.,px.y));vec4 e=texture2D(u_image,v_texCoord+vec2(px.x,0.));vec4 w=texture2D(u_image,v_texCoord-vec2(px.x,0.));vec4 sharp=c*5.-(n+s2+e+w);gl_FragColor=mix(c,sharp,u_amount/100.);}`,
+    'Unsharp Mask':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_amount;uniform float u_radius;uniform float u_threshold;
+void main(){vec2 px=1./u_resolution;vec4 c=texture2D(u_image,v_texCoord);vec4 blur=vec4(0.);float w=0.;float r=max(u_radius,1.);for(int i=-4;i<=4;i++){for(int j=-4;j<=4;j++){float g=exp(-(float(i)*float(i)+float(j)*float(j))/(2.*r*r));blur+=texture2D(u_image,v_texCoord+vec2(float(i),float(j))*px)*g;w+=g;}}blur/=w;vec4 diff=c-blur;float thr=u_threshold/255.;if(length(diff.rgb)<thr)gl_FragColor=c;else gl_FragColor=clamp(c+diff*u_amount/100.,0.,1.);}`,
+    'Edge Detection':`precision mediump float;uniform sampler2D u_image;uniform vec2 u_resolution;varying vec2 v_texCoord;uniform float u_mode;
+void main(){vec2 px=1./u_resolution;if(u_mode<.5){vec4 tl=texture2D(u_image,v_texCoord+vec2(-px.x,px.y));vec4 tc=texture2D(u_image,v_texCoord+vec2(0.,px.y));vec4 tr=texture2D(u_image,v_texCoord+px);vec4 ml=texture2D(u_image,v_texCoord-vec2(px.x,0.));vec4 mr=texture2D(u_image,v_texCoord+vec2(px.x,0.));vec4 bl=texture2D(u_image,v_texCoord-px);vec4 bc=texture2D(u_image,v_texCoord-vec2(0.,px.y));vec4 br=texture2D(u_image,v_texCoord+vec2(px.x,-px.y));vec4 gx=(-tl-2.*ml-bl+tr+2.*mr+br);vec4 gy=(-tl-2.*tc-tr+bl+2.*bc+br);float mag=length(sqrt(gx*gx+gy*gy).rgb);gl_FragColor=vec4(vec3(mag),1.);}else if(u_mode<1.5){vec4 c=texture2D(u_image,v_texCoord);vec4 n=texture2D(u_image,v_texCoord+vec2(0.,px.y));vec4 s2=texture2D(u_image,v_texCoord-vec2(0.,px.y));vec4 e=texture2D(u_image,v_texCoord+vec2(px.x,0.));vec4 w=texture2D(u_image,v_texCoord-vec2(px.x,0.));vec4 lap=abs(4.*c-n-s2-e-w);gl_FragColor=vec4(lap.rgb,1.);}else{vec4 c=texture2D(u_image,v_texCoord);vec4 n=texture2D(u_image,v_texCoord+vec2(0.,px.y));vec4 s2=texture2D(u_image,v_texCoord-vec2(0.,px.y));vec4 e=texture2D(u_image,v_texCoord+vec2(px.x,0.));vec4 w=texture2D(u_image,v_texCoord-vec2(px.x,0.));float mag=length((4.*c-n-s2-e-w).rgb);gl_FragColor=vec4(vec3(step(.1,mag)),1.);}}`,
+    'Etching':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_lines;uniform float u_angle;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));float a=u_angle/180.*3.14159;vec2 dir=vec2(cos(a),sin(a));float lp=dot(v_texCoord,dir)*u_lines;float line=step(g,fract(lp));gl_FragColor=vec4(vec3(1.-line),c.a);}`,
+    'Fourier Transform':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_mode;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));vec2 uv=v_texCoord-.5;if(u_mode<.5){float mag=log(1.+length(uv)*10.);gl_FragColor=vec4(vec3(mag*g),c.a);}else{gl_FragColor=vec4(vec3(g),c.a);}}`,
+    'Clouds':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_scale;uniform float u_octaves;uniform float u_persistence;
+float rand(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.-2.*f);float a=rand(i);float b=rand(i+vec2(1.,0.));float c2=rand(i+vec2(0.,1.));float d=rand(i+vec2(1.,1.));return mix(mix(a,b,f.x),mix(c2,d,f.x),f.y);}
+void main(){vec2 uv=v_texCoord*u_scale;float n=0.;float amp=1.;float freq=1.;float max_v=0.;int oct=int(u_octaves);for(int i=0;i<8;i++){if(i>=oct)break;n+=noise(uv*freq)*amp;max_v+=amp;amp*=u_persistence/100.;freq*=2.;}n/=max_v;gl_FragColor=vec4(vec3(n),1.);}`,
+    'Checkerboard':`precision mediump float;varying vec2 v_texCoord;uniform float u_size;
+void main(){vec2 uv=floor(v_texCoord*1024./u_size);float c=mod(uv.x+uv.y,2.);gl_FragColor=vec4(vec3(c),1.);}`,
+    'Linear Gradient':`precision mediump float;varying vec2 v_texCoord;uniform float u_angle;uniform float u_r1;uniform float u_g1;uniform float u_b1;uniform float u_r2;uniform float u_g2;uniform float u_b2;
+void main(){float a=u_angle/360.*6.28318;vec2 dir=vec2(cos(a),sin(a));float t=dot(v_texCoord-.5,dir)+.5;t=clamp(t,0.,1.);vec3 c1=vec3(u_r1,u_g1,u_b1)/255.;vec3 c2=vec3(u_r2,u_g2,u_b2)/255.;gl_FragColor=vec4(mix(c1,c2,t),1.);}`,
+    'Radial Gradient':`precision mediump float;varying vec2 v_texCoord;uniform float u_r1;uniform float u_g1;uniform float u_b1;uniform float u_r2;uniform float u_g2;uniform float u_b2;
+void main(){float t=clamp(length(v_texCoord-.5)*2.,0.,1.);vec3 c1=vec3(u_r1,u_g1,u_b1)/255.;vec3 c2=vec3(u_r2,u_g2,u_b2)/255.;gl_FragColor=vec4(mix(c1,c2,t),1.);}`,
+    'RGB to HSV':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float mx=max(c.r,max(c.g,c.b));float mn=min(c.r,min(c.g,c.b));float d=mx-mn;float h=0.;if(d>0.){if(mx==c.r)h=mod((c.g-c.b)/d,6.)/6.;else if(mx==c.g)h=((c.b-c.r)/d+2.)/6.;else h=((c.r-c.g)/d+4.)/6.;}float s=mx==0.?0.:d/mx;gl_FragColor=vec4(h,s,mx,c.a);}`,
+    'HSV to RGB':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float h=c.r*6.;float s=c.g;float v=c.b;int i=int(floor(h));float f=h-float(i);float p=v*(1.-s);float q=v*(1.-s*f);float t2=v*(1.-s*(1.-f));vec3 rgb;if(i==0)rgb=vec3(v,t2,p);else if(i==1)rgb=vec3(q,v,p);else if(i==2)rgb=vec3(p,v,t2);else if(i==3)rgb=vec3(p,q,v);else if(i==4)rgb=vec3(t2,p,v);else rgb=vec3(v,p,q);gl_FragColor=vec4(rgb,c.a);}`,
+    'RGB to YUV':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float y=.299*c.r+.587*c.g+.114*c.b;float u2=-.147*c.r-.289*c.g+.436*c.b+.5;float v2=.615*c.r-.515*c.g-.100*c.b+.5;gl_FragColor=vec4(y,u2,v2,c.a);}`,
+    'YUV to RGB':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float y=c.r;float u2=c.g-.5;float v2=c.b-.5;float r=y+1.140*v2;float g2=y-.395*u2-.581*v2;float b=y+2.032*u2;gl_FragColor=vec4(clamp(vec3(r,g2,b),0.,1.),c.a);}`,
+    'YUV to HSL':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;
+vec3 rgb2hsl(vec3 c){float mx=max(c.r,max(c.g,c.b));float mn=min(c.r,min(c.g,c.b));float h=0.,s=0.,l=(mx+mn)/2.;float d=mx-mn;if(d>0.){s=l>.5?d/(2.-mx-mn):d/(mx+mn);if(mx==c.r)h=mod((c.g-c.b)/d,6.)/6.;else if(mx==c.g)h=((c.b-c.r)/d+2.)/6.;else h=((c.r-c.g)/d+4.)/6.;}return vec3(h,s,l);}
+void main(){vec4 c=texture2D(u_image,v_texCoord);float y=c.r;float u2=c.g-.5;float v2=c.b-.5;float r=y+1.140*v2;float g2=y-.395*u2-.581*v2;float b=y+2.032*u2;vec3 hsl=rgb2hsl(clamp(vec3(r,g2,b),0.,1.));gl_FragColor=vec4(hsl,c.a);}`,
+    'HSL to YUV':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;
+float hue2rgb(float p,float q,float t){if(t<0.)t+=1.;if(t>1.)t-=1.;if(t<1./6.)return p+(q-p)*6.*t;if(t<.5)return q;if(t<2./3.)return p+(q-p)*(2./3.-t)*6.;return p;}
+vec3 hsl2rgb(vec3 c){if(c.y==0.)return vec3(c.z);float q=c.z<.5?c.z*(1.+c.y):c.z+c.y-c.z*c.y;float p=2.*c.z-q;return vec3(hue2rgb(p,q,c.x+1./3.),hue2rgb(p,q,c.x),hue2rgb(p,q,c.x-1./3.));}
+void main(){vec4 c=texture2D(u_image,v_texCoord);vec3 rgb=hsl2rgb(c.rgb);float y=.299*rgb.r+.587*rgb.g+.114*rgb.b;float u2=-.147*rgb.r-.289*rgb.g+.436*rgb.b+.5;float v2=.615*rgb.r-.515*rgb.g-.100*rgb.b+.5;gl_FragColor=vec4(y,u2,v2,c.a);}`,
+    'Pseudocolor - rainbow':`precision mediump float;uniform sampler2D u_image;varying vec2 v_texCoord;uniform float u_cycles;
+void main(){vec4 c=texture2D(u_image,v_texCoord);float g=dot(c.rgb,vec3(.299,.587,.114));float t=fract(g*u_cycles);float r=clamp(abs(t*6.-3.)-1.,0.,1.);float gr=clamp(2.-abs(t*6.-2.),0.,1.);float b=clamp(2.-abs(t*6.-4.),0.,1.);gl_FragColor=vec4(r,gr,b,c.a);}`,
+  }
+};
+
+const UNIFORM_MAP={
+  'Hue/Saturation':['u_hue','u_sat','u_lum'],
+  'Gradient Map':['u_angle'],
+  'Contrast':['u_contrast','u_brightness'],
+  'Duotone':['u_sr','u_sg','u_sb','u_hr','u_hg','u_hb'],
+  'Channel Mixer':['u_rr','u_rg','u_rb','u_gr','u_gg','u_gb','u_br','u_bg','u_bb'],
+  'Tritone':['u_sr','u_sg','u_sb','u_mr','u_mg','u_mb','u_hr','u_hg','u_hb'],
+  'Quadtone':['u_q1r','u_q1g','u_q1b','u_q2r','u_q2g','u_q2b','u_q3r','u_q3g','u_q3b','u_q4r','u_q4g','u_q4b'],
+  'Color Curves':['u_rg','u_gg','u_bg','u_rl','u_gl','u_bl'],
+  'Color Lookup Table':['u_preset'],
+  'Invert':['u_amount'],
+  'Heatmap':['u_scale'],
+  'Kaleido':['u_segments','u_angle'],
+  'Displace':['u_xa','u_ya','u_scale'],
+  'Melt':['u_amount','u_frequency'],
+  'Shear':['u_xs','u_ys'],
+  'Wave':['u_amp','u_wl','u_phase','u_dir'],
+  'Swirl':['u_angle','u_radius'],
+  'ZigZag':['u_amount','u_ridges','u_style'],
+  'Polar Coordinates':['u_mode'],
+  'Gaussian Blur':['u_radius'],
+  'Box Blur':['u_radius'],
+  'Linear Blur':['u_amount','u_angle'],
+  'Radial Blur':['u_amount','u_cx','u_cy'],
+  'Motion Blur':['u_dist','u_angle'],
+  'Sharpen':['u_amount'],
+  'Unsharp Mask':['u_amount','u_radius','u_threshold'],
+  'Edge Detection':['u_mode'],
+  'Etching':['u_lines','u_angle'],
+  'Fourier Transform':['u_mode'],
+  'Clouds':['u_scale','u_octaves','u_persistence'],
+  'Checkerboard':['u_size'],
+  'Linear Gradient':['u_angle','u_r1','u_g1','u_b1','u_r2','u_g2','u_b2'],
+  'Radial Gradient':['u_r1','u_g1','u_b1','u_r2','u_g2','u_b2'],
+  'RGB to HSV':[],
+  'HSV to RGB':[],
+  'RGB to YUV':[],
+  'YUV to RGB':[],
+  'YUV to HSL':[],
+  'HSL to YUV':[],
+  'Pseudocolor - rainbow':['u_cycles'],
+};
+
+let state={
+  layers:[],
+  activeLayer:0,
+  history:[],
+  historyIdx:-1,
+  zoom:1,
+  panX:0,panY:0,
+  tool:'brush',
+  fgColor:'#ffffff',
+  bgColor:'#000000',
+  brushSize:20,
+  brushHardness:80,
+  brushFlow:100,
+  opacity:100,
+  blendMode:'normal',
+  isDrawing:false,
+  lastX:0,lastY:0,
+  clipboard:null,
+  selectedEffect:null,
+  effectParams:{},
+  fonts:[],
+  activeText:null,
+};
+
+const canvas=document.getElementById('main-canvas');
+const ctx=canvas.getContext('2d');
+const overlay=document.getElementById('overlay-canvas');
+const octx=overlay.getContext('2d');
+
+function createLayerCanvas(w,h){const c=document.createElement('canvas');c.width=w||canvas.width;c.height=h||canvas.height;return c;}
+
+function addLayer(name,src){
+  const lc=createLayerCanvas();
+  if(src){const lctx=lc.getContext('2d');lctx.drawImage(src,0,0,lc.width,lc.height);}
+  const layer={id:Date.now(),name:name||`Layer ${state.layers.length+1}`,canvas:lc,visible:true,opacity:100,blendMode:'normal'};
+  state.layers.splice(state.activeLayer+1,0,layer);
+  state.activeLayer=state.layers.indexOf(layer);
+  renderLayers();
+  updateLayersUI();
+  pushHistory();
+}
+
+function dupLayer(){
+  if(!state.layers.length)return;
+  const src=state.layers[state.activeLayer];
+  const lc=createLayerCanvas();
+  lc.getContext('2d').drawImage(src.canvas,0,0);
+  const layer={...src,id:Date.now(),name:src.name+' copy',canvas:lc};
+  state.layers.splice(state.activeLayer+1,0,layer);
+  state.activeLayer++;
+  renderLayers();updateLayersUI();pushHistory();
+}
+
+function deleteLayer(){
+  if(state.layers.length<=1)return;
+  state.layers.splice(state.activeLayer,1);
+  state.activeLayer=Math.min(state.activeLayer,state.layers.length-1);
+  renderLayers();updateLayersUI();pushHistory();
+}
+
+function mergeDown(){
+  if(state.activeLayer===state.layers.length-1||state.layers.length<2)return;
+  const top=state.layers[state.activeLayer];
+  const bot=state.layers[state.activeLayer+1];
+  const bctx=bot.canvas.getContext('2d');
+  bctx.save();bctx.globalAlpha=top.opacity/100;bctx.globalCompositeOperation=top.blendMode;bctx.drawImage(top.canvas,0,0);bctx.restore();
+  state.layers.splice(state.activeLayer,1);
+  state.activeLayer=Math.max(0,state.activeLayer-1);
+  renderLayers();updateLayersUI();pushHistory();
+}
+
+function renderLayers(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(let i=state.layers.length-1;i>=0;i--){
+    const l=state.layers[i];
+    if(!l.visible)continue;
+    ctx.save();ctx.globalAlpha=l.opacity/100;ctx.globalCompositeOperation=l.blendMode;ctx.drawImage(l.canvas,0,0);ctx.restore();
+  }
+  updateThumbsAll();
+}
+
+function updateThumbsAll(){
+  state.layers.forEach(l=>{
+    const th=document.querySelector(`[data-lid="${l.id}"] canvas`);
+    if(th){const tc=th.getContext('2d');tc.clearRect(0,0,24,24);tc.drawImage(l.canvas,0,0,24,24);}
+  });
+}
+
+function updateLayersUI(){
+  const list=document.getElementById('layers-list');
+  list.innerHTML='';
+  state.layers.forEach((l,i)=>{
+    const div=document.createElement('div');
+    div.className='layer-item'+(i===state.activeLayer?' selected':'');
+    div.dataset.lid=l.id;
+    div.onclick=()=>{state.activeLayer=i;updateLayersUI();updateStatus();};
+    const th=document.createElement('div');th.className='layer-thumb';
+    const tc=document.createElement('canvas');tc.width=24;tc.height=24;
+    tc.getContext('2d').drawImage(l.canvas,0,0,24,24);
+    th.appendChild(tc);
+    const nm=document.createElement('div');nm.className='layer-name';nm.textContent=l.name;
+    nm.ondblclick=e=>{e.stopPropagation();const inp=document.createElement('input');inp.type='text';inp.value=l.name;inp.style.cssText='width:100%;background:var(--bg4);border:1px solid var(--accent);color:var(--text);padding:2px 4px;font-size:11px;font-family:inherit;border-radius:2px;outline:none';inp.onblur=()=>{l.name=inp.value||l.name;updateLayersUI();};inp.onkeydown=e2=>{if(e2.key==='Enter')inp.blur();};nm.innerHTML='';nm.appendChild(inp);inp.focus();inp.select();};
+    const vis=document.createElement('div');vis.className='layer-vis';vis.textContent=l.visible?'👁':'○';
+    vis.onclick=e=>{e.stopPropagation();l.visible=!l.visible;renderLayers();updateLayersUI();};
+    div.appendChild(th);div.appendChild(nm);div.appendChild(vis);
+    list.appendChild(div);
+  });
+  document.getElementById('st-layer').textContent=state.layers[state.activeLayer]?.name||'-';
+}
+
+function pushHistory(){
+  const snap=state.layers.map(l=>{const c=createLayerCanvas();c.getContext('2d').drawImage(l.canvas,0,0);return{...l,canvas:c};});
+  state.history=state.history.slice(0,state.historyIdx+1);
+  state.history.push(snap);
+  if(state.history.length>50)state.history.shift();
+  state.historyIdx=state.history.length-1;
+}
+
+function undo(){
+  if(state.historyIdx<=0)return;
+  state.historyIdx--;
+  restoreHistory(state.historyIdx);
+}
+
+function redo(){
+  if(state.historyIdx>=state.history.length-1)return;
+  state.historyIdx++;
+  restoreHistory(state.historyIdx);
+}
+
+function restoreHistory(idx){
+  const snap=state.history[idx];
+  state.layers=snap.map(l=>{const c=createLayerCanvas();c.getContext('2d').drawImage(l.canvas,0,0);return{...l,canvas:c};});
+  renderLayers();updateLayersUI();
+}
+
+function copy(){
+  if(!state.layers.length)return;
+  const src=state.layers[state.activeLayer].canvas;
+  const c=createLayerCanvas();c.getContext('2d').drawImage(src,0,0);
+  state.clipboard=c;
+}
+
+function paste(){
+  if(!state.clipboard)return;
+  addLayer('Pasted',state.clipboard);
+}
+
+function uploadImage(){document.getElementById('file-input').click();}
+
+document.getElementById('file-input').onchange=function(e){
+  const file=e.target.files[0];if(!file)return;
+  const img=new Image();
+  img.onload=()=>{
+    canvas.width=img.width;canvas.height=img.height;
+    overlay.width=img.width;overlay.height=img.height;
+    if(!state.layers.length){
+      addLayer('Background');
+    }
+    const lc=state.layers[state.activeLayer].canvas;
+    lc.width=img.width;lc.height=img.height;
+    lc.getContext('2d').drawImage(img,0,0);
+    renderLayers();updateStatus();pushHistory();
+  };
+  img.src=URL.createObjectURL(file);
+  e.target.value='';
+};
+
+function exportImage(format){
+  if(!state.layers.length)return;
+  renderLayers();
+  let mimeType='image/png';
+  if(format==='jpg'||format==='jpeg')mimeType='image/jpeg';
+  else if(format==='png')mimeType='image/png';
+  else if(format==='svg'){
+    const svgData=`<svg xmlns="http://www.w3.org/2000/svg" width="${canvas.width}" height="${canvas.height}"><image href="${canvas.toDataURL()}" width="${canvas.width}" height="${canvas.height}"/></svg>`;
+    const blob=new Blob([svgData],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='export.svg';a.click();URL.revokeObjectURL(url);
+    return;
+  }else if(format==='xcf'||format==='psd'||format==='tiff'){
+    alert(`Exporting as ${format.toUpperCase()} is not natively supported by browsers. Downloading as PNG instead.`);
+    mimeType='image/png';format='png';
+  }
+  canvas.toBlob(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=`export.${format}`;a.click();URL.revokeObjectURL(url);
+  },mimeType,.95);
+}
+
+function applyWebGLEffect(effectName,params){
+  if(!state.layers.length)return;
+  const src=state.layers[state.activeLayer].canvas;
+  const frag=SHADERS.frag[effectName];
+  if(!frag)return;
+  const gl_canvas=document.createElement('canvas');
+  gl_canvas.width=src.width;gl_canvas.height=src.height;
+  const gl=gl_canvas.getContext('webgl')||gl_canvas.getContext('experimental-webgl');
+  if(!gl)return;
+  const vert=SHADERS.vert;
+  function compileShader(type,src2){const s=gl.createShader(type);gl.shaderSource(s,src2);gl.compileShader(s);return s;}
+  const prog=gl.createProgram();
+  gl.attachShader(prog,compileShader(gl.VERTEX_SHADER,vert));
+  gl.attachShader(prog,compileShader(gl.FRAGMENT_SHADER,frag));
+  gl.linkProgram(prog);gl.useProgram(prog);
+  const posLoc=gl.getAttribLocation(prog,'a_position');
+  const texLoc=gl.getAttribLocation(prog,'a_texCoord');
+  const posBuf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,posBuf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(posLoc);gl.vertexAttribPointer(posLoc,2,gl.FLOAT,false,0,0);
+  const texBuf=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,texBuf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,0,1,0,0,1,0,1,1,0,1,1]),gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(texLoc);gl.vertexAttribPointer(texLoc,2,gl.FLOAT,false,0,0);
+  const tex=gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
+  const uImage=gl.getUniformLocation(prog,'u_image');if(uImage)gl.uniform1i(uImage,0);
+  const uRes=gl.getUniformLocation(prog,'u_resolution');if(uRes)gl.uniform2f(uRes,src.width,src.height);
+  const uniforms=UNIFORM_MAP[effectName]||[];
+  const paramDefs=EFFECT_PARAMS[effectName]||[];
+  uniforms.forEach((uName,i)=>{
+    const loc=gl.getUniformLocation(prog,uName);
+    if(loc!==null){
+      const val=params[i]!==undefined?params[i]:(paramDefs[i]?paramDefs[i].val:0);
+      gl.uniform1f(loc,parseFloat(val));
+    }
+  });
+  gl.viewport(0,0,src.width,src.height);
+  gl.drawArrays(gl.TRIANGLES,0,6);
+  const lc=state.layers[state.activeLayer].canvas;
+  const lctx=lc.getContext('2d');
+  lctx.clearRect(0,0,lc.width,lc.height);
+  lctx.drawImage(gl_canvas,0,0);
+  renderLayers();pushHistory();
+}
+
+function scale(w,h){
+  if(!state.layers.length)return;
+  canvas.width=w;canvas.height=h;overlay.width=w;overlay.height=h;
+  state.layers.forEach(l=>{
+    const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;
+    tmp.getContext('2d').drawImage(l.canvas,0,0,w,h);
+    l.canvas.width=w;l.canvas.height=h;
+    l.canvas.getContext('2d').drawImage(tmp,0,0);
+  });
+  renderLayers();updateStatus();pushHistory();
+}
+
+function rotate(angle){
+  if(!state.layers.length)return;
+  const rad=angle*Math.PI/180;
+  const w=canvas.width;const h=canvas.height;
+  let nw=Math.abs(w*Math.cos(rad))+Math.abs(h*Math.sin(rad));
+  let nh=Math.abs(w*Math.sin(rad))+Math.abs(h*Math.cos(rad));
+  nw=Math.round(nw);nh=Math.round(nh);
+  state.layers.forEach(l=>{
+    const tmp=document.createElement('canvas');tmp.width=nw;tmp.height=nh;
+    const tc=tmp.getContext('2d');
+    tc.translate(nw/2,nh/2);tc.rotate(rad);tc.drawImage(l.canvas,-w/2,-h/2);
+    l.canvas.width=nw;l.canvas.height=nh;
+    l.canvas.getContext('2d').drawImage(tmp,0,0);
+  });
+  canvas.width=nw;canvas.height=nh;overlay.width=nw;overlay.height=nh;
+  renderLayers();updateStatus();pushHistory();
+}
+
+function positionXY(x,y){
+  if(!state.layers.length)return;
+  const l=state.layers[state.activeLayer];
+  const tmp=createLayerCanvas();
+  const tc=tmp.getContext('2d');
+  tc.drawImage(l.canvas,x,y);
+  l.canvas.getContext('2d').clearRect(0,0,l.canvas.width,l.canvas.height);
+  l.canvas.getContext('2d').drawImage(tmp,0,0);
+  renderLayers();pushHistory();
+}
+
+function fonts(){
+  const modal=document.getElementById('plugin-modal');
+  document.getElementById('plugin-modal-title').textContent='Text Tool';
+  document.getElementById('plugin-modal-body').innerHTML=`
+    <div class="col" style="gap:8px">
+      <div class="row"><span class="label" style="width:70px">Text</span><input type="text" id="txt-input" style="flex:1" placeholder="Enter text…"></div>
+      <div class="row"><span class="label" style="width:70px">Font</span>
+        <select id="txt-font" style="flex:1">
+          <option>Open Sans</option><option>Arial</option><option>Georgia</option><option>Courier New</option><option>Impact</option><option>Times New Roman</option><option>Verdana</option><option>Tahoma</option><option>Trebuchet MS</option><option>Comic Sans MS</option>
+        </select>
+      </div>
+      <div class="row"><span class="label" style="width:70px">Size</span><input type="number" id="txt-size" value="48" style="width:70px"></div>
+      <div class="row"><span class="label" style="width:70px">Color</span><input type="color" id="txt-color" value="${state.fgColor}"></div>
+      <div class="row"><span class="label" style="width:70px">X</span><input type="number" id="txt-x" value="50" style="width:70px"><span class="label" style="width:10px;margin-left:8px">Y</span><input type="number" id="txt-y" value="50" style="width:70px"></div>
+    </div>`;
+  document.getElementById('plugin-modal-ok').onclick=()=>{
+    const text=document.getElementById('txt-input').value;
+    const font=document.getElementById('txt-font').value;
+    const size=parseInt(document.getElementById('txt-size').value)||48;
+    const color=document.getElementById('txt-color').value;
+    const x=parseInt(document.getElementById('txt-x').value)||50;
+    const y=parseInt(document.getElementById('txt-y').value)||50;
+    if(!text||!state.layers.length){closeModal('plugin-modal');return;}
+    const lc=state.layers[state.activeLayer].canvas;
+    const lctx=lc.getContext('2d');
+    lctx.font=`${size}px "${font}"`;
+    lctx.fillStyle=color;
+    lctx.fillText(text,x,y);
+    renderLayers();pushHistory();
+    closeModal('plugin-modal');
+  };
+  modal.classList.add('open');
+}
+
+function unlimitedLayers(){addLayer();}
+
+function blendModes(){
+  document.getElementById('blend-mode-sel').focus();
+}
+
+function scaleDialog(){
+  const modal=document.getElementById('plugin-modal');
+  document.getElementById('plugin-modal-title').textContent='Scale Image';
+  document.getElementById('plugin-modal-body').innerHTML=`
+    <div class="col" style="gap:8px">
+      <div class="row"><span class="label" style="width:60px">Width</span><input type="number" id="sc-w" value="${canvas.width}" style="width:90px"></div>
+      <div class="row"><span class="label" style="width:60px">Height</span><input type="number" id="sc-h" value="${canvas.height}" style="width:90px"></div>
+    </div>`;
+  document.getElementById('plugin-modal-ok').onclick=()=>{
+    const w=parseInt(document.getElementById('sc-w').value);
+    const h=parseInt(document.getElementById('sc-h').value);
+    if(w>0&&h>0)scale(w,h);
+    closeModal('plugin-modal');
+  };
+  modal.classList.add('open');
+}
+
+function rotateDialog(){
+  const modal=document.getElementById('plugin-modal');
+  document.getElementById('plugin-modal-title').textContent='Rotate';
+  document.getElementById('plugin-modal-body').innerHTML=`
+    <div class="col" style="gap:8px">
+      <div class="row"><span class="label" style="width:60px">Angle °</span><input type="number" id="rot-a" value="90" style="width:90px"></div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button class="btn" onclick="document.getElementById('rot-a').value=90">90°</button>
+        <button class="btn" onclick="document.getElementById('rot-a').value=180">180°</button>
+        <button class="btn" onclick="document.getElementById('rot-a').value=270">270°</button>
+        <button class="btn" onclick="document.getElementById('rot-a').value=-90">-90°</button>
+      </div>
+    </div>`;
+  document.getElementById('plugin-modal-ok').onclick=()=>{
+    const a=parseFloat(document.getElementById('rot-a').value)||0;
+    rotate(a);closeModal('plugin-modal');
+  };
+  modal.classList.add('open');
+}
+
+function positionDialog(){
+  const modal=document.getElementById('plugin-modal');
+  document.getElementById('plugin-modal-title').textContent='Position Layer';
+  document.getElementById('plugin-modal-body').innerHTML=`
+    <div class="col" style="gap:8px">
+      <div class="row"><span class="label" style="width:30px">X</span><input type="number" id="pos-x" value="0" style="width:90px"></div>
+      <div class="row"><span class="label" style="width:30px">Y</span><input type="number" id="pos-y" value="0" style="width:90px"></div>
+    </div>`;
+  document.getElementById('plugin-modal-ok').onclick=()=>{
+    const x=parseInt(document.getElementById('pos-x').value)||0;
+    const y=parseInt(document.getElementById('pos-y').value)||0;
+    positionXY(x,y);closeModal('plugin-modal');
+  };
+  modal.classList.add('open');
+}
+
+function createFilterJSON(){
+  const filter={name:'My Filter',effect:state.selectedEffect||'Contrast',params:state.effectParams};
+  const blob=new Blob([JSON.stringify(filter,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='filter.json';a.click();URL.revokeObjectURL(url);
+}
+
+function saveFilterJSON(){createFilterJSON();}
+
+function loadFilterJSON(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{
+        const f=JSON.parse(ev.target.result);
+        if(f.effect&&EFFECT_PARAMS[f.effect]){
+          const params=EFFECT_PARAMS[f.effect].map((p,i)=>f.params[i]!==undefined?f.params[i]:p.val);
+          applyWebGLEffect(f.effect,params);
+        }
+      }catch(err){alert('Invalid filter JSON');}
+    };r.readAsText(file);
+  };inp.click();
+}
+
+function createPluginJSON(){
+  const plugin={name:'My Plugin',version:'1.0',author:'',effects:[],filters:[]};
+  const blob=new Blob([JSON.stringify(plugin,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='plugin.json';a.click();URL.revokeObjectURL(url);
+}
+
+function createPluginHTML(){
+  const html=`<!DOCTYPE html>
+<html>
+<head><title>PhotoStudio Plugin</title></head>
+<body>
+<h2>Plugin</h2>
+<script>
+const plugin={name:"My Plugin",effects:[],filters:[]};
+window.parent.postMessage({type:"plugin",data:plugin},"*");
+<\/script>
+</body>
+</html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='plugin.html';a.click();URL.revokeObjectURL(url);
+}
+
+let selectedEffectModal=null;
+let modalParamVals={};
+
+function openEffectsModal(){
+  state.selectedEffect=null;selectedEffectModal=null;modalParamVals={};
+  buildEffectsList();buildFxParams(null);
+  document.getElementById('effect-modal').classList.add('open');
+  document.getElementById('fx-search').value='';
+}
+
+function buildEffectsList(filter){
+  const list=document.getElementById('effects-list');
+  list.innerHTML='';
+  for(const[cat,effects]of Object.entries(EFFECT_CATEGORIES)){
+    const filtered=effects.filter(e=>!filter||e.toLowerCase().includes(filter.toLowerCase()));
+    if(!filtered.length)continue;
+    const ch=document.createElement('div');ch.className='cat-header';ch.textContent=cat;list.appendChild(ch);
+    filtered.forEach(eff=>{
+      const div=document.createElement('div');
+      div.className='effect-item'+(eff===selectedEffectModal?' selected':'');
+      div.textContent=eff;
+      div.onclick=()=>{
+        selectedEffectModal=eff;
+        document.getElementById('effect-modal-title').textContent=eff;
+        buildEffectsList(document.getElementById('fx-search').value);
+        buildFxParams(eff);
+      };
+      list.appendChild(div);
+    });
+  }
+}
+
+document.getElementById('fx-search').oninput=function(){buildEffectsList(this.value);};
+
+function buildFxParams(effectName){
+  const container=document.getElementById('fx-modal-params');
+  container.innerHTML='';
+  if(!effectName){container.innerHTML='<div style="color:var(--text3);font-size:11px;padding:8px">Select an effect from the list</div>';return;}
+  const params=EFFECT_PARAMS[effectName]||[];
+  if(!params.length){container.innerHTML='<div style="color:var(--text3);font-size:11px;padding:8px">No parameters for this effect</div>';return;}
+  if(!modalParamVals[effectName]){modalParamVals[effectName]=params.map(p=>p.val);}
+  params.forEach((p,i)=>{
+    const div=document.createElement('div');div.className='slider-row';
+    if(p.labels){
+      const lbl=document.createElement('div');lbl.className='slider-label';lbl.innerHTML=`<span>${p.n}</span>`;
+      const sel=document.createElement('select');
+      p.labels.forEach((l,li)=>{const opt=document.createElement('option');opt.value=li;opt.textContent=l;if(li===modalParamVals[effectName][i])opt.selected=true;sel.appendChild(opt);});
+      sel.onchange=()=>{modalParamVals[effectName][i]=parseInt(sel.value);};
+      div.appendChild(lbl);div.appendChild(sel);
+    }else{
+      const row=document.createElement('div');row.className='slider-label';
+      const nm=document.createElement('span');nm.textContent=p.n;
+      const vl=document.createElement('span');vl.className='slider-val';vl.textContent=modalParamVals[effectName][i];
+      row.appendChild(nm);row.appendChild(vl);
+      const sl=document.createElement('input');sl.type='range';sl.min=p.min;sl.max=p.max;sl.value=modalParamVals[effectName][i];sl.step=(p.max-p.min)/200;
+      sl.oninput=()=>{modalParamVals[effectName][i]=parseFloat(sl.value);vl.textContent=parseFloat(sl.value).toFixed(1);};
+      div.appendChild(row);div.appendChild(sl);
+    }
+    container.appendChild(div);
+  });
+}
+
+function previewEffect(){
+  if(!selectedEffectModal)return;
+  applyWebGLEffect(selectedEffectModal,modalParamVals[selectedEffectModal]||(EFFECT_PARAMS[selectedEffectModal]||[]).map(p=>p.val));
+}
+
+function applyEffect(){
+  if(!selectedEffectModal)return;
+  applyWebGLEffect(selectedEffectModal,modalParamVals[selectedEffectModal]||(EFFECT_PARAMS[selectedEffectModal]||[]).map(p=>p.val));
+  closeModal('effect-modal');
+  state.selectedEffect=selectedEffectModal;
+  state.effectParams=modalParamVals[selectedEffectModal]||[];
+  updateFxParamsPanel();
+}
+
+function updateFxParamsPanel(){
+  const container=document.getElementById('fx-params-container');
+  const effectName=state.selectedEffect;
+  if(!effectName){container.innerHTML='<div style="color:var(--text3);font-size:11px">No effect selected</div>';return;}
+  const params=EFFECT_PARAMS[effectName]||[];
+  if(!params.length){container.innerHTML=`<div style="color:var(--text2);font-size:11px">${effectName}<br><span style="color:var(--text3)">No parameters</span></div>`;return;}
+  container.innerHTML=`<div style="color:var(--text2);font-size:11px;margin-bottom:6px">${effectName}</div>`;
+  params.forEach((p,i)=>{
+    const div=document.createElement('div');div.className='slider-row';
+    const row=document.createElement('div');row.className='slider-label';
+    const nm=document.createElement('span');nm.textContent=p.n;
+    const vl=document.createElement('span');vl.className='slider-val';vl.textContent=state.effectParams[i]!==undefined?parseFloat(state.effectParams[i]).toFixed(1):p.val;
+    row.appendChild(nm);row.appendChild(vl);
+    const sl=document.createElement('input');sl.type='range';sl.min=p.min;sl.max=p.max;sl.value=state.effectParams[i]!==undefined?state.effectParams[i]:p.val;sl.step=(p.max-p.min)/200;
+    sl.oninput=()=>{state.effectParams[i]=parseFloat(sl.value);vl.textContent=parseFloat(sl.value).toFixed(1);applyWebGLEffect(effectName,state.effectParams);};
+    div.appendChild(row);div.appendChild(sl);
+    container.appendChild(div);
+  });
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+let pluginModalOk=()=>closeModal('plugin-modal');
+
+function togglePanel(name){
+  const body=document.getElementById(`${name}-body`);
+  const arrow=document.getElementById(`${name}-arrow`);
+  if(body.classList.toggle('collapsed'))arrow.textContent='▶';
+  else arrow.textContent='▼';
+}
+
+function updateStatus(){
+  document.getElementById('st-size').textContent=`${canvas.width} × ${canvas.height}`;
+  document.getElementById('st-zoom').textContent=`${Math.round(state.zoom*100)}%`;
+  document.getElementById('st-layer').textContent=state.layers[state.activeLayer]?.name||'-';
+}
+
+function UI(){
+  const menubar=document.getElementById('menubar');
+  const title=document.createElement('div');
+  title.style.cssText='font-size:13px;font-weight:700;color:var(--accent);padding:0 12px 0 4px;letter-spacing:.5px';
+  title.textContent='PhotoStudio';
+  menubar.appendChild(title);
+
+  const menus=[
+    {label:'File',items:[
+      {label:'Upload Image',action:uploadImage},
+      {type:'sep'},
+      {label:'Export as PNG',action:()=>exportImage('png')},
+      {label:'Export as JPG',action:()=>exportImage('jpg')},
+      {label:'Export as JPEG',action:()=>exportImage('jpeg')},
+      {label:'Export as SVG',action:()=>exportImage('svg')},
+      {label:'Export as TIFF',action:()=>exportImage('tiff')},
+      {label:'Export as XCF',action:()=>exportImage('xcf')},
+      {label:'Export as PSD',action:()=>exportImage('psd')},
+    ]},
+    {label:'Edit',items:[
+      {label:'Undo',action:undo,kbd:'Ctrl+Z'},
+      {label:'Redo',action:redo,kbd:'Ctrl+Y'},
+      {type:'sep'},
+      {label:'Copy',action:copy,kbd:'Ctrl+C'},
+      {label:'Paste',action:paste,kbd:'Ctrl+V'},
+    ]},
+    {label:'Effects',items:[
+      {label:'Open Effects…',action:openEffectsModal},
+      {type:'sep'},
+      ...Object.keys(EFFECT_CATEGORIES).map(cat=>({label:cat,sub:EFFECT_CATEGORIES[cat].map(eff=>({label:eff,action:()=>{selectedEffectModal=eff;document.getElementById('effect-modal-title').textContent=eff;buildEffectsList('');buildFxParams(eff);document.getElementById('effect-modal').classList.add('open');}}))})),
+    ]},
+    {label:'Plugins',items:[
+      {label:'Create Filter as JSON',action:createFilterJSON},
+      {label:'Create Plugin as JSON',action:createPluginJSON},
+      {label:'Create Plugin as HTML',action:createPluginHTML},
+      {type:'sep'},
+      {label:'Save Filter as JSON',action:saveFilterJSON},
+      {label:'Load Filter from JSON',action:loadFilterJSON},
+    ]},
+    {label:'Layer',items:[
+      {label:'New Layer',action:addLayer},
+      {label:'Duplicate Layer',action:dupLayer},
+      {label:'Delete Layer',action:deleteLayer},
+      {label:'Merge Down',action:mergeDown},
+      {type:'sep'},
+      {label:'Scale…',action:scaleDialog},
+      {label:'Rotate…',action:rotateDialog},
+      {label:'Position…',action:positionDialog},
+      {label:'Blend Modes',action:blendModes},
+      {label:'Add Text',action:fonts},
+    ]},
+  ];
+
+  menus.forEach(menu=>{
+    const item=document.createElement('div');item.className='menu-item';item.textContent=menu.label;
+    const dd=buildDropdown(menu.items);
+    item.appendChild(dd);
+    item.onclick=e=>{e.stopPropagation();const wasOpen=dd.classList.contains('open');closeAllMenus();if(!wasOpen){dd.classList.add('open');item.classList.add('active');}};
+    menubar.appendChild(item);
+  });
+
+  document.addEventListener('click',closeAllMenus);
+}
+
+function buildDropdown(items){
+  const dd=document.createElement('div');dd.className='dropdown';
+  items.forEach(it=>{
+    if(it.type==='sep'){const s=document.createElement('div');s.className='dd-sep';dd.appendChild(s);return;}
+    if(it.sub){
+      const wrap=document.createElement('div');wrap.className='dd-sub';
+      const div=document.createElement('div');div.className='dd-item';div.textContent=it.label;
+      const subdd=buildDropdown(it.sub);
+      wrap.appendChild(div);wrap.appendChild(subdd);
+      dd.appendChild(wrap);return;
+    }
+    const div=document.createElement('div');div.className='dd-item';
+    div.innerHTML=`<span>${it.label}</span>${it.kbd?`<span style="color:var(--text3);font-size:10px">${it.kbd}</span>`:''}`;
+    div.onclick=e=>{e.stopPropagation();if(it.action)it.action();closeAllMenus();};
+    dd.appendChild(div);
+  });
+  return dd;
+}
+
+function closeAllMenus(){
+  document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.menu-item.active').forEach(d=>d.classList.remove('active'));
+}
+
+function UImenu(){UI();}
+
+function slider(container,label,min,max,val,onchange){
+  const div=document.createElement('div');div.className='slider-row';
+  const row=document.createElement('div');row.className='slider-label';
+  const nm=document.createElement('span');nm.textContent=label;
+  const vl=document.createElement('span');vl.className='slider-val';vl.textContent=val;
+  row.appendChild(nm);row.appendChild(vl);
+  const sl=document.createElement('input');sl.type='range';sl.min=min;sl.max=max;sl.value=val;
+  sl.oninput=()=>{vl.textContent=parseFloat(sl.value).toFixed(1);onchange(parseFloat(sl.value));};
+  div.appendChild(row);div.appendChild(sl);
+  container.appendChild(div);
+  return sl;
+}
+
+function cubefile(){return null;}
+function point(x,y){return{x,y};}
+function marker(canvas2,x,y,color,size){const c=canvas2.getContext('2d');c.beginPath();c.arc(x,y,size||5,0,Math.PI*2);c.fillStyle=color||'#ff0000';c.fill();}
+function boolean(val){return!!val;}
+function color(hex){return hex||'#ffffff';}
+
+function buildToolbar(){
+  const bar=document.getElementById('tools-bar');
+  const tools=[
+    {id:'brush',icon:'✏',title:'Brush'},
+    {id:'eraser',icon:'⌫',title:'Eraser'},
+    {id:'move',icon:'✥',title:'Move'},
+    {id:'select',icon:'⬚',title:'Select'},
+    {id:'eyedrop',icon:'🔬',title:'Eyedropper',small:true},
+    {id:'fill',icon:'🪣',title:'Fill',small:true},
+    {id:'text',icon:'T',title:'Text'},
+    {id:'zoom',icon:'🔍',title:'Zoom',small:true},
+  ];
+  tools.forEach(t=>{
+    const btn=document.createElement('button');
+    btn.className='tool-btn'+(t.id===state.tool?' active':'');
+    btn.title=t.title;btn.textContent=t.icon;btn.dataset.tool=t.id;
+    btn.onclick=()=>{
+      state.tool=t.id;
+      document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active',b.dataset.tool===t.id));
+      if(t.id==='text')fonts();
+    };
+    bar.appendChild(btn);
+  });
+}
+
+function buildBlendSelect(){
+  const sel=document.getElementById('blend-mode-sel');
+  BLEND_MODES.forEach(m=>{const opt=document.createElement('option');opt.value=m;opt.textContent=m.charAt(0).toUpperCase()+m.slice(1).replace(/-/g,' ');sel.appendChild(opt);});
+  sel.onchange=()=>{
+    if(state.layers.length)state.layers[state.activeLayer].blendMode=sel.value;
+    state.blendMode=sel.value;renderLayers();pushHistory();
+  };
+}
+
+function buildColorSwatches(){
+  const fg=document.getElementById('fg-swatch');
+  const bg=document.getElementById('bg-swatch');
+  fg.style.background=state.fgColor;bg.style.background=state.bgColor;
+  fg.onclick=()=>{const inp=document.createElement('input');inp.type='color';inp.value=state.fgColor;inp.oninput=()=>{state.fgColor=inp.value;fg.style.background=inp.value;};inp.click();};
+  bg.onclick=()=>{const inp=document.createElement('input');inp.type='color';inp.value=state.bgColor;inp.oninput=()=>{state.bgColor=inp.value;bg.style.background=inp.value;};inp.click();};
+}
+
+function buildSliders(){
+  const sizeSlider=document.getElementById('size-slider');
+  const hardSlider=document.getElementById('hard-slider');
+  const flowSlider=document.getElementById('flow-slider');
+  const opSlider=document.getElementById('opacity-slider');
+  sizeSlider.oninput=()=>{state.brushSize=parseInt(sizeSlider.value);document.getElementById('size-val').textContent=sizeSlider.value;};
+  hardSlider.oninput=()=>{state.brushHardness=parseInt(hardSlider.value);document.getElementById('hard-val').textContent=hardSlider.value;};
+  flowSlider.oninput=()=>{state.brushFlow=parseInt(flowSlider.value);document.getElementById('flow-val').textContent=flowSlider.value;};
+  opSlider.oninput=()=>{state.opacity=parseInt(opSlider.value);document.getElementById('opacity-val').textContent=opSlider.value;if(state.layers.length){state.layers[state.activeLayer].opacity=state.opacity;renderLayers();}};
+}
+
+function drawBrush(x,y,px,py){
+  if(!state.layers.length)return;
+  const lc=state.layers[state.activeLayer].canvas;
+  const lctx=lc.getContext('2d');
+  lctx.save();
+  lctx.globalAlpha=state.brushFlow/100*(state.opacity/100);
+  if(state.tool==='eraser')lctx.globalCompositeOperation='destination-out';
+  const r=state.brushSize/2;
+  const grad=lctx.createRadialGradient(x,y,r*(1-state.brushHardness/100),x,y,r);
+  grad.addColorStop(0,state.fgColor);
+  grad.addColorStop(1,'transparent');
+  lctx.strokeStyle=state.tool==='eraser'?'rgba(0,0,0,1)':grad;
+  lctx.fillStyle=state.tool==='eraser'?'rgba(0,0,0,1)':grad;
+  lctx.lineWidth=state.brushSize;
+  lctx.lineCap='round';lctx.lineJoin='round';
+  lctx.beginPath();
+  lctx.moveTo(px,py);lctx.lineTo(x,y);
+  lctx.stroke();
+  const cg=lctx.createRadialGradient(x,y,r*(1-state.brushHardness/100),x,y,r);
+  if(state.tool!=='eraser'){cg.addColorStop(0,state.fgColor);cg.addColorStop(1,'transparent');lctx.fillStyle=cg;}
+  lctx.beginPath();lctx.arc(x,y,r,0,Math.PI*2);lctx.fill();
+  lctx.restore();
+  renderLayers();
+}
+
+function fill(x,y){
+  if(!state.layers.length)return;
+  const lc=state.layers[state.activeLayer].canvas;
+  const lctx=lc.getContext('2d');
+  const imgData=lctx.getImageData(0,0,lc.width,lc.height);
+  const data=imgData.data;
+  const idx=(Math.round(y)*lc.width+Math.round(x))*4;
+  const tr=data[idx],tg=data[idx+1],tb=data[idx+2],ta=data[idx+3];
+  const fc=hexToRgb(state.fgColor);
+  if(!fc)return;
+  const stack=[[Math.round(x),Math.round(y)]];
+  const visited=new Uint8Array(lc.width*lc.height);
+  function match(i){return Math.abs(data[i]-tr)<20&&Math.abs(data[i+1]-tg)<20&&Math.abs(data[i+2]-tb)<20&&Math.abs(data[i+3]-ta)<20;}
+  while(stack.length){
+    const[cx,cy]=stack.pop();
+    if(cx<0||cx>=lc.width||cy<0||cy>=lc.height)continue;
+    const ci=(cy*lc.width+cx)*4;
+    if(visited[cy*lc.width+cx])continue;
+    if(!match(ci))continue;
+    visited[cy*lc.width+cx]=1;
+    data[ci]=fc.r;data[ci+1]=fc.g;data[ci+2]=fc.b;data[ci+3]=255;
+    stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);
+  }
+  lctx.putImageData(imgData,0,0);renderLayers();pushHistory();
+}
+
+function hexToRgb(hex){const r=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);return r?{r:parseInt(r[1],16),g:parseInt(r[2],16),b:parseInt(r[3],16)}:null;}
+
+let moveStart={x:0,y:0,layerData:null};
+
+canvas.addEventListener('mousedown',e=>{
+  const{x,y}=canvasPos(e);
+  state.isDrawing=true;state.lastX=x;state.lastY=y;
+  if(state.tool==='brush'||state.tool==='eraser'){drawBrush(x,y,x,y);}
+  else if(state.tool==='fill'){fill(x,y);}
+  else if(state.tool==='eyedrop'){
+    const px=ctx.getImageData(Math.round(x),Math.round(y),1,1).data;
+    state.fgColor=`#${px[0].toString(16).padStart(2,'0')}${px[1].toString(16).padStart(2,'0')}${px[2].toString(16).padStart(2,'0')}`;
+    document.getElementById('fg-swatch').style.background=state.fgColor;
+  }else if(state.tool==='move'){
+    moveStart.x=x;moveStart.y=y;
+    if(state.layers.length){moveStart.layerData=state.layers[state.activeLayer].canvas.getContext('2d').getImageData(0,0,state.layers[state.activeLayer].canvas.width,state.layers[state.activeLayer].canvas.height);}
+  }else if(state.tool==='zoom'){state.zoom=state.zoom<4?state.zoom*1.25:1;updateStatus();}
+});
+
+canvas.addEventListener('mousemove',e=>{
+  const{x,y}=canvasPos(e);
+  document.getElementById('st-pos').textContent=`${Math.round(x)}, ${Math.round(y)}`;
+  if(!state.isDrawing)return;
+  if(state.tool==='brush'||state.tool==='eraser'){drawBrush(x,y,state.lastX,state.lastY);}
+  else if(state.tool==='move'&&state.layers.length){
+    const dx=x-moveStart.x;const dy=y-moveStart.y;
+    const lc=state.layers[state.activeLayer].canvas;
+    const lctx=lc.getContext('2d');
+    lctx.clearRect(0,0,lc.width,lc.height);
+    lctx.putImageData(moveStart.layerData,0,0);
+    const tmp=document.createElement('canvas');tmp.width=lc.width;tmp.height=lc.height;
+    tmp.getContext('2d').drawImage(lc,dx,dy);
+    lctx.clearRect(0,0,lc.width,lc.height);
+    lctx.drawImage(tmp,0,0);
+    renderLayers();
+  }
+  state.lastX=x;state.lastY=y;
+});
+
+canvas.addEventListener('mouseup',e=>{if(state.isDrawing){state.isDrawing=false;pushHistory();}});
+canvas.addEventListener('mouseleave',e=>{if(state.isDrawing){state.isDrawing=false;pushHistory();}});
+
+canvas.addEventListener('wheel',e=>{
+  e.preventDefault();
+  state.zoom=Math.min(8,Math.max(.1,state.zoom*(e.deltaY<0?1.1:.9)));
+  canvas.style.transform=`scale(${state.zoom})`;
+  overlay.style.transform=`scale(${state.zoom})`;
+  updateStatus();
+},{passive:false});
+
+function canvasPos(e){
+  const rect=canvas.getBoundingClientRect();
+  return{x:(e.clientX-rect.left)/state.zoom,y:(e.clientY-rect.top)/state.zoom};
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey){
+    if(e.key==='z'){e.preventDefault();undo();}
+    else if(e.key==='y'||e.key==='Z'){e.preventDefault();redo();}
+    else if(e.key==='c'){e.preventDefault();copy();}
+    else if(e.key==='v'){e.preventDefault();paste();}
+  }
+  if(e.key==='b')document.querySelector('[data-tool=brush]').click();
+  if(e.key==='e')document.querySelector('[data-tool=eraser]').click();
+  if(e.key==='v')document.querySelector('[data-tool=move]').click();
+  if(e.key==='i')document.querySelector('[data-tool=eyedrop]').click();
+  if(e.key==='g')document.querySelector('[data-tool=fill]').click();
+  if(e.key==='t')document.querySelector('[data-tool=text]').click();
+});
+
+function init(){
+  UI();
+  buildToolbar();
+  buildBlendSelect();
+  buildColorSwatches();
+  buildSliders();
+  addLayer('Background');
+  const lc=state.layers[0].canvas;
+  const lctx=lc.getContext('2d');
+  lctx.fillStyle='#1a1a1a';
+  lctx.fillRect(0,0,lc.width,lc.height);
+  renderLayers();
+  updateStatus();
+  pushHistory();
+}
+
+window.addEventListener('load',init);
+</script>
+</body>
+</html>

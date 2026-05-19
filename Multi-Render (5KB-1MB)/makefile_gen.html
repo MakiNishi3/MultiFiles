@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Makefile Generator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px}
+h1{font-size:1.6rem;font-weight:700;letter-spacing:.04em;color:#fff;margin-bottom:8px}
+.sub{font-size:.82rem;color:#64748b;margin-bottom:32px}
+.card{background:#181c27;border:1px solid #232836;border-radius:12px;padding:28px 28px 24px;width:100%;max-width:700px;margin-bottom:20px}
+.card-title{font-size:.75rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#475569;margin-bottom:16px}
+.drop-zone{border:2px dashed #2d3548;border-radius:8px;padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;margin-bottom:12px}
+.drop-zone:hover,.drop-zone.drag{border-color:#3b82f6;background:#1e2535}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-zone .icon{font-size:1.8rem;margin-bottom:6px}
+.drop-zone p{font-size:.83rem;color:#94a3b8}
+.drop-zone p span{color:#3b82f6;font-weight:600}
+.file-list{list-style:none;display:flex;flex-wrap:wrap;gap:7px;min-height:0}
+.file-list li{background:#1e2535;border:1px solid #2d3548;border-radius:6px;padding:4px 10px 4px 8px;font-size:.75rem;color:#94a3b8;display:flex;align-items:center;gap:6px}
+.file-list li button{background:none;border:none;color:#475569;cursor:pointer;font-size:.85rem;line-height:1;padding:0;transition:color .15s}
+.file-list li button:hover{color:#ef4444}
+.row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+label{display:block;font-size:.75rem;color:#64748b;margin-bottom:5px;font-weight:600;letter-spacing:.05em}
+input[type=text],input[type=number]{background:#10131c;border:1px solid #232836;color:#e2e8f0;border-radius:7px;padding:8px 12px;font-family:sans-serif;font-size:.88rem;outline:none;transition:border-color .2s;width:100%}
+input[type=text]:focus,input[type=number]:focus{border-color:#3b82f6}
+.field{flex:1;min-width:140px}
+.prompt-box{width:100%;background:#10131c;border:1px solid #232836;border-radius:8px;min-height:80px;padding:10px 13px;font-family:sans-serif;font-size:.85rem;color:#e2e8f0;resize:vertical;outline:none;transition:border-color .2s}
+.prompt-box:focus{border-color:#3b82f6}
+.btn{display:inline-flex;align-items:center;gap:7px;background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;transition:background .18s,transform .1s;letter-spacing:.02em}
+.btn:hover{background:#2563eb}
+.btn:active{transform:scale(.97)}
+.btn.dl{background:#059669}
+.btn.dl:hover{background:#047857}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.size-row{display:flex;align-items:center;gap:10px}
+.size-label{font-size:.8rem;color:#64748b}
+.size-input-wrap{display:flex;align-items:center;gap:6px}
+.size-unit{font-size:.8rem;color:#64748b}
+.slider{-webkit-appearance:none;appearance:none;width:180px;height:4px;border-radius:2px;background:#232836;outline:none;cursor:pointer}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#3b82f6;cursor:pointer}
+.preview{background:#10131c;border:1px solid #232836;border-radius:8px;padding:14px 16px;font-family:monospace;font-size:.78rem;color:#94a3b8;white-space:pre;overflow-x:auto;max-height:260px;overflow-y:auto;margin-top:12px;line-height:1.6}
+.badge{display:inline-block;background:#1e3a5f;color:#60a5fa;border-radius:4px;padding:1px 7px;font-size:.7rem;font-weight:700;margin-left:4px}
+.empty{color:#334155;font-size:.8rem;padding:6px 0}
+</style>
+</head>
+<body>
+<h1>Makefile Generator</h1>
+<p class="sub">Upload C++ sources, configure, generate &amp; download</p>
+
+<div class="card">
+  <div class="card-title">Source Files</div>
+  <div class="drop-zone" id="cppZone">
+    <input type="file" id="cppInput" multiple accept=".cpp,.cxx,.cc">
+    <div class="icon">📄</div>
+    <p><span>Click or drag</span> .cpp / .cxx / .cc files</p>
+  </div>
+  <ul class="file-list" id="cppList"></ul>
+</div>
+
+<div class="card">
+  <div class="card-title">Header Files</div>
+  <div class="drop-zone" id="hZone">
+    <input type="file" id="hInput" multiple accept=".h,.hpp,.hxx">
+    <div class="icon">📋</div>
+    <p><span>Click or drag</span> .h / .hpp / .hxx files</p>
+  </div>
+  <ul class="file-list" id="hList"></ul>
+</div>
+
+<div class="card">
+  <div class="card-title">Configuration</div>
+  <div class="row">
+    <div class="field">
+      <label>Target Name</label>
+      <input type="text" id="targetName" value="app" placeholder="app">
+    </div>
+    <div class="field">
+      <label>Compiler</label>
+      <input type="text" id="compiler" value="g++" placeholder="g++">
+    </div>
+    <div class="field">
+      <label>C++ Standard</label>
+      <input type="text" id="cppStd" value="c++17" placeholder="c++17">
+    </div>
+  </div>
+  <div class="row">
+    <div class="field">
+      <label>Optimization</label>
+      <input type="text" id="optFlag" value="-O2" placeholder="-O2">
+    </div>
+    <div class="field">
+      <label>Extra CFLAGS</label>
+      <input type="text" id="extraFlags" value="-Wall -Wextra" placeholder="-Wall">
+    </div>
+    <div class="field">
+      <label>Linker Flags</label>
+      <input type="text" id="ldFlags" value="" placeholder="-lm">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Prompt Makefile</div>
+  <textarea class="prompt-box" id="promptText" placeholder="Describe extra rules, targets, install paths, or any special build behaviour you want included in the Makefile…"></textarea>
+  <div style="margin-top:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <label style="margin:0;white-space:nowrap">Prompt size</label>
+    <input type="range" class="slider" id="sizeSlider" min="-3" max="3" step="0.001" value="0">
+    <div class="size-input-wrap">
+      <input type="number" id="sizeInput" value="0.001" min="0.001" max="1000" step="0.001" style="width:90px">
+      <span class="size-unit">MB</span>
+    </div>
+  </div>
+  <div class="btn-row" style="margin-top:16px">
+    <button class="btn" onclick="promptMkfile()">⚡ Prompt Makefile</button>
+    <button class="btn dl" onclick="downloadMakefile()">⬇ Download Makefile</button>
+  </div>
+  <div class="preview" id="preview"># Makefile preview will appear here</div>
+</div>
+
+<script>
+const cppFiles = [];
+const hFiles = [];
+let makefileContent = '';
+
+function setupDrop(zoneId, inputId, arr, listId, exts) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag');
+    addFiles(Array.from(e.dataTransfer.files).filter(f => exts.some(x => f.name.toLowerCase().endsWith(x))), arr, listId);
+  });
+  input.addEventListener('change', () => {
+    addFiles(Array.from(input.files), arr, listId);
+    input.value = '';
+  });
+}
+
+function addFiles(files, arr, listId) {
+  files.forEach(f => { if (!arr.find(x => x.name === f.name)) arr.push(f); });
+  renderList(arr, listId);
+  updatePreview();
+}
+
+function renderList(arr, listId) {
+  const ul = document.getElementById(listId);
+  ul.innerHTML = '';
+  if (!arr.length) { ul.innerHTML = '<li class="empty">No files added</li>'; return; }
+  arr.forEach((f, i) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${f.name}</span><button onclick="removeFile(${i},'${listId}')" title="Remove">✕</button>`;
+    ul.appendChild(li);
+  });
+}
+
+function removeFile(idx, listId) {
+  const arr = listId === 'cppList' ? cppFiles : hFiles;
+  arr.splice(idx, 1);
+  renderList(arr, listId);
+  updatePreview();
+}
+
+function buildMakefile(extra) {
+  const target = document.getElementById('targetName').value.trim() || 'app';
+  const cc = document.getElementById('compiler').value.trim() || 'g++';
+  const std = document.getElementById('cppStd').value.trim() || 'c++17';
+  const opt = document.getElementById('optFlag').value.trim();
+  const extra_f = document.getElementById('extraFlags').value.trim();
+  const ld = document.getElementById('ldFlags').value.trim();
+  const srcs = cppFiles.map(f => f.name);
+  const hdrs = hFiles.map(f => f.name);
+  const objs = srcs.map(s => s.replace(/\.(cpp|cxx|cc)$/i, '.o'));
+
+  let lines = [];
+  lines.push(`# Generated Makefile`);
+  lines.push(`CXX      := ${cc}`);
+  lines.push(`TARGET   := ${target}`);
+  lines.push(`CXXFLAGS := -std=${std} ${opt}${extra_f ? ' ' + extra_f : ''}`);
+  if (ld) lines.push(`LDFLAGS  := ${ld}`);
+  lines.push('');
+  if (srcs.length) lines.push(`SRCS     := ${srcs.join(' ')}`);
+  else lines.push(`SRCS     :=`);
+  if (hdrs.length) lines.push(`HDRS     := ${hdrs.join(' ')}`);
+  lines.push(`OBJS     := ${objs.length ? objs.join(' ') : '$(SRCS:.cpp=.o)'}`);
+  lines.push('');
+  lines.push(`.PHONY: all clean`);
+  lines.push('');
+  lines.push(`all: $(TARGET)`);
+  lines.push('');
+  lines.push(`$(TARGET): $(OBJS)`);
+  lines.push(`\t$(CXX) $(CXXFLAGS) -o $@ $^${ld ? ' $(LDFLAGS)' : ''}`);
+  lines.push('');
+  if (srcs.length) {
+    srcs.forEach((s, i) => {
+      const o = objs[i];
+      const deps = hdrs.length ? [s, ...hdrs].join(' ') : s;
+      lines.push(`${o}: ${deps}`);
+      lines.push(`\t$(CXX) $(CXXFLAGS) -c -o $@ $<`);
+      lines.push('');
+    });
+  } else {
+    lines.push(`%.o: %.cpp $(HDRS)`);
+    lines.push(`\t$(CXX) $(CXXFLAGS) -c -o $@ $<`);
+    lines.push('');
+  }
+  lines.push(`clean:`);
+  lines.push(`\trm -f $(OBJS) $(TARGET)`);
+  if (extra && extra.trim()) {
+    lines.push('');
+    lines.push('# --- Prompt-specified rules ---');
+    extra.trim().split('\n').forEach(l => lines.push(l));
+  }
+  return lines.join('\n');
+}
+
+function updatePreview() {
+  const m = buildMakefile('');
+  document.getElementById('preview').textContent = m;
+  makefileContent = m;
+}
+
+function padToSize(content, mb) {
+  const targetBytes = Math.round(mb * 1024 * 1024);
+  if (content.length >= targetBytes) return content;
+  const pad = targetBytes - content.length;
+  const filler = '\n# ' + '='.repeat(77) + '\n# padding\n';
+  let out = content;
+  while (out.length < targetBytes - filler.length) out += filler;
+  out += '\n# ' + ' '.repeat(Math.max(0, targetBytes - out.length - 4));
+  return out.slice(0, targetBytes);
+}
+
+function promptMkfile() {
+  const prompt = document.getElementById('promptText').value;
+  const sizeMB = parseFloat(document.getElementById('sizeInput').value) || 0.001;
+  let mk = buildMakefile(prompt);
+  mk = padToSize(mk, sizeMB);
+  makefileContent = mk;
+  document.getElementById('preview').textContent = mk.slice(0, 4000) + (mk.length > 4000 ? '\n…(truncated for preview)' : '');
+}
+
+function downloadMakefile() {
+  const sizeMB = parseFloat(document.getElementById('sizeInput').value) || 0.001;
+  let mk = makefileContent || buildMakefile(document.getElementById('promptText').value);
+  mk = padToSize(mk, sizeMB);
+  const blob = new Blob([mk], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'Makefile';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+const slider = document.getElementById('sizeSlider');
+const sizeInput = document.getElementById('sizeInput');
+
+slider.addEventListener('input', () => {
+  const v = Math.pow(10, parseFloat(slider.value));
+  const clamped = Math.min(1000, Math.max(0.001, parseFloat(v.toFixed(4))));
+  sizeInput.value = clamped;
+});
+sizeInput.addEventListener('input', () => {
+  let v = parseFloat(sizeInput.value);
+  if (!isNaN(v)) {
+    v = Math.min(1000, Math.max(0.001, v));
+    slider.value = Math.log10(v).toFixed(3);
+  }
+});
+
+setupDrop('cppZone', 'cppInput', cppFiles, 'cppList', ['.cpp', '.cxx', '.cc']);
+setupDrop('hZone', 'hInput', hFiles, 'hList', ['.h', '.hpp', '.hxx']);
+renderList(cppFiles, 'cppList');
+renderList(hFiles, 'hList');
+updatePreview();
+</script>
+</body>
+</html>

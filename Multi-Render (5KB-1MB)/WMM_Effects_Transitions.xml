@@ -1,0 +1,605 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TransitionsAndEffects Version="2.8">
+  <Transitions>
+
+    <TransitionDLL guid="{E0039AA4-08D0-44FB-A7B0-BEA33148B3AB}" name="3D Six Pack - Ball" iconid="0">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="Direction" value="0" min="0" max="7"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+      <Param name="CenterX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="CenterY" value="0.5" min="0.0" max="1.0"/>
+      <Param name="Segments" value="4" min="1" max="16"/>
+    </TransitionDLL>
+
+    <TransitionDLL guid="{E0039AA4-08D0-44FB-A7B0-BEA33148B3AC}" name="3D Six Pack - Box Fold" iconid="1">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="Direction" value="0" min="0" max="3"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+      <Param name="Perspective" value="0.5" min="0.0" max="1.0"/>
+    </TransitionDLL>
+
+    <TransitionDLL guid="{E0039AA4-08D0-44FB-A7B0-BEA33148B3AD}" name="3D Six Pack - Clock Wipe" iconid="2">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="Direction" value="0" min="0" max="1"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+      <Param name="StartAngle" value="0.0" min="0.0" max="360.0"/>
+      <Param name="Blades" value="1" min="1" max="12"/>
+    </TransitionDLL>
+
+    <TransitionDLL guid="{E0039AA4-08D0-44FB-A7B0-BEA33148B3AE}" name="3D Six Pack - Slide" iconid="3">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="Direction" value="0" min="0" max="7"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+      <Param name="Perspective" value="0.5" min="0.0" max="1.0"/>
+    </TransitionDLL>
+
+    <TransitionDLL guid="{E0039AA4-08D0-44FB-A7B0-BEA33148B3AF}" name="3D Six Pack - Push" iconid="4">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="Direction" value="0" min="0" max="3"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+    </TransitionDLL>
+
+    <TransitionDLL guid="{E0039AA4-08D0-44FB-A7B0-BEA33148B3B0}" name="3D Six Pack - Shuffle" iconid="5">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="Direction" value="0" min="0" max="3"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+      <Param name="Cards" value="4" min="2" max="8"/>
+    </TransitionDLL>
+
+    <TransitionDLL guid="{B12E6A80-DE3B-4E7E-B88A-80C4D0E12E40}" name="SpiceMaster - Lens" iconid="20">
+      <Param name="Duration" value="1.0" min="0.0" max="30.0"/>
+      <Param name="LensType" value="0" min="0" max="5"/>
+      <Param name="Reverse" value="0" min="0" max="1"/>
+      <Param name="Zoom" value="1.0" min="0.1" max="5.0"/>
+      <Param name="CenterX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="CenterY" value="0.5" min="0.0" max="1.0"/>
+      <Param name="Softness" value="0.1" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D TexA : register(s0);
+          sampler2D TexB : register(s1);
+          float Progress : register(c0);
+          float LensType : register(c1);
+          float Zoom : register(c2);
+          float2 Center : register(c3);
+          float Softness : register(c4);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 d = uv - Center;
+            float dist = length(d);
+            float r = lerp(1.0, Zoom, Progress);
+            float2 uvLens = Center + d / r;
+            float4 a = tex2D(TexA, uv);
+            float4 b = tex2D(TexB, uvLens);
+            float edge = smoothstep(0.0, Softness, Progress) * smoothstep(1.0, 1.0 - Softness, Progress);
+            return lerp(a, b, Progress);
+          }
+        "/>
+      </Shader>
+    </TransitionDLL>
+
+  </Transitions>
+
+  <Effects>
+
+    <EffectDLL guid="{FBD80D7B-F1AB-4A53-AC9A-C6A8E6C1A660}" name="Blur&amp;Sharpen - Box Blur" iconid="30">
+      <Param name="Amount" value="5" min="0" max="100"/>
+      <Param name="Horizontal" value="1" min="0" max="1"/>
+      <Param name="Vertical" value="1" min="0" max="1"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Amount : register(c0);
+          float2 TexelSize : register(c1);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 color = float4(0,0,0,0);
+            int r = (int)(Amount * 0.5);
+            float total = 0.0;
+            for (int x = -r; x <= r; x++) {
+              for (int y = -r; y <= r; y++) {
+                color += tex2D(Tex, uv + float2(x, y) * TexelSize);
+                total += 1.0;
+              }
+            }
+            return color / total;
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{FBD80D7B-F1AB-4A53-AC9A-C6A8E6C1A661}" name="Blur&amp;Sharpen - Gauss Blur" iconid="31">
+      <Param name="Radius" value="3" min="1" max="50"/>
+      <Param name="Sigma" value="1.0" min="0.1" max="20.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Radius : register(c0);
+          float Sigma : register(c1);
+          float2 TexelSize : register(c2);
+          float gaussian(float x, float sigma) {
+            return exp(-(x*x) / (2.0*sigma*sigma));
+          }
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 color = float4(0,0,0,0);
+            float total = 0.0;
+            int r = (int)Radius;
+            for (int x = -r; x <= r; x++) {
+              for (int y = -r; y <= r; y++) {
+                float w = gaussian(length(float2(x, y)), Sigma);
+                color += tex2D(Tex, uv + float2(x, y) * TexelSize) * w;
+                total += w;
+              }
+            }
+            return color / total;
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{FBD80D7B-F1AB-4A53-AC9A-C6A8E6C1A662}" name="Blur&amp;Sharpen - YAEP Blur" iconid="32">
+      <Param name="Strength" value="0.5" min="0.0" max="1.0"/>
+      <Param name="Passes" value="2" min="1" max="8"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Strength : register(c0);
+          float2 TexelSize : register(c1);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 c  = tex2D(Tex, uv);
+            float4 n  = tex2D(Tex, uv + float2(0, -TexelSize.y));
+            float4 s  = tex2D(Tex, uv + float2(0,  TexelSize.y));
+            float4 e  = tex2D(Tex, uv + float2( TexelSize.x, 0));
+            float4 w  = tex2D(Tex, uv + float2(-TexelSize.x, 0));
+            float4 avg = (n + s + e + w) * 0.25;
+            return lerp(c, avg, Strength);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{FBD80D7B-F1AB-4A53-AC9A-C6A8E6C1A663}" name="Blur&amp;Sharpen - Sharpen" iconid="33">
+      <Param name="Amount" value="0.5" min="0.0" max="5.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Amount : register(c0);
+          float2 TexelSize : register(c1);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 c = tex2D(Tex, uv);
+            float4 n = tex2D(Tex, uv + float2(0, -TexelSize.y));
+            float4 s = tex2D(Tex, uv + float2(0,  TexelSize.y));
+            float4 e = tex2D(Tex, uv + float2( TexelSize.x, 0));
+            float4 w = tex2D(Tex, uv + float2(-TexelSize.x, 0));
+            float4 laplacian = c * 4.0 - (n + s + e + w);
+            return c + laplacian * Amount;
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{FBD80D7B-F1AB-4A53-AC9A-C6A8E6C1A664}" name="Blur&amp;Sharpen - Unsharp Mask" iconid="34">
+      <Param name="Radius" value="3" min="1" max="50"/>
+      <Param name="Amount" value="1.0" min="0.0" max="5.0"/>
+      <Param name="Threshold" value="0.05" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Radius : register(c0);
+          float Amount : register(c1);
+          float Threshold : register(c2);
+          float2 TexelSize : register(c3);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 orig = tex2D(Tex, uv);
+            float4 blur = float4(0,0,0,0);
+            int r = (int)Radius;
+            float total = 0.0;
+            for (int x = -r; x <= r; x++) {
+              for (int y = -r; y <= r; y++) {
+                float w = 1.0;
+                blur += tex2D(Tex, uv + float2(x, y) * TexelSize) * w;
+                total += w;
+              }
+            }
+            blur /= total;
+            float4 diff = orig - blur;
+            float mag = length(diff.rgb);
+            if (mag > Threshold)
+              return orig + diff * Amount;
+            return orig;
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{FBD80D7B-F1AB-4A53-AC9A-C6A8E6C1A665}" name="Blur&amp;Sharpen - Motion Blur" iconid="35">
+      <Param name="Angle" value="0.0" min="-180.0" max="180.0"/>
+      <Param name="Distance" value="10" min="1" max="200"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Angle : register(c0);
+          float Distance : register(c1);
+          float2 TexelSize : register(c2);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float rad = Angle * 3.14159265 / 180.0;
+            float2 dir = float2(cos(rad), sin(rad)) * TexelSize * Distance;
+            float4 color = float4(0,0,0,0);
+            int steps = (int)Distance;
+            for (int i = 0; i < steps; i++) {
+              float t = (float)i / (float)steps;
+              color += tex2D(Tex, uv + dir * t);
+            }
+            return color / (float)steps;
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{CC0200A1-1234-5678-ABCD-000000000001}" name="CreativEase - Chroma Warp" iconid="40">
+      <Param name="Amount" value="0.01" min="0.0" max="0.1"/>
+      <Param name="Angle" value="0.0" min="-180.0" max="180.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Amount : register(c0);
+          float Angle : register(c1);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float rad = Angle * 3.14159265 / 180.0;
+            float2 offset = float2(cos(rad), sin(rad)) * Amount;
+            float r = tex2D(Tex, uv + offset).r;
+            float g = tex2D(Tex, uv).g;
+            float b = tex2D(Tex, uv - offset).b;
+            float a = tex2D(Tex, uv).a;
+            return float4(r, g, b, a);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{CC0200A1-1234-5678-ABCD-000000000002}" name="CreativEase - Distortion Warp" iconid="41">
+      <Param name="FrequencyX" value="5.0" min="0.1" max="50.0"/>
+      <Param name="FrequencyY" value="5.0" min="0.1" max="50.0"/>
+      <Param name="AmplitudeX" value="0.02" min="0.0" max="0.5"/>
+      <Param name="AmplitudeY" value="0.02" min="0.0" max="0.5"/>
+      <Param name="Time" value="0.0" min="0.0" max="100.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float FrequencyX : register(c0);
+          float FrequencyY : register(c1);
+          float AmplitudeX : register(c2);
+          float AmplitudeY : register(c3);
+          float Time : register(c4);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 warp;
+            warp.x = uv.x + sin(uv.y * FrequencyY + Time) * AmplitudeX;
+            warp.y = uv.y + cos(uv.x * FrequencyX + Time) * AmplitudeY;
+            return tex2D(Tex, warp);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{CC0200A1-1234-5678-ABCD-000000000003}" name="CreativEase - Etching" iconid="42">
+      <Param name="Strength" value="1.0" min="0.0" max="5.0"/>
+      <Param name="LineWidth" value="1.0" min="0.5" max="5.0"/>
+      <Param name="Angle" value="45.0" min="0.0" max="180.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Strength : register(c0);
+          float LineWidth : register(c1);
+          float Angle : register(c2);
+          float2 TexelSize : register(c3);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float rad = Angle * 3.14159265 / 180.0;
+            float2 dir = float2(cos(rad), sin(rad)) * TexelSize * LineWidth;
+            float4 c0 = tex2D(Tex, uv);
+            float4 c1 = tex2D(Tex, uv + dir);
+            float edge = length(c0.rgb - c1.rgb) * Strength;
+            float etch = 1.0 - saturate(edge);
+            return float4(etch, etch, etch, c0.a);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{CC0200A1-1234-5678-ABCD-000000000004}" name="CreativEase - Rainbow" iconid="43">
+      <Param name="Frequency" value="1.0" min="0.1" max="10.0"/>
+      <Param name="Offset" value="0.0" min="0.0" max="1.0"/>
+      <Param name="Intensity" value="0.5" min="0.0" max="1.0"/>
+      <Param name="Vertical" value="1" min="0" max="1"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Frequency : register(c0);
+          float Offset : register(c1);
+          float Intensity : register(c2);
+          float Vertical : register(c3);
+          float3 hsv2rgb(float3 c) {
+            float4 K = float4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+            float3 p = abs(frac(c.xxx + K.xyz) * 6.0 - K.www);
+            return c.z * lerp(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+          }
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 orig = tex2D(Tex, uv);
+            float pos = Vertical > 0.5 ? uv.y : uv.x;
+            float hue = frac(pos * Frequency + Offset);
+            float3 rainbow = hsv2rgb(float3(hue, 1.0, 1.0));
+            return float4(lerp(orig.rgb, orig.rgb * rainbow, Intensity), orig.a);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{CC0200A1-1234-5678-ABCD-000000000005}" name="CreativEase - Kaleidoscope" iconid="44">
+      <Param name="Segments" value="6" min="2" max="32"/>
+      <Param name="Rotation" value="0.0" min="-180.0" max="180.0"/>
+      <Param name="CenterX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="CenterY" value="0.5" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Segments : register(c0);
+          float Rotation : register(c1);
+          float2 Center : register(c2);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 d = uv - Center;
+            float angle = atan2(d.y, d.x);
+            float dist = length(d);
+            float pi = 3.14159265;
+            float seg = pi * 2.0 / Segments;
+            angle += Rotation * pi / 180.0;
+            angle = fmod(abs(angle), seg);
+            if (angle > seg * 0.5) angle = seg - angle;
+            float2 nuv = Center + float2(cos(angle), sin(angle)) * dist;
+            return tex2D(Tex, nuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{CC0200A1-1234-5678-ABCD-000000000006}" name="CreativEase - HSL Adjust" iconid="45">
+      <Param name="Hue" value="0.0" min="-180.0" max="180.0"/>
+      <Param name="Saturation" value="1.0" min="0.0" max="3.0"/>
+      <Param name="Lightness" value="0.0" min="-1.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Hue : register(c0);
+          float Saturation : register(c1);
+          float Lightness : register(c2);
+          float3 rgb2hsl(float3 c) {
+            float maxC = max(c.r, max(c.g, c.b));
+            float minC = min(c.r, min(c.g, c.b));
+            float l = (maxC + minC) * 0.5;
+            float d = maxC - minC;
+            float s = (l > 0.5) ? d / (2.0 - maxC - minC) : d / (maxC + minC);
+            float h = 0.0;
+            if (d > 0.0) {
+              if (maxC == c.r) h = (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0);
+              else if (maxC == c.g) h = (c.b - c.r) / d + 2.0;
+              else h = (c.r - c.g) / d + 4.0;
+              h /= 6.0;
+            }
+            return float3(h, s, l);
+          }
+          float hue2rgb(float p, float q, float t) {
+            if (t < 0.0) t += 1.0;
+            if (t > 1.0) t -= 1.0;
+            if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
+            if (t < 0.5) return q;
+            if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
+            return p;
+          }
+          float3 hsl2rgb(float3 hsl) {
+            float h = hsl.x, s = hsl.y, l = hsl.z;
+            if (s == 0.0) return float3(l, l, l);
+            float q = (l < 0.5) ? l * (1.0 + s) : l + s - l * s;
+            float p = 2.0 * l - q;
+            return float3(hue2rgb(p,q,h+1.0/3.0), hue2rgb(p,q,h), hue2rgb(p,q,h-1.0/3.0));
+          }
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 orig = tex2D(Tex, uv);
+            float3 hsl = rgb2hsl(orig.rgb);
+            hsl.x = frac(hsl.x + Hue / 360.0);
+            hsl.y = saturate(hsl.y * Saturation);
+            hsl.z = saturate(hsl.z + Lightness);
+            return float4(hsl2rgb(hsl), orig.a);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000001}" name="DistortMaster - Wave" iconid="50">
+      <Param name="FrequencyH" value="5.0" min="0.1" max="50.0"/>
+      <Param name="FrequencyV" value="5.0" min="0.1" max="50.0"/>
+      <Param name="AmplitudeH" value="0.02" min="0.0" max="0.5"/>
+      <Param name="AmplitudeV" value="0.02" min="0.0" max="0.5"/>
+      <Param name="Phase" value="0.0" min="0.0" max="6.283185"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float FrequencyH : register(c0);
+          float FrequencyV : register(c1);
+          float AmplitudeH : register(c2);
+          float AmplitudeV : register(c3);
+          float Phase : register(c4);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 wuv;
+            wuv.x = uv.x + sin(uv.y * FrequencyV + Phase) * AmplitudeH;
+            wuv.y = uv.y + sin(uv.x * FrequencyH + Phase) * AmplitudeV;
+            return tex2D(Tex, wuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000002}" name="DistortMaster - Swirl" iconid="51">
+      <Param name="Angle" value="180.0" min="-360.0" max="360.0"/>
+      <Param name="Radius" value="0.5" min="0.0" max="2.0"/>
+      <Param name="CenterX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="CenterY" value="0.5" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Angle : register(c0);
+          float Radius : register(c1);
+          float2 Center : register(c2);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 d = uv - Center;
+            float dist = length(d);
+            float pi = 3.14159265;
+            float theta = Angle * pi / 180.0 * max(0.0, 1.0 - dist / Radius);
+            float cosA = cos(theta), sinA = sin(theta);
+            float2 rotated = float2(cosA * d.x - sinA * d.y, sinA * d.x + cosA * d.y);
+            return tex2D(Tex, Center + rotated);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000003}" name="DistortMaster - Twirl" iconid="52">
+      <Param name="Amount" value="1.0" min="-5.0" max="5.0"/>
+      <Param name="Radius" value="0.5" min="0.01" max="2.0"/>
+      <Param name="CenterX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="CenterY" value="0.5" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Amount : register(c0);
+          float Radius : register(c1);
+          float2 Center : register(c2);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 d = uv - Center;
+            float dist = length(d);
+            float pi = 3.14159265;
+            float factor = max(0.0, 1.0 - dist / Radius);
+            float theta = Amount * pi * factor;
+            float cosA = cos(theta), sinA = sin(theta);
+            float2 rot = float2(cosA*d.x - sinA*d.y, sinA*d.x + cosA*d.y);
+            return tex2D(Tex, Center + rot);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000004}" name="DistortMaster - Slide" iconid="53">
+      <Param name="OffsetX" value="0.0" min="-1.0" max="1.0"/>
+      <Param name="OffsetY" value="0.0" min="-1.0" max="1.0"/>
+      <Param name="Wrap" value="1" min="0" max="1"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float OffsetX : register(c0);
+          float OffsetY : register(c1);
+          float Wrap : register(c2);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 nuv = uv + float2(OffsetX, OffsetY);
+            if (Wrap > 0.5)
+              nuv = frac(nuv);
+            else
+              nuv = clamp(nuv, 0.0, 1.0);
+            return tex2D(Tex, nuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000005}" name="DistortMaster - Fisheye" iconid="54">
+      <Param name="Amount" value="0.5" min="-1.0" max="1.0"/>
+      <Param name="CenterX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="CenterY" value="0.5" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float Amount : register(c0);
+          float2 Center : register(c1);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 d = uv - Center;
+            float dist = length(d);
+            float scale = (Amount > 0.0)
+              ? (1.0 + dist * Amount)
+              : (1.0 / (1.0 - dist * Amount));
+            float2 nuv = Center + d / scale;
+            return tex2D(Tex, nuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000006}" name="DistortMaster - Displace" iconid="55">
+      <Param name="ScaleX" value="0.05" min="-1.0" max="1.0"/>
+      <Param name="ScaleY" value="0.05" min="-1.0" max="1.0"/>
+      <Param name="ChannelX" value="0" min="0" max="2"/>
+      <Param name="ChannelY" value="1" min="0" max="2"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          sampler2D DispMap : register(s1);
+          float ScaleX : register(c0);
+          float ScaleY : register(c1);
+          float ChannelX : register(c2);
+          float ChannelY : register(c3);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float4 disp = tex2D(DispMap, uv);
+            float dx = (ChannelX < 0.5) ? disp.r : ((ChannelX < 1.5) ? disp.g : disp.b);
+            float dy = (ChannelY < 0.5) ? disp.r : ((ChannelY < 1.5) ? disp.g : disp.b);
+            float2 nuv = uv + float2((dx - 0.5) * ScaleX, (dy - 0.5) * ScaleY);
+            return tex2D(Tex, nuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{DD0300B2-1234-5678-ABCD-000000000007}" name="DistortMaster - Shear" iconid="56">
+      <Param name="ShearX" value="0.0" min="-1.0" max="1.0"/>
+      <Param name="ShearY" value="0.0" min="-1.0" max="1.0"/>
+      <Param name="Wrap" value="1" min="0" max="1"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float ShearX : register(c0);
+          float ShearY : register(c1);
+          float Wrap : register(c2);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 nuv;
+            nuv.x = uv.x + ShearX * uv.y;
+            nuv.y = uv.y + ShearY * uv.x;
+            if (Wrap > 0.5)
+              nuv = frac(nuv);
+            else
+              nuv = clamp(nuv, 0.0, 1.0);
+            return tex2D(Tex, nuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+    <EffectDLL guid="{EE0400C3-1234-5678-ABCD-000000000001}" name="ZoomMaster - Ken Burns" iconid="70">
+      <Param name="StartX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="StartY" value="0.5" min="0.0" max="1.0"/>
+      <Param name="EndX" value="0.5" min="0.0" max="1.0"/>
+      <Param name="EndY" value="0.5" min="0.0" max="1.0"/>
+      <Param name="StartScale" value="1.0" min="0.1" max="4.0"/>
+      <Param name="EndScale" value="1.3" min="0.1" max="4.0"/>
+      <Param name="Progress" value="0.0" min="0.0" max="1.0"/>
+      <Shader>
+        <PixelShader code="
+          sampler2D Tex : register(s0);
+          float2 StartPos : register(c0);
+          float2 EndPos : register(c1);
+          float StartScale : register(c2);
+          float EndScale : register(c3);
+          float Progress : register(c4);
+          float4 main(float2 uv : TEXCOORD) : COLOR {
+            float2 center = lerp(StartPos, EndPos, Progress);
+            float scale = lerp(StartScale, EndScale, Progress);
+            float2 nuv = center + (uv - 0.5) / scale;
+            return tex2D(Tex, nuv);
+          }
+        "/>
+      </Shader>
+    </EffectDLL>
+
+  </Effects>
+</TransitionsAndEffects>
