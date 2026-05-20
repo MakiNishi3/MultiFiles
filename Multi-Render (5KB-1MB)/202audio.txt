@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a=0\nfor (let i=-30; i<30; i++) {\n  let frequency = 2**(i+t/2e5)\n  a += (((t*frequency*4)&t/100*frequency)/16384)%1*1.1**(0-((log2(frequency)-5))**2)/3\n}\nreturn a","bypass":false}]

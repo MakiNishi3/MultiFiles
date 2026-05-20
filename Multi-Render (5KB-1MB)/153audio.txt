@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"c0 = clamp(0,t/sr-1,1)\nreturn sin(t*pi/256)*(1-c0)+(t/256%2-1)*c0","bypass":false},{"name":"Untitled","effect":"c0 = clamp(0,t/sr-2,1)\nreturn v[0]*(1-c0)+(floor(t/256)%2-.5)*2*c0","bypass":false}]

@@ -1,0 +1,10 @@
+Description
+
+CODE
+
+Audio:
+1. Untitled
+return (t/1024)%1
+
+2. Limiter
+return [clamp(-1,v[0],1)/2,clamp(-1,v[1],1)/2]

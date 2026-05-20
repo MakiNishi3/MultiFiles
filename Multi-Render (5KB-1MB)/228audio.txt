@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"return sin(t)","bypass":false},{"name":"Untitled","effect":"return (v[0]**floor(t/1e4)**2)/2","bypass":false}]

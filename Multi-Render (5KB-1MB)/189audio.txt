@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a = 0;\nfor (let k=1; k<=128; k++) {\na += sin(t/256*pi*k)/10*sin(t/1e4-k)**64\n}\nreturn a","bypass":false}]

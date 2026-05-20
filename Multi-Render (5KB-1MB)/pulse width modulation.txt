@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"return ((t/512)%1<(t/510)%1?1:-1)/2","bypass":false}]

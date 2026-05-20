@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a = 0;\nfor (let k=1; k<=512; k++) {\n  a += sin(t*k/128+(k**2)/3*sin(t/5e4)**4)/k\n}\nreturn a","bypass":false}]

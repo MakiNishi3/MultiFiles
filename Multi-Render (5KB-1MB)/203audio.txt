@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a=0\nfor (let i=-20; i<20; i++) {\n  let frequency = 1.5**(i+t/3e5)\n  a += sin(t*frequency/200)*1.1**(0-((log2(frequency)-5))**2)*((t/2e3-i+30)%6<=1?1:0)/5\n}\nreturn a","bypass":false}]

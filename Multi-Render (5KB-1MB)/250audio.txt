@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a=0;\nfor (let i=1; i<10; i++) {\n   a += tanh(sin((sin(t*pi/400))*sin(t*pi*i*2**i/800)**256)*(t/1e4)**4)*(tanh(5*sin(t*pi/1e4+\ntanh(t/2e4-10)*1e2+i))+1)/10\n}\nreturn a","bypass":false}]

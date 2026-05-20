@@ -1,0 +1,1 @@
+[{"name":"Arcsine wave","effect":"return (asin(((t/128%2)-1))*2/pi)","bypass":false}]

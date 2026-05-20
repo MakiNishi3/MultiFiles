@@ -1,0 +1,1 @@
+[{"name":"Arctangent wave","effect":"return (atan(((t/32%2)-1)*10)*2/pi)","bypass":false}]

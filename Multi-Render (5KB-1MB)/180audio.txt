@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a = 0;\nfor (let k=0; k<20; k++) {\na += sin(t*pi/(2048)*1.5**k)/20\n}\nreturn a","bypass":false}]

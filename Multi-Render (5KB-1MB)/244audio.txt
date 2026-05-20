@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a=0\nfor (let i=0; i<49; i++) {\n  a += 0.025*sin(t/sr*440/2*pi*2**([3,5,7,8,10,12,14][i%7]/12+floor(i/7)))\n}\nreturn a","bypass":false}]

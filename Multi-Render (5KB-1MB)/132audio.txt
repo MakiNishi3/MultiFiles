@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"return sin(t*pi/256)","bypass":false},{"name":"Untitled","effect":"let a = 8\nreturn getSample(floor(t/a)*a)","bypass":false}]

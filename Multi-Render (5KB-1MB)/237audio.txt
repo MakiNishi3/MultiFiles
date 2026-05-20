@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a=t*pi/3e5\nt0 = t*(42&t>>10)\nfor (let k=1; k<10; k++) {\n  t0 = atan(sin(t0)*a)*a\n}\nreturn tanh(t0)","bypass":false},{"name":"Untitled","effect":"return getSample(t&t>>8)","bypass":false}]

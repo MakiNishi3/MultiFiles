@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a = 0\nfor (let k=1; k<=256; k++) {\na += (sin(t*k*pi/256)**15)/k\n}\nreturn a","bypass":false}]

@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a = (t/24e3)**2\nv0 = [0,0]\nfor (let k=1; k<a; k++) {\na0 = (sin(k*pi*t/64)-sin(k*pi*(t+1/2)/64))/(2*k)*4\nv0 = [v0[0]+a0,v0[1]+a0]\n}\nreturn v0","bypass":false}]

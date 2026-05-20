@@ -1,0 +1,8 @@
+[{"name":"Untitled","effect":"return (i>>(x*t&y)*t%223)*(x^y)<<((t>>6+x*y*i*t)&7)","bypass":false}]
+#DELIMITER#
+[
+"blank",
+"256",
+"256",
+"https://quitin.github.io/projects/html/media-workstation/image-editor/image-editor.html"
+]

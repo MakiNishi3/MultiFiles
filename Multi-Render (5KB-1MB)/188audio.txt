@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"f = x => asin(sin(x/2))/2\na = 0;\nfor (let k=0; k<10; k++) {\na += f(sin(t*pi/1024*e**k)*k*t/1e4)/15\n}\nreturn a","bypass":false}]

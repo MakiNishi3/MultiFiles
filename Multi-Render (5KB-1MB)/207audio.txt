@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a = 0\na += sin(t/5+5e3*sin(t/3e4))/8\na += sin(t/5-5e3*sin(t/3e4))/8\nreturn a","bypass":false},{"name":"Untitled","effect":"a = v[0]\na *= (t/16)%1<0.5?1:0\nreturn a","bypass":false}]

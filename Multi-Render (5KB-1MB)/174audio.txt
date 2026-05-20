@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a = 0;\nfor (let k=0; k<20; k++) {\na += ((t/2048*2**k)%1-0.5)/20\n}\nreturn a","bypass":false}]

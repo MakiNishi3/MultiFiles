@@ -1,0 +1,8 @@
+[{"name":"Untitled","effect":"return i<<i","bypass":false}]
+#DELIMITER#
+[
+"blank",
+"256",
+"256",
+"https://quitin.github.io/projects/html/media-workstation/image-editor/image-editor.html"
+]

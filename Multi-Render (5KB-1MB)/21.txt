@@ -1,0 +1,12 @@
+Audio
+
+Effect 1: Untitled
+return sin(t**0.5*5)*1.00001**t+sin(t*(0.5/(1+(t/25e4)**50)))*1.0001**(t-1e5)
+
+Effect 2: Limiter
+return [clamp(-1,v[0],1)/2,clamp(-1,v[1],1)/2]
+
+
+Video
+
+return (x-128)**2*V**2+(y-128)**2*V**2

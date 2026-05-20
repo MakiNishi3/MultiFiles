@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"return ((t/512)%1-0.5)*2","bypass":false},{"name":"Untitled","effect":"return (v[0]**floor(t/1e3)**2)/2","bypass":false}]

@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"f = (t) => {\nlet a = 0;\nfor (let k=0; k<24; k++) {\n  a += exp(0-(48*((t/128)%2+cos((t/1e5+k/24*pi)%pi)-1))**2)*sin((t/1e5+k/24*pi)%(pi))**4*1\n}\n  return a\n};\nreturn (f(t)*2-1)/3","bypass":false}]

@@ -1,0 +1,8 @@
+[{"name":"Untitled","effect":"return sin(y*pi/256*4)**floor(x/2)*255","bypass":false}]
+#DELIMITER#
+[
+"blank",
+"256",
+"256",
+"https://quitin.github.io/projects/html/media-workstation/image-editor/image-editor.html"
+]

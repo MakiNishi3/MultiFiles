@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"let a=0\nfor (let i=0; i<7; i++) {\n  a += 0.1*(((((t/sr*440/2*2**([9,11,13,14,16,18,20][i]/12))%1)-0.5)*t/1e4)%1)\n}\nreturn a","bypass":false}]

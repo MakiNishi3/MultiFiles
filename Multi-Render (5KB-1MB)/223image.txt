@@ -1,0 +1,8 @@
+[{"name":"Untitled","effect":"return (x*32/256%1)**floor(2+(-1)**floor(x/16)+x/32)*256","bypass":false}]
+#DELIMITER#
+[
+"blank",
+"256",
+"256",
+"https://quitin.github.io/projects/html/media-workstation/image-editor/image-editor.html"
+]

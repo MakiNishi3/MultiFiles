@@ -1,0 +1,1 @@
+[{"name":"Untitled","effect":"a = 0\nfor (let k=1; k<=256; k++) {\nb = floor(3**(t/2e4)-1)\na += (sin(t*k*pi/256)**(2*b+1))/k\n}\nreturn a","bypass":false}]
